@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -51,34 +52,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/api/auth/register").permitAll()
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/sectors/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/incidents/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/stats/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/incidents").permitAll()
-                        // Swagger endpoints
-                        .requestMatchers("/swagger-ui.html").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/api-docs/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        // Protected endpoints
-                        .requestMatchers("/api/auth/me").authenticated()
-                        .requestMatchers("/api/auth/**").authenticated()
-                        .requestMatchers("/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/incidents/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/incidents/**").hasRole("ADMIN")
-                        .requestMatchers("/api/incidents/my").authenticated()
-                        .requestMatchers("/api/alerts/**/resend").hasRole("ADMIN")
-                        .requestMatchers("/api/alerts/**/acknowledge").hasRole("ADMIN")
-                        // All other requests require authentication
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/sectors/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/stats/**").permitAll()
+                        .requestMatchers("/incidents/my").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/incidents/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/incidents").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/api-docs/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/auth/**").authenticated()
+                        .requestMatchers("/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/incidents/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/incidents/**").hasRole("ADMIN")
+                        .requestMatchers("/alerts/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
 

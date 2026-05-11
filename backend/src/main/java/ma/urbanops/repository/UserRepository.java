@@ -29,7 +29,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByReceiveAlertsTrueAndSector(String sector);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = ?1")
-    Long countByRole(Role role);
+    long countByRole(Role role);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt >= ?1")
     Long countByCreatedAtAfter(LocalDateTime date);

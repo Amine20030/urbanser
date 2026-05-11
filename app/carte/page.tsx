@@ -1,28 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search } from 'lucide-react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MapView } from '@/components/shared/MapView'
-import { INCIDENTS } from '@/lib/mockData'
+import { incidentApi } from '@/lib/api'
+import { MapIncident, Incident } from '@/lib/types'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { getSeverityColor } from '@/lib/utils'
+import { MapSkeleton } from '@/components/shared/LoadingSkeleton'
+import { ErrorState, EmptyState } from '@/components/shared/ErrorState'
 
 export default function CartePage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [incidents, setIncidents] = useState<MapIncident[]>([])
+  const [fullIncidents, setFullIncidents] = useState<Incident[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredIncidents = INCIDENTS.filter(
+  useEffect(() => {
+    Promise.all([incidentApi.getMap(), incidentApi.getRecent()])
+      .then(([mapRes, recentRes]) => {
+        setIncidents(mapRes.data)
+        setFullIncidents(recentRes.data)
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('Impossible de charger la carte')
+        setLoading(false)
+      })
+  }, [])
+
+  const filteredIncidents = incidents.filter(
     (incident) =>
-      incident.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      incident.sector.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      incident.category.toLowerCase().includes(searchQuery.toLowerCase())
+      incident.title.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   // Calculate incidents by service
-  const serviceCounts = INCIDENTS.reduce((acc, incident) => {
-    acc[incident.authority] = (acc[incident.authority] || 0) + 1
+  const serviceCounts = fullIncidents.reduce((acc: Record<string, number>, incident) => {
+    const service = incident.authorityNotified || 'Non assigné'
+    acc[service] = (acc[service] || 0) + 1
     return acc
-  }, {} as Record<string, number>)
+  }, {})
 
   const serviceStats = Object.entries(serviceCounts)
     .map(([name, count]) => ({ name, count }))
@@ -49,7 +68,13 @@ export default function CartePage() {
             </div>
           </div>
 
-          <MapView incidents={filteredIncidents} height="100vh" />
+          {loading ? (
+            <MapSkeleton />
+          ) : error ? (
+            <ErrorState message={error} retry={() => window.location.reload()} />
+          ) : (
+            <MapView incidents={filteredIncidents} height="100vh" />
+          )}
         </div>
 
         {/* Right panel */}
@@ -71,7 +96,7 @@ export default function CartePage() {
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
-                          width: `${(service.count / INCIDENTS.length) * 100}%`,
+                          width: `${fullIncidents.length > 0 ? (service.count / fullIncidents.length) * 100 : 0}%`,
                           backgroundColor: getSeverityColor('MED'),
                         }}
                       />
@@ -88,19 +113,21 @@ export default function CartePage() {
               Derniers incidents
             </h3>
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {INCIDENTS.slice(0, 6).map((incident) => (
+              {loading ? (
+                <p className="text-xs text-[var(--t3)]">Chargement...</p>
+              ) : fullIncidents.slice(0, 6).map((incident) => (
                 <div
                   key={incident.id}
                   className="p-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)]"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="text-xs font-mono text-cyan-400">{incident.id}</span>
-                    <StatusBadge status={incident.status} size="sm" />
+                    <span className="text-xs font-mono text-cyan-400">{incident.referenceCode}</span>
+                    <StatusBadge status={incident.status.toLowerCase() as 'open' | 'in_progress' | 'resolved'} size="sm" />
                   </div>
                   <h4 className="text-xs text-[var(--t1)] mb-1 line-clamp-1">
                     {incident.title}
                   </h4>
-                  <p className="text-[10px] text-[var(--t3)]">{incident.date}</p>
+                  <p className="text-[10px] text-[var(--t3)]">{new Date(incident.createdAt).toLocaleDateString('fr-FR')}</p>
                 </div>
               ))}
             </div>

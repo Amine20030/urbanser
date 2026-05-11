@@ -4,8 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ma.urbanops.dto.request.IncidentRequest;
 import ma.urbanops.dto.request.UpdateStatusRequest;
-import ma.urbanops.dto.response.AIAnalysisResponse;
+
 import ma.urbanops.dto.response.IncidentMapDTO;
+import ma.urbanops.dto.response.MapIncidentProjection;
 import ma.urbanops.entity.Category;
 import ma.urbanops.entity.Incident;
 import ma.urbanops.entity.Sector;
@@ -24,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
+
 import java.util.List;
 
 @Slf4j
@@ -72,8 +73,16 @@ public class IncidentService {
     }
 
     public Incident getByReference(String code) {
-        return incidentRepository.findByReferenceCode(code)
-                .orElseThrow(() -> new ResourceNotFoundException("Incident", "referenceCode", code));
+        if (code != null && code.toUpperCase().startsWith("INC-")) {
+            String numberPart = code.substring(4);
+            try {
+                int number = Integer.parseInt(numberPart);
+                code = String.format("INC-%04d", number);
+            } catch (NumberFormatException ignored) {}
+        }
+        String finalCode = code;
+        return incidentRepository.findByReferenceCode(finalCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Incident", "referenceCode", finalCode));
     }
 
     @Transactional
@@ -92,34 +101,47 @@ public class IncidentService {
             photoUrl = fileStorageService.storeFile(photo);
         }
         
-        // AI Analysis
-        String base64Image = null;
-        if (photo != null && !photo.isEmpty()) {
-            try {
-                base64Image = Base64.getEncoder().encodeToString(photo.getBytes());
-            } catch (Exception e) {
-                log.warn("Could not convert image to base64: {}", e.getMessage());
-            }
-        }
-        
-        AIAnalysisResponse analysis = aiAnalysisService.analyzeIncident(
-                request.getDescription(), base64Image, category.getName());
+
         
         Incident incident = Incident.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .category(category)
                 .sector(sector)
-                .severity(analysis.getSeverity())
                 .status(IncidentStatus.OPEN)
                 .reportedBy(reporter)
                 .photoUrl(photoUrl)
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
-                .aiAnalysisResult(analysis.getRawResponse())
-                .authorityNotified(analysis.getAuthorityToAlert())
-                .alertSent(false)
                 .build();
+
+        // ── AI ANALYSIS (non-blocking) ────────────────────────
+        try {
+            String categoryName = category.getName();
+            ma.urbanops.dto.response.AIAnalysisResult ai = aiAnalysisService.analyze(request.getDescription(), categoryName);
+
+            // Map severity string to enum
+            Severity sev;
+            try { sev = Severity.valueOf(ai.getSeverity()); }
+            catch (Exception e) { sev = Severity.MEDIUM; }
+
+            incident.setSeverity(sev);
+            incident.setAuthorityNotified(ai.getAuthorityName());
+            incident.setAiAnalysisResult(ai.getReason());
+            incident.setAlertSent(false);
+
+            log.info("AI result: category={} severity={} confidence={} fallback={}",
+                ai.getCategory(), ai.getSeverity(), ai.getConfidence(), ai.getFallbackUsed());
+
+        } catch (Exception e) {
+            // AI failed completely — use safe defaults, DO NOT crash
+            log.warn("AI block failed entirely, using safe defaults: {}", e.getMessage());
+            incident.setSeverity(Severity.MEDIUM);
+            incident.setAuthorityNotified(category.getDefaultAuthority());
+            incident.setAiAnalysisResult("Analyse indisponible");
+            incident.setAlertSent(false);
+        }
+        // ── END AI ────────────────────────────────────────────
         
         // Save incident first to get ID for reference code
         Incident savedIncident = incidentRepository.save(incident);
@@ -129,10 +151,14 @@ public class IncidentService {
         savedIncident = incidentRepository.save(savedIncident);
         
         // Create and send alert
-        if (analysis.getSeverity() == Severity.HIGH || analysis.getSeverity() == Severity.MEDIUM) {
-            alertService.createAndSendAlert(savedIncident);
-            savedIncident.setAlertSent(true);
-            savedIncident = incidentRepository.save(savedIncident);
+        if (incident.getSeverity() == Severity.HIGH || incident.getSeverity() == Severity.MEDIUM) {
+            try {
+                alertService.createAndSendAlert(savedIncident);
+                savedIncident.setAlertSent(true);
+                savedIncident = incidentRepository.save(savedIncident);
+            } catch (Exception e) {
+                log.warn("Alert creation/sending failed silently: {}", e.getMessage());
+            }
         }
         
         log.info("Incident created with reference: {}", savedIncident.getReferenceCode());
@@ -197,6 +223,18 @@ public class IncidentService {
                         .category(i.getCategory().getName())
                         .build())
                 .toList();
+    }
+
+    /**
+     * Interface-based projection method — returns only the fields needed for map display.
+     * Spring Data JPA generates an optimal SELECT query loading only 7 columns instead of 20+.
+     * This is a JPA best practice for performance with large datasets.
+     *
+     * @return List of MapIncidentProjection (interface-based projection)
+     */
+    @Transactional(readOnly = true)
+    public List<MapIncidentProjection> getAllForMapProjection() {
+        return incidentRepository.findAllForMapProjection();
     }
 
     public String generateReferenceCode(Long id) {

@@ -4,10 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import ma.urbanops.dto.request.IncidentRequest;
 import ma.urbanops.dto.request.UpdateStatusRequest;
 import ma.urbanops.dto.response.IncidentMapDTO;
 import ma.urbanops.dto.response.IncidentResponse;
+import ma.urbanops.dto.response.MapIncidentProjection;
 import ma.urbanops.entity.Incident;
 import ma.urbanops.entity.User;
 import ma.urbanops.enums.IncidentStatus;
@@ -17,9 +19,11 @@ import ma.urbanops.service.IncidentService;
 import ma.urbanops.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +33,7 @@ import java.util.List;
 @RequestMapping("/incidents")
 @RequiredArgsConstructor
 @Tag(name = "Incidents", description = "Incident management endpoints")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, allowedHeaders = "*")
 public class IncidentController {
 
     private final IncidentService incidentService;
@@ -69,7 +74,10 @@ public class IncidentController {
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User reporter = userDetails != null ? userService.findByEmail(userDetails.getUsername()) : null;
         Incident incident = incidentService.createIncident(request, photo, reporter);
-        return ResponseEntity.ok(toResponse(incident));
+        IncidentResponse response = toResponse(incident);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Location", "/api/v1/incidents/" + incident.getId())
+                .body(response);
     }
 
     @PatchMapping("/{id}/status")
@@ -78,7 +86,7 @@ public class IncidentController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<IncidentResponse> updateStatus(
             @PathVariable Long id,
-            @RequestBody UpdateStatusRequest request) {
+            @Valid @RequestBody UpdateStatusRequest request) {
         Incident incident = incidentService.updateStatus(id, request);
         return ResponseEntity.ok(toResponse(incident));
     }
@@ -89,7 +97,7 @@ public class IncidentController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> deleteIncident(@PathVariable Long id) {
         incidentService.deleteIncident(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();  // HTTP 204 No Content
     }
 
     @GetMapping("/my")
@@ -103,9 +111,10 @@ public class IncidentController {
     }
 
     @GetMapping("/map")
-    @Operation(summary = "Get all incidents for map display")
-    public ResponseEntity<List<IncidentMapDTO>> getAllForMap() {
-        return ResponseEntity.ok(incidentService.getAllForMap());
+    @Operation(summary = "Get all incidents for map display (projection)",
+               description = "Returns lightweight data using JPA interface projection — only 7 fields loaded from DB instead of 20+")
+    public ResponseEntity<List<MapIncidentProjection>> getAllForMap() {
+        return ResponseEntity.ok(incidentService.getAllForMapProjection());
     }
 
     @GetMapping("/recent")

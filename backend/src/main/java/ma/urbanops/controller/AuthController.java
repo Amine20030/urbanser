@@ -12,6 +12,7 @@ import ma.urbanops.entity.User;
 import ma.urbanops.security.JwtTokenProvider;
 import ma.urbanops.security.UserDetailsImpl;
 import ma.urbanops.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,7 +35,9 @@ public class AuthController {
     @Operation(summary = "Register a new citizen account")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
         User user = userService.register(request);
-        return ResponseEntity.ok(userService.toResponse(user));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Location", "/api/v1/users/" + user.getId())
+                .body(userService.toResponse(user));
     }
 
     @PostMapping("/login")
@@ -78,6 +81,6 @@ public class AuthController {
     @Operation(summary = "Logout (token invalidation handled client-side)")
     public ResponseEntity<Void> logout() {
         SecurityContextHolder.clearContext();
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();  // HTTP 204 No Content
     }
 }

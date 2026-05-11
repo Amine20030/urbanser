@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import ma.urbanops.dto.response.StatsResponse;
 import ma.urbanops.service.StatsService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +18,7 @@ import java.util.Map;
 @RequestMapping("/stats")
 @RequiredArgsConstructor
 @Tag(name = "Statistics", description = "Dashboard statistics endpoints")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, allowedHeaders = "*")
 public class StatsController {
 
     private final StatsService statsService;

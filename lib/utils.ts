@@ -1,12 +1,11 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { Severity, Status, Category } from './mockData'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getSeverityColor(severity: Severity): string {
+export function getSeverityColor(severity: string): string {
   switch (severity) {
     case 'HIGH':
       return '#ef4444'
@@ -19,7 +18,7 @@ export function getSeverityColor(severity: Severity): string {
   }
 }
 
-export function getSeverityBgColor(severity: Severity): string {
+export function getSeverityBgColor(severity: string): string {
   switch (severity) {
     case 'HIGH':
       return 'bg-red-500/10 border-red-500/30 text-red-400'
@@ -32,7 +31,7 @@ export function getSeverityBgColor(severity: Severity): string {
   }
 }
 
-export function getStatusColor(status: Status): string {
+export function getStatusColor(status: string): string {
   switch (status) {
     case 'open':
       return '#ef4444'
@@ -45,7 +44,7 @@ export function getStatusColor(status: Status): string {
   }
 }
 
-export function getStatusBgColor(status: Status): string {
+export function getStatusBgColor(status: string): string {
   switch (status) {
     case 'open':
       return 'bg-red-500/10 border-red-500/30 text-red-400'
@@ -58,7 +57,7 @@ export function getStatusBgColor(status: Status): string {
   }
 }
 
-export function getStatusLabel(status: Status): string {
+export function getStatusLabel(status: string): string {
   switch (status) {
     case 'open':
       return 'Ouvert'
@@ -71,7 +70,7 @@ export function getStatusLabel(status: Status): string {
   }
 }
 
-export function getSeverityLabel(severity: Severity): string {
+export function getSeverityLabel(severity: string): string {
   switch (severity) {
     case 'HIGH':
       return 'Haute'
@@ -84,8 +83,8 @@ export function getSeverityLabel(severity: Severity): string {
   }
 }
 
-export function getCategoryIcon(category: Category): string {
-  const icons: Record<Category, string> = {
+export function getCategoryIcon(category: string): string {
+  const icons: Record<string, string> = {
     'Transport': '🚌',
     'Eau': '💧',
     'Déchets': '🗑️',
@@ -98,8 +97,8 @@ export function getCategoryIcon(category: Category): string {
   return icons[category] || '📍'
 }
 
-export function getAuthorityForCategory(category: Category): string {
-  const authorities: Record<Category, string> = {
+export function getAuthorityForCategory(category: string): string {
+  const authorities: Record<string, string> = {
     'Transport': 'Police',
     'Eau': 'RADEEMA',
     'Déchets': 'Commune',
@@ -136,16 +135,16 @@ export function getIncidentById(id: string) {
 export function filterIncidents(
   incidents: any[],
   filters: {
-    category?: Category | null
-    severity?: Severity | null
-    status?: Status | null
+    category?: string | null
+    severity?: string | null
+    status?: string | null
     search?: string
   }
 ) {
   return incidents.filter((incident) => {
-    if (filters.category && incident.category !== filters.category) return false
+    if (filters.category && incident.category?.name !== filters.category) return false
     if (filters.severity && incident.severity !== filters.severity) return false
-    if (filters.status && incident.status !== filters.status) return false
+    if (filters.status && incident.status?.toLowerCase() !== filters.status?.toLowerCase()) return false
     if (filters.search) {
       const search = filters.search.toLowerCase()
       const match =
@@ -159,8 +158,8 @@ export function filterIncidents(
   })
 }
 
-export function getCategoryColor(category: Category): string {
-  const colors: Record<Category, string> = {
+export function getCategoryColor(category: string): string {
+  const colors: Record<string, string> = {
     'Transport': '#06b6d4',
     'Eau': '#3b82f6',
     'Déchets': '#22c55e',

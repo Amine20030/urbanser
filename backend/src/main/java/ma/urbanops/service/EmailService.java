@@ -10,7 +10,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -22,7 +25,19 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    public void sendAlertEmail(String toEmail, String authorityName, Incident incident) {
+    /**
+     * Sends alert email asynchronously — does NOT block the API response.
+     * If SMTP is slow (30s timeout), the incident creation API returns immediately.
+     *
+     * @Async runs this in a separate thread pool (see AsyncConfig).
+     *
+     * @param toEmail recipient email
+     * @param authorityName authority name
+     * @param incident the incident to alert about
+     * @return CompletableFuture for async completion tracking
+     */
+    @Async  // FIX 4: Non-blocking async execution
+    public CompletableFuture<Void> sendAlertEmail(String toEmail, String authorityName, Incident incident) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -35,17 +50,35 @@ public class EmailService {
             log.info("Alert email sent to: {} for incident {}", toEmail, incident.getReferenceCode());
         } catch (MessagingException e) {
             log.error("Failed to send alert email: {}", e.getMessage());
+            // FIX 4: Do NOT rethrow — async failure must not break the API response
         }
+        return CompletableFuture.completedFuture(null);
     }
 
-    public void sendConfirmationToReporter(User user, Incident incident) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(user.getEmail());
-        message.setSubject("Confirmation: Incident Reported - " + incident.getReferenceCode());
-        message.setText("Dear " + user.getFirstName() + ",\n\nYour incident has been reported successfully.\nReference: " + incident.getReferenceCode() + "\nStatus: " + incident.getStatus() + "\n\nThank you for helping improve Marrakech!");
-        mailSender.send(message);
-        log.info("Confirmation email sent to: {}", user.getEmail());
+    /**
+     * Sends confirmation email asynchronously to the incident reporter.
+     *
+     * @Async ensures this runs in a separate thread and doesn't delay the API response.
+     *
+     * @param user the user who reported the incident
+     * @param incident the reported incident
+     * @return CompletableFuture for async completion tracking
+     */
+    @Async  // FIX 4: Non-blocking async execution
+    public CompletableFuture<Void> sendConfirmationToReporter(User user, Incident incident) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(user.getEmail());
+            message.setSubject("Confirmation: Incident Reported - " + incident.getReferenceCode());
+            message.setText("Dear " + user.getFirstName() + ",\n\nYour incident has been reported successfully.\nReference: " + incident.getReferenceCode() + "\nStatus: " + incident.getStatus() + "\n\nThank you for helping improve Marrakech!");
+            mailSender.send(message);
+            log.info("Confirmation email sent to: {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to send confirmation email: {}", e.getMessage());
+            // FIX 4: Do NOT rethrow — async failure must not break the API response
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     private String buildAlertEmailContent(String authorityName, Incident incident) {

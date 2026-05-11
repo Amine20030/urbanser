@@ -26,7 +26,7 @@ public class Alert {
     private Long id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)  // LAZY = don't load incident unless accessed — avoids N+1 problem
     @JoinColumn(name = "incident_id", nullable = false)
     private Incident incident;
 

@@ -41,6 +41,14 @@ public class StatsService {
         
         double resolutionRate = calculateResolutionRate(totalIncidents, resolvedIncidents);
         
+        List<StatsResponse.HourlyCount> hourlyStats;
+        try {
+            hourlyStats = getHourlyStats();
+        } catch (Exception e) {
+            log.warn("Hourly stats unavailable ({}), using empty series", e.getMessage());
+            hourlyStats = new ArrayList<>();
+        }
+
         return StatsResponse.builder()
                 .totalIncidents(totalIncidents)
                 .openIncidents(openIncidents)
@@ -52,7 +60,7 @@ public class StatsService {
                 .resolutionRate(resolutionRate)
                 .incidentsByCategory(getStatsByCategory())
                 .incidentsBySector(getStatsBySector())
-                .incidentsByHour(getHourlyStats())
+                .incidentsByHour(hourlyStats)
                 .servicesHealth(getServicesHealth())
                 .build();
     }
@@ -74,7 +82,7 @@ public class StatsService {
         for (Object[] row : raw) {
             result.add(StatsResponse.CategoryCount.builder()
                     .category((String) row[0])
-                    .count((Long) row[1])
+                    .count(((Number) row[1]).longValue())
                     .build());
         }
         return result;
@@ -86,7 +94,7 @@ public class StatsService {
         for (Object[] row : raw) {
             result.add(StatsResponse.SectorCount.builder()
                     .sector((String) row[0])
-                    .count((Long) row[1])
+                    .count(((Number) row[1]).longValue())
                     .build());
         }
         return result;
@@ -98,8 +106,8 @@ public class StatsService {
         List<StatsResponse.HourlyCount> result = new ArrayList<>();
         for (Object[] row : raw) {
             result.add(StatsResponse.HourlyCount.builder()
-                    .hour((Integer) row[0])
-                    .count((Long) row[1])
+                    .hour(((Number) row[0]).intValue())
+                    .count(((Number) row[1]).longValue())
                     .build());
         }
         return result;
@@ -112,7 +120,7 @@ public class StatsService {
         
         for (Object[] row : raw) {
             String category = (String) row[0];
-            Long count = (Long) row[1];
+            long count = ((Number) row[1]).longValue();
             int percentage = total == 0 ? 0 : (int) Math.round((double) count / total * 100);
             String color = getHealthColor(percentage);
             result.add(StatsResponse.ServiceHealth.builder()

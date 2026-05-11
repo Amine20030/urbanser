@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 
 // Create Axios instance
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -21,13 +21,14 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
+// Response interceptor — do not redirect on failed login/register (those return 401 too)
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - logout
-      if (typeof window !== 'undefined') {
+      const url = String(error.config?.url ?? '');
+      const isAuthAttempt = url.includes('/auth/login') || url.includes('/auth/register');
+      if (!isAuthAttempt && typeof window !== 'undefined') {
         localStorage.removeItem('urbanops_token');
         localStorage.removeItem('urbanops_user');
         window.location.href = '/auth/signin';
@@ -42,8 +43,15 @@ export const authAPI = {
   login: (email: string, password: string) => 
     api.post('/auth/login', { email, password }),
   
-  register: (data: { firstName: string; lastName: string; email: string; password: string; phone?: string; sector?: string }) =>
-    api.post('/auth/register', data),
+  register: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    phone?: string;
+    sector?: string;
+    receiveAlerts?: boolean;
+  }) => api.post('/auth/register', data),
   
   getMe: () => api.get('/auth/me'),
   
@@ -63,9 +71,23 @@ export const incidentAPI = {
   
   getByReference: (code: string) => api.get(`/incidents/reference/${code}`),
   
-  create: (data: FormData) => api.post('/incidents', data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  create: async (data: FormData) => {
+    const headers: Record<string, string> = {};
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('urbanops_token');
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(`${api.defaults.baseURL}/incidents`, {
+      method: 'POST',
+      headers,
+      body: data,
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw { response: { data: errData } };
+    }
+    return { data: await res.json() } as any;
+  },
   
   updateStatus: (id: number, status: string) => api.patch(`/incidents/${id}/status`, { status }),
   

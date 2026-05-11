@@ -1,0 +1,7 @@
+ma\urbanops\service\UserServiceTest.class
+ma\urbanops\service\StatsServiceTest.class
+ma\urbanops\service\AlertServiceTest.class
+ma\urbanops\service\IncidentServiceTest.class
+ma\urbanops\service\AIAnalysisServiceTest.class
+ma\urbanops\controller\IncidentControllerTest.class
+ma\urbanops\controller\AuthControllerTest.class

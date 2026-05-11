@@ -1,6 +1,10 @@
 'use client'
 
-import { SERVICE_STATS } from '@/lib/mockData'
+import { useState, useEffect } from 'react'
+import { statsApi } from '@/lib/api'
+import { ServiceHealth } from '@/lib/types'
+import { CardsSkeleton } from '@/components/shared/LoadingSkeleton'
+import { ErrorState } from '@/components/shared/ErrorState'
 
 interface ServiceCardProps {
   name: string
@@ -35,10 +39,41 @@ function ServiceCard({ name, percentage, color, index }: ServiceCardProps) {
 }
 
 export function ServiceCards() {
+  const [services, setServices] = useState<ServiceHealth[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    statsApi
+      .getHealth()
+      .then((res: { data: ServiceHealth[] }) => {
+        setServices(res.data)
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('Impossible de charger la santé des services')
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return <CardsSkeleton count={4} />
+  }
+
+  if (error) {
+    return <ErrorState message={error} />
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {SERVICE_STATS.map((service, index) => (
-        <ServiceCard key={service.name} {...service} index={index} />
+      {services.map((service, index) => (
+        <ServiceCard
+          key={service.category}
+          name={service.category}
+          percentage={service.healthPercent}
+          color={service.healthPercent > 80 ? '#22c55e' : service.healthPercent > 50 ? '#f59e0b' : '#ef4444'}
+          index={index}
+        />
       ))}
     </div>
   )

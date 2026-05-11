@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import ma.urbanops.dto.response.CategoryResponse;
 import ma.urbanops.entity.Category;
 import ma.urbanops.service.CategoryService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,9 @@ public class CategoryController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<CategoryResponse> createCategory(@RequestBody Category category) {
         Category saved = categoryService.create(category);
-        return ResponseEntity.ok(toResponse(saved));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Location", "/api/v1/categories/" + saved.getId())
+                .body(toResponse(saved));
     }
 
     @PutMapping("/{id}")
@@ -59,7 +62,7 @@ public class CategoryController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();  // HTTP 204 No Content
     }
 
     private CategoryResponse toResponse(Category c) {

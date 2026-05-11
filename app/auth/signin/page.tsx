@@ -1,12 +1,45 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Building2, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
+import { authApi } from '@/lib/api'
 
 export default function SignInPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    try {
+      const res = await authApi.login({ email, password })
+      const { token, user } = res.data
+      
+      if (rememberMe) {
+        localStorage.setItem('urbanops_token', token)
+        localStorage.setItem('urbanops_user', JSON.stringify(user))
+      } else {
+        sessionStorage.setItem('urbanops_token', token)
+        sessionStorage.setItem('urbanops_user', JSON.stringify(user))
+      }
+      
+      // Redirect based on role
+      router.push(user.role === 'ADMIN' ? '/dashboard' : '/')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Email ou mot de passe incorrect')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4">
@@ -25,7 +58,13 @@ export default function SignInPage() {
             Connexion à UrbanOps
           </h1>
 
-          <form className="space-y-4">
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
               <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
@@ -33,7 +72,10 @@ export default function SignInPage() {
               </label>
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre@email.com"
+                required
                 className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
               />
             </div>
@@ -46,7 +88,10 @@ export default function SignInPage() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  required
                   className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
                 />
                 <button
@@ -77,9 +122,10 @@ export default function SignInPage() {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors"
+              disabled={loading}
+              className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors"
             >
-              Se connecter
+              {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
 

@@ -37,4 +37,12 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
 
     @Query("SELECT a.sentTo, COUNT(a) FROM Alert a GROUP BY a.sentTo")
     List<Object[]> countByAuthority();
+
+    // @Query to find HIGH severity unacknowledged alerts — for dashboard critical alerts panel
+    @Query("SELECT a FROM Alert a WHERE a.severity = 'HIGH' AND a.acknowledged = false ORDER BY a.sentAt DESC")
+    List<Alert> findCriticalUnacknowledged();
+
+    // @Query to count alerts grouped by severity — for stats
+    @Query("SELECT a.severity, COUNT(a) FROM Alert a GROUP BY a.severity")
+    List<Object[]> countBySeverity();
 }

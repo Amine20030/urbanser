@@ -9,6 +9,7 @@ import ma.urbanops.dto.response.SectorResponse;
 import ma.urbanops.entity.Incident;
 import ma.urbanops.entity.Sector;
 import ma.urbanops.service.SectorService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -50,7 +51,9 @@ public class SectorController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<SectorResponse> createSector(@RequestBody Sector sector) {
         Sector saved = sectorService.create(sector);
-        return ResponseEntity.ok(toResponse(saved));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Location", "/api/v1/sectors/" + saved.getId())
+                .body(toResponse(saved));
     }
 
     private SectorResponse toResponse(Sector s) {

@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { INCIDENTS } from '@/lib/mockData'
+import { statsApi } from '@/lib/api'
+import { DashboardStats } from '@/lib/types'
+import { CardsSkeleton } from '@/components/shared/LoadingSkeleton'
+import { ErrorState } from '@/components/shared/ErrorState'
 
 interface KpiCardProps {
   title: string
@@ -75,43 +78,67 @@ function KpiCard({ title, value, color, accentColor, delta, deltaPositive, index
 }
 
 export function KpiCards() {
-  const openCount = INCIDENTS.filter((i) => i.status === 'open').length
-  const inProgressCount = INCIDENTS.filter((i) => i.status === 'in_progress').length
-  const resolvedCount = INCIDENTS.filter((i) => i.status === 'resolved').length
-  const highSeverityCount = INCIDENTS.filter((i) => i.severity === 'HIGH').length
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    statsApi
+      .getDashboard()
+      .then((res: { data: DashboardStats }) => {
+        setStats(res.data)
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('Impossible de charger les statistiques')
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return <CardsSkeleton count={4} />
+  }
+
+  if (error) {
+    return <ErrorState message={error} />
+  }
+
+  if (!stats) {
+    return null
+  }
 
   const kpis = [
     {
       title: 'INCIDENTS OUVERTS',
-      value: openCount,
+      value: stats.openIncidents,
       color: '#ef4444',
       accentColor: '#ef4444',
-      delta: '↓12% vs hier',
-      deltaPositive: false,
+      delta: `${stats.resolutionRate}% taux résolution`,
+      deltaPositive: true,
     },
     {
       title: 'EN COURS',
-      value: inProgressCount,
+      value: stats.inProgressIncidents,
       color: '#f59e0b',
       accentColor: '#f59e0b',
-      delta: '↑5% vs hier',
+      delta: 'En traitement',
       deltaPositive: true,
     },
     {
       title: 'RÉSOLUS 24H',
-      value: resolvedCount,
+      value: stats.resolvedLast24h,
       color: '#22c55e',
       accentColor: '#22c55e',
-      delta: '↑18% vs hier',
+      delta: 'Dernières 24h',
       deltaPositive: true,
     },
     {
       title: 'CRITICITÉ HAUTE',
-      value: highSeverityCount,
+      value: stats.highSeverityCount,
       color: '#8b5cf6',
       accentColor: '#8b5cf6',
-      delta: '↓3% vs hier',
-      deltaPositive: true,
+      delta: 'Prioritaires',
+      deltaPositive: false,
     },
   ]
 

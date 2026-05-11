@@ -10,6 +10,7 @@ import ma.urbanops.enums.Severity;
 import ma.urbanops.service.AlertService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -62,7 +63,7 @@ public class AlertController {
     @Operation(summary = "Resend alert email for an incident")
     public ResponseEntity<Void> resendAlert(@PathVariable Long incidentId) {
         alertService.resendAlert(incidentId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();  // HTTP 202 Accepted (async processing)
     }
 
     @PatchMapping("/{id}/acknowledge")
@@ -70,7 +71,7 @@ public class AlertController {
     @Operation(summary = "Mark alert as acknowledged")
     public ResponseEntity<Void> acknowledgeAlert(@PathVariable Long id) {
         alertService.acknowledgeAlert(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().build();  // HTTP 200 OK for PATCH
     }
 
     @GetMapping("/recent")

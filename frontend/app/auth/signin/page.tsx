@@ -1,17 +1,58 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Building2, Eye, EyeOff } from 'lucide-react'
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
+import { authAPI } from '@/lib/api'
 
 export default function SignInPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+    try {
+      const { data } = await authAPI.login(email.trim(), password)
+      const token = data?.token
+      if (!token) {
+        setError('Réponse serveur invalide (pas de jeton).')
+        return
+      }
+      localStorage.setItem('urbanops_token', token)
+      if (data.user) {
+        localStorage.setItem('urbanops_user', JSON.stringify(data.user))
+      }
+      if (rememberMe) {
+        localStorage.setItem('urbanops_remember', '1')
+      } else {
+        localStorage.removeItem('urbanops_remember')
+      }
+      router.push('/dashboard')
+    } catch (err: unknown) {
+      const ax = err as { response?: { status?: number; data?: { message?: string } } }
+      const msg = ax.response?.data?.message
+      setError(
+        msg ||
+          (ax.response?.status === 401
+            ? 'Email ou mot de passe incorrect.'
+            : 'Connexion impossible. Réessayez plus tard.')
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-2">
             <Building2 className="w-8 h-8 text-cyan-400" />
@@ -19,26 +60,33 @@ export default function SignInPage() {
           </Link>
         </div>
 
-        {/* Card */}
         <div className="p-8 rounded-[12px] bg-[var(--bg-card)] border border-[var(--border)]">
           <h1 className="text-xl font-semibold text-[var(--t1)] text-center mb-6">
             Connexion à UrbanOps
           </h1>
 
-          <form className="space-y-4">
-            {/* Email */}
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              {error}
+            </div>
+          )}
+
+          <form className="space-y-4" onSubmit={onSubmit}>
             <div>
               <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
                 Email
               </label>
               <input
                 type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre@email.com"
                 className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
               />
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
                 Mot de passe
@@ -46,6 +94,10 @@ export default function SignInPage() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
                 />
@@ -60,7 +112,6 @@ export default function SignInPage() {
               </div>
             </div>
 
-            {/* Remember me */}
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -74,16 +125,15 @@ export default function SignInPage() {
               </label>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors"
+              disabled={loading}
+              className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors disabled:opacity-60"
             >
-              Se connecter
+              {loading ? 'Connexion…' : 'Se connecter'}
             </button>
           </form>
 
-          {/* Links */}
           <div className="mt-6 text-center space-y-3">
             <p className="text-sm">
               <span className="text-[var(--t2)]">Pas encore de compte ? </span>

@@ -1,0 +1,29 @@
+2026-05-11 01:03:02 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler ma.urbanops.exception.GlobalExceptionHandler#handleGlobalException(Exception, HttpServletRequest)
+2026-05-11 01:03:02 [http-nio-8080-exec-8] ERROR m.u.exception.GlobalExceptionHandler - Unexpected error: Content-Type 'application/json' is not supported
+org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported
+2026-05-11 01:03:02 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported]
+2026-05-11 01:03:02 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2026-05-11 01:03:25 [scheduling-1] DEBUG org.hibernate.SQL - 
+2026-05-11 01:16:10 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler ma.urbanops.exception.GlobalExceptionHandler#handleGlobalException(Exception, HttpServletRequest)
+2026-05-11 01:16:10 [http-nio-8080-exec-1] ERROR m.u.exception.GlobalExceptionHandler - Unexpected error: Content-Type 'application/json' is not supported
+org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported
+2026-05-11 01:16:10 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported]
+2026-05-11 01:16:10 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2026-05-11 01:16:12 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Securing POST /incidents
+2026-05-11 01:16:12 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler ma.urbanops.exception.GlobalExceptionHandler#handleGlobalException(Exception, HttpServletRequest)
+2026-05-11 01:16:12 [http-nio-8080-exec-3] ERROR m.u.exception.GlobalExceptionHandler - Unexpected error: Content-Type 'application/json' is not supported
+org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported
+2026-05-11 01:16:12 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported]
+2026-05-11 01:16:12 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2026-05-11 01:16:56 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /incidents
+2026-05-11 01:16:56 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler ma.urbanops.exception.GlobalExceptionHandler#handleGlobalException(Exception, HttpServletRequest)
+2026-05-11 01:16:56 [http-nio-8080-exec-9] ERROR m.u.exception.GlobalExceptionHandler - Unexpected error: Content-Type 'application/json' is not supported
+org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported
+2026-05-11 01:16:56 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported]
+2026-05-11 01:16:56 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2026-05-11 01:17:07 [scheduling-1] DEBUG org.hibernate.SQL - 
+2026-05-11 01:17:36 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler ma.urbanops.exception.GlobalExceptionHandler#handleGlobalException(Exception, HttpServletRequest)
+2026-05-11 01:17:36 [http-nio-8080-exec-5] ERROR m.u.exception.GlobalExceptionHandler - Unexpected error: Content-Type 'application/json' is not supported
+org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported
+2026-05-11 01:17:36 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported]
+2026-05-11 01:17:36 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR

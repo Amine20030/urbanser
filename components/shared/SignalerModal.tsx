@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { X, Camera, Upload, Check, Loader2, MapPin } from 'lucide-react'
-import { CATEGORIES, SECTORS, Category, getAuthorityForCategory } from '@/lib/mockData'
-import { cn } from '@/lib/utils'
+import { incidentApi, categoryApi, sectorApi } from '@/lib/api'
+import { Category, Sector } from '@/lib/types'
+import { getAuthorityForCategory, cn } from '@/lib/utils'
 
 interface SignalerModalProps {
   isOpen: boolean
@@ -15,13 +16,30 @@ type Step = 1 | 2 | 3
 
 export function SignalerModal({ isOpen, onClose, initialLocation }: SignalerModalProps) {
   const [step, setStep] = useState<Step>(1)
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [description, setDescription] = useState('')
   const [sector, setSector] = useState('')
   const [location, setLocation] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [detectedSeverity, setDetectedSeverity] = useState<'HIGH' | 'MED' | 'LOW'>('MED')
+  const [categories, setCategories] = useState<Category[]>([])
+  const [sectors, setSectors] = useState<Sector[]>([])
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      Promise.all([categoryApi.getAll(), sectorApi.getAll()])
+        .then(([catRes, secRes]) => {
+          setCategories(catRes.data)
+          setSectors(secRes.data)
+        })
+        .catch(() => {
+          setSubmitError('Impossible de charger les données')
+        })
+    }
+  }, [isOpen])
 
   const resetForm = useCallback(() => {
     setStep(1)
@@ -39,25 +57,48 @@ export function SignalerModal({ isOpen, onClose, initialLocation }: SignalerModa
     onClose()
   }, [onClose, resetForm])
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && selectedCategory) {
       setStep(2)
     } else if (step === 2 && description && sector) {
       setStep(3)
       setIsAnalyzing(true)
-      // Simulate AI analysis
-      setTimeout(() => {
+      setSubmitError(null)
+      
+      try {
+        // Create FormData for multipart upload
+        const formData = new FormData()
+        const dataPayload = {
+          title: description.substring(0, 100) || 'Signalement',
+          description: description,
+          categoryId: parseInt(selectedCategory || '0'),
+          sectorId: parseInt(sector || '0'),
+          latitude: initialLocation?.lat || 31.6295,
+          longitude: initialLocation?.lng || -7.9811
+        }
+        
+        formData.append('data', new Blob([JSON.stringify(dataPayload)], {
+          type: 'application/json'
+        }))
+        
+        if (photo) {
+          formData.append('photo', photo)
+        }
+
+        const res = await incidentApi.create(formData)
+        setDetectedSeverity(res.data.severity)
         setIsAnalyzing(false)
         setAnalysisComplete(true)
-        // Simulate severity detection based on keywords
-        if (description.toLowerCase().includes('danger') || description.toLowerCase().includes('critique')) {
-          setDetectedSeverity('HIGH')
-        } else if (description.toLowerCase().includes('important') || description.toLowerCase().includes('urgent')) {
-          setDetectedSeverity('MED')
-        } else {
-          setDetectedSeverity('LOW')
-        }
-      }, 2000)
+      } catch (err) {
+        setIsAnalyzing(false)
+        setSubmitError('Erreur lors de l\'envoi du signalement')
+      }
+    }
+  }
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setPhoto(e.target.files[0])
     }
   }
 
@@ -140,21 +181,19 @@ export function SignalerModal({ isOpen, onClose, initialLocation }: SignalerModa
                 Sélectionnez la catégorie du problème que vous souhaitez signaler :
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {CATEGORIES.map((cat) => (
+                {categories.map((category) => (
                   <button
-                    key={cat.value}
-                    onClick={() => setSelectedCategory(cat.value)}
+                    key={category.id}
+                    onClick={() => setSelectedCategory(String(category.id))}
                     className={cn(
-                      'p-4 rounded-[10px] border text-left transition-all duration-150',
-                      selectedCategory === cat.value
-                        ? 'border-blue-500 bg-blue-500/10'
-                        : 'border-[var(--border)] bg-[var(--bg-hover)] hover:border-[var(--border2)]'
+                      'p-3 rounded-lg border text-left transition-all',
+                      selectedCategory === String(category.id)
+                        ? 'bg-blue-500/10 border-blue-500/50'
+                        : 'bg-[var(--bg-hover)] border-[var(--border)] hover:border-[var(--border2)]'
                     )}
                   >
-                    <span className="text-2xl mb-2 block">{cat.icon}</span>
-                    <span className="text-sm font-medium text-[var(--t1)]">
-                      {cat.label}
-                    </span>
+                    <span className="text-2xl mb-1 block">{category.icon}</span>
+                    <span className="text-xs text-[var(--t1)]">{category.name}</span>
                   </button>
                 ))}
               </div>
@@ -178,16 +217,22 @@ export function SignalerModal({ isOpen, onClose, initialLocation }: SignalerModa
               {/* Photo Upload */}
               <div>
                 <label className="block text-[11px] uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                  Photo
+                  Photo (optionnel)
                 </label>
-                <div className="border-2 border-dashed border-[var(--border)] hover:border-[var(--border2)] rounded-[10px] p-6 text-center cursor-pointer transition-colors">
-                  <Camera className="w-8 h-8 mx-auto mb-2 text-[var(--t2)]" />
-                  <p className="text-sm text-[var(--t1)] mb-1">
-                    📷 Glissez une photo ou cliquez pour parcourir
-                  </p>
-                  <p className="text-xs text-[var(--t3)]">
-                    L&apos;IA analysera automatiquement la criticité
-                  </p>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 px-4 py-3 rounded-[8px] bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm hover:border-[var(--border2)] transition-colors cursor-pointer">
+                    <Camera className="w-4 h-4" />
+                    <span>{photo ? photo.name : 'Choisir une photo'}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  </label>
+                  {photo && (
+                    <button
+                      onClick={() => setPhoto(null)}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Supprimer
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -215,9 +260,9 @@ export function SignalerModal({ isOpen, onClose, initialLocation }: SignalerModa
                   className="w-full p-3 rounded-[8px] bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm focus:outline-none focus:border-blue-500/50"
                 >
                   <option value="">Sélectionnez un secteur</option>
-                  {SECTORS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
+                  {sectors.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
                     </option>
                   ))}
                 </select>
@@ -277,7 +322,7 @@ export function SignalerModal({ isOpen, onClose, initialLocation }: SignalerModa
                       <div>
                         <p className="text-sm text-[var(--t1)]">Catégorie détectée</p>
                         <p className="text-xs text-[var(--t2)]">
-                          {selectedCategory && CATEGORIES.find(c => c.value === selectedCategory)?.label}
+                          {selectedCategory && categories.find((c: Category) => String(c.id) === selectedCategory)?.name}
                         </p>
                       </div>
                     </div>

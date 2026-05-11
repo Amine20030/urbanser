@@ -1,5 +1,6 @@
 package ma.urbanops.repository;
 
+import ma.urbanops.dto.response.MapIncidentProjection;
 import ma.urbanops.entity.Incident;
 import ma.urbanops.entity.User;
 import ma.urbanops.enums.IncidentStatus;
@@ -36,10 +37,10 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
     List<Incident> findTopNByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("SELECT COUNT(i) FROM Incident i WHERE i.status = :status")
-    Long countByStatus(@Param("status") IncidentStatus status);
+    long countByStatus(@Param("status") IncidentStatus status);
 
     @Query("SELECT COUNT(i) FROM Incident i WHERE i.severity = :severity")
-    Long countBySeverity(@Param("severity") Severity severity);
+    long countBySeverity(@Param("severity") Severity severity);
 
     @Query("SELECT i.severity, COUNT(i) FROM Incident i GROUP BY i.severity")
     List<Object[]> countBySeverityGrouped();
@@ -53,20 +54,72 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
     @Query("SELECT i.sector.name, COUNT(i) FROM Incident i GROUP BY i.sector.name")
     List<Object[]> countBySectorGrouped();
 
-    @Query("SELECT FUNCTION('DATE', i.createdAt), COUNT(i) FROM Incident i WHERE i.createdAt >= :startDate GROUP BY FUNCTION('DATE', i.createdAt)")
+    @Query(value = """
+            SELECT CAST(i.created_at AS date), COUNT(*)
+            FROM incidents i
+            WHERE i.created_at >= :startDate
+            GROUP BY CAST(i.created_at AS date)
+            ORDER BY 1
+            """, nativeQuery = true)
     List<Object[]> countByDayLast30Days(@Param("startDate") LocalDateTime startDate);
 
-    @Query("SELECT FUNCTION('HOUR', i.createdAt), COUNT(i) FROM Incident i WHERE i.createdAt >= :startDate GROUP BY FUNCTION('HOUR', i.createdAt)")
+    /** PostgreSQL — date_part is reliable across PG versions for hourly buckets. */
+    @Query(value = """
+            SELECT CAST(date_part('hour', i.created_at) AS INTEGER), COUNT(*)
+            FROM incidents i
+            WHERE i.created_at >= :startDate
+            GROUP BY date_part('hour', i.created_at)
+            ORDER BY 1
+            """, nativeQuery = true)
     List<Object[]> countByHourLast24Hours(@Param("startDate") LocalDateTime startDate);
 
-    @Query("SELECT COUNT(i) FROM Incident i WHERE i.status = 'RESOLVED' AND i.resolvedAt >= :startDate")
-    Long countResolvedSince(@Param("startDate") LocalDateTime startDate);
-
     @Query("SELECT COUNT(i) FROM Incident i WHERE i.createdAt >= :date")
-    Long countCreatedAfter(@Param("date") LocalDateTime date);
+    long countCreatedAfter(@Param("date") LocalDateTime date);
+
+    // FIX 1: Method required by StatsService line 40 — count resolved incidents since a date
+    @Query("SELECT COUNT(i) FROM Incident i " +
+           "WHERE i.status = ma.urbanops.enums.IncidentStatus.RESOLVED " +
+           "AND i.resolvedAt >= :since")
+    long countResolvedSince(@Param("since") LocalDateTime since);
 
     List<Incident> findByLatitudeBetweenAndLongitudeBetween(Double latMin, Double latMax, Double lngMin, Double lngMax);
 
     @Query("SELECT i FROM Incident i WHERE i.status != 'RESOLVED' ORDER BY i.severity DESC, i.createdAt DESC")
     List<Incident> findActiveIncidentsOrderBySeverityAndDate();
+
+    // @Query for dynamic filtering with pagination — used by dashboard filters
+    @Query("SELECT i FROM Incident i " +
+           "WHERE (:severity IS NULL OR i.severity = :severity) " +
+           "AND (:status IS NULL OR i.status = :status) " +
+           "AND (:categoryId IS NULL OR i.category.id = :categoryId) " +
+           "AND (:sectorId IS NULL OR i.sector.id = :sectorId) " +
+           "AND (:keyword IS NULL OR LOWER(i.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "     OR LOWER(i.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Incident> findWithFilters(
+            @Param("severity") Severity severity,
+            @Param("status") IncidentStatus status,
+            @Param("categoryId") Long categoryId,
+            @Param("sectorId") Long sectorId,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    // @Query for category stats — returns category name and count
+    @Query("SELECT c.name, COUNT(i) FROM Incident i " +
+           "JOIN i.category c GROUP BY c.name ORDER BY COUNT(i) DESC")
+    List<Object[]> countGroupedByCategory();
+
+    // @Query to find HIGH severity incidents open for more than X hours — used by scheduled tasks
+    @Query("SELECT i FROM Incident i WHERE i.severity = :severity AND i.status = :status AND i.createdAt < :before")
+    List<Incident> findBySeverityAndStatusAndCreatedAtBefore(
+            @Param("severity") Severity severity,
+            @Param("status") IncidentStatus status,
+            @Param("before") LocalDateTime before);
+
+    // Interface-based projection — Spring Data JPA generates SELECT with only needed columns
+    // Returns lightweight data for map display without loading full entities
+    @Query("SELECT i.id as id, i.referenceCode as referenceCode, i.title as title, " +
+           "i.latitude as latitude, i.longitude as longitude, " +
+           "i.severity as severity, i.status as status, i.category.name as categoryName " +
+           "FROM Incident i WHERE i.status != 'RESOLVED'")
+    List<MapIncidentProjection> findAllForMapProjection();
 }

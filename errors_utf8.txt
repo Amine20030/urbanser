@@ -1,0 +1,20 @@
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2713)
+	... 195 common frames omitted
+Caused by: org.postgresql.util.PSQLException: ERROR: syntax error at or near ":"
+  Position: 39
+2026-05-11 01:02:26 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [GlobalExceptionHandler.ErrorResponse(timestamp=2026-05-11T01:02:26.292572900, status=500, error=Inte (truncated)...]
+2026-05-11 01:02:26 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.orm.jpa.JpaSystemException: JDBC exception executing SQL [select c1_0.name,count(i1_0.id) from incidents i1_0 join categories c1_0 on c1_0.id=i1_0.category_id group by c1_0.name] [ERROR: current transaction is aborted, commands ignored until end of transaction block] [n/a]]
+2026-05-11 01:02:26 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2026-05-11 01:02:28 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Securing GET /sectors
+2026-05-11 01:02:54 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler ma.urbanops.exception.GlobalExceptionHandler#handleGlobalException(Exception, HttpServletRequest)
+2026-05-11 01:02:54 [http-nio-8080-exec-4] ERROR m.u.exception.GlobalExceptionHandler - Unexpected error: Content-Type 'application/json' is not supported
+org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported
+2026-05-11 01:02:54 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported]
+2026-05-11 01:02:54 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2026-05-11 01:03:02 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Securing POST /incidents
+2026-05-11 01:03:02 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler ma.urbanops.exception.GlobalExceptionHandler#handleGlobalException(Exception, HttpServletRequest)
+2026-05-11 01:03:02 [http-nio-8080-exec-8] ERROR m.u.exception.GlobalExceptionHandler - Unexpected error: Content-Type 'application/json' is not supported
+org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported
+2026-05-11 01:03:02 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content-Type 'application/json' is not supported]
+2026-05-11 01:03:02 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2026-05-11 01:03:25 [scheduling-1] DEBUG org.hibernate.SQL - 

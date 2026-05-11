@@ -20,6 +20,10 @@ import java.util.List;
     @Index(name = "idx_incident_created", columnList = "createdAt"),
     @Index(name = "idx_incident_coords", columnList = "latitude, longitude")
 })
+@NamedQuery(
+    name = "Incident.findOpenByCity",
+    query = "SELECT i FROM Incident i WHERE i.status = 'OPEN' AND i.sector.city = :city ORDER BY i.createdAt DESC"
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -41,12 +45,12 @@ public class Incident {
     private String description;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)  // LAZY = don't load category unless accessed — avoids N+1 problem
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)  // LAZY = don't load sector unless accessed
     @JoinColumn(name = "sector_id", nullable = false)
     private Sector sector;
 
@@ -60,7 +64,7 @@ public class Incident {
     @Builder.Default
     private IncidentStatus status = IncidentStatus.OPEN;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)  // LAZY = don't load user unless accessed
     @JoinColumn(name = "reported_by_id")
     private User reportedBy;
 

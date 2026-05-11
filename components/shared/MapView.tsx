@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Incident, Severity } from '@/lib/mockData'
+import { MapIncident, Severity } from '@/lib/types'
 import { getSeverityColor } from '@/lib/utils'
 
 // Dynamically import Leaflet components to avoid SSR issues
@@ -28,11 +28,11 @@ const CircleMarker = dynamic(
 )
 
 interface MapViewProps {
-  incidents: Incident[]
+  incidents: MapIncident[]
   center?: [number, number]
   zoom?: number
   height?: string
-  onMarkerClick?: (incident: Incident) => void
+  onMarkerClick?: (incident: MapIncident) => void
   onMapClick?: (lat: number, lng: number) => void
   className?: string
 }
@@ -120,7 +120,7 @@ export function MapView({
         {incidents.map((incident) => (
           <CircleMarker
             key={incident.id}
-            center={[incident.lat, incident.lng]}
+            center={[incident.latitude, incident.longitude]}
             radius={getMarkerRadius(incident.severity)}
             pathOptions={{
               fillColor: getSeverityColor(incident.severity),
@@ -138,47 +138,31 @@ export function MapView({
                 <h3 className="font-semibold text-sm text-[var(--t1)] mb-1">
                   {incident.title}
                 </h3>
-                <p className="text-xs text-[var(--t2)] mb-2">{incident.description}</p>
-                <div className="flex items-center gap-2 text-xs mb-1">
-                  <span className="text-[var(--t3)]">Catégorie:</span>
-                  <span className="text-[var(--t1)]">{incident.category}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs mb-1">
-                  <span className="text-[var(--t3)]">Secteur:</span>
-                  <span className="text-[var(--t1)]">{incident.sector}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs mb-1">
-                  <span className="text-[var(--t3)]">Autorité:</span>
-                  <span className="text-[var(--t1)]">{incident.authority}</span>
-                </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-[var(--t3)]">Statut:</span>
                   <span
                     className="px-1.5 py-0.5 rounded text-[10px] font-mono"
                     style={{
                       backgroundColor:
-                        incident.status === 'open'
+                        incident.status === 'OPEN'
                           ? 'rgba(239, 68, 68, 0.1)'
-                          : incident.status === 'in_progress'
+                          : incident.status === 'IN_PROGRESS'
                           ? 'rgba(245, 158, 11, 0.1)'
                           : 'rgba(34, 197, 94, 0.1)',
                       color:
-                        incident.status === 'open'
+                        incident.status === 'OPEN'
                           ? '#ef4444'
-                          : incident.status === 'in_progress'
+                          : incident.status === 'IN_PROGRESS'
                           ? '#f59e0b'
                           : '#22c55e',
                     }}
                   >
-                    {incident.status === 'open'
+                    {incident.status === 'OPEN'
                       ? 'Ouvert'
-                      : incident.status === 'in_progress'
+                      : incident.status === 'IN_PROGRESS'
                       ? 'En cours'
                       : 'Résolu'}
                   </span>
-                </div>
-                <div className="text-[10px] text-[var(--t3)] mt-2">
-                  {incident.date}
                 </div>
               </div>
             </Popup>

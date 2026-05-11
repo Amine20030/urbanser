@@ -47,7 +47,7 @@ public class UserController {
     @Operation(summary = "Deactivate user")
     public ResponseEntity<Void> deactivateUser(@PathVariable Long id) {
         userService.deactivateUser(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();  // HTTP 204 No Content
     }
 
     @GetMapping("/stats")

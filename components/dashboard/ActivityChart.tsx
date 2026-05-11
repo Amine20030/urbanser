@@ -10,19 +10,39 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { ACTIVITY_DATA } from '@/lib/mockData'
+import { statsApi } from '@/lib/api'
+import { HourlyActivity } from '@/lib/types'
+import { ChartSkeleton } from '@/components/shared/LoadingSkeleton'
+import { ErrorState } from '@/components/shared/ErrorState'
 
 export function ActivityChart() {
   const [mounted, setMounted] = useState(false)
+  const [data, setData] = useState<HourlyActivity[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setMounted(true)
+    statsApi
+      .getHourly()
+      .then((res: { data: HourlyActivity[] }) => {
+        setData(res.data)
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('Impossible de charger les données')
+        setLoading(false)
+      })
   }, [])
 
-  if (!mounted) {
+  if (!mounted || loading) {
+    return <ChartSkeleton />
+  }
+
+  if (error) {
     return (
-      <div className="h-[250px] bg-[var(--bg-card)] rounded-[10px] border border-[var(--border)] flex items-center justify-center">
-        <div className="text-sm text-[var(--t2)]">Chargement du graphique...</div>
+      <div className="h-[250px]">
+        <ErrorState message={error} />
       </div>
     )
   }
@@ -34,7 +54,7 @@ export function ActivityChart() {
       </h3>
       <div className="h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={ACTIVITY_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorTransport" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />

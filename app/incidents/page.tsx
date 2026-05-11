@@ -1,21 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { IncidentTable } from '@/components/dashboard/IncidentTable'
-import { INCIDENTS, Category, Severity, Status } from '@/lib/mockData'
+import { incidentApi } from '@/lib/api'
+import { Incident } from '@/lib/types'
 import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { cn, getSeverityLabel, getStatusLabel } from '@/lib/utils'
+import { CardsSkeleton } from '@/components/shared/LoadingSkeleton'
+import { ErrorState } from '@/components/shared/ErrorState'
 
 export default function IncidentsPage() {
-  const [activeCategory, setActiveCategory] = useState<Category | null>(null)
-  const [activeSeverity, setActiveSeverity] = useState<Severity | null>(null)
-  const [activeStatus, setActiveStatus] = useState<Status | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [activeSeverity, setActiveSeverity] = useState<string | null>(null)
+  const [activeStatus, setActiveStatus] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [incidents, setIncidents] = useState<Incident[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const categories: (Category | null)[] = [
+  const categories: (string | null)[] = [
     null,
     'Transport',
     'Eau',
@@ -25,13 +31,26 @@ export default function IncidentsPage() {
     'Voirie',
   ]
 
-  const severities: (Severity | null)[] = [null, 'HIGH', 'MED', 'LOW']
-  const statuses: (Status | null)[] = [null, 'open', 'in_progress', 'resolved']
+  const severities: (string | null)[] = [null, 'HIGH', 'MED', 'LOW']
+  const statuses: (string | null)[] = [null, 'open', 'in_progress', 'resolved']
 
-  const totalCount = INCIDENTS.length
-  const openCount = INCIDENTS.filter((i) => i.status === 'open').length
-  const inProgressCount = INCIDENTS.filter((i) => i.status === 'in_progress').length
-  const resolvedCount = INCIDENTS.filter((i) => i.status === 'resolved').length
+  useEffect(() => {
+    incidentApi
+      .getAll({ page: 0, size: 100 })
+      .then((res: { data: { content: Incident[] } }) => {
+        setIncidents(res.data.content)
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('Impossible de charger les incidents')
+        setLoading(false)
+      })
+  }, [])
+
+  const totalCount = incidents.length
+  const openCount = incidents.filter((i) => i.status === 'OPEN').length
+  const inProgressCount = incidents.filter((i) => i.status === 'IN_PROGRESS').length
+  const resolvedCount = incidents.filter((i) => i.status === 'RESOLVED').length
 
   const FilterPill = ({
     label,
@@ -146,14 +165,20 @@ export default function IncidentsPage() {
 
           {/* Table */}
           <div className="p-4 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border)] overflow-hidden">
-            <IncidentTable
-              filters={{
-                category: activeCategory,
-                severity: activeSeverity,
-                status: activeStatus,
-                search: searchQuery,
-              }}
-            />
+            {loading ? (
+              <CardsSkeleton count={3} />
+            ) : error ? (
+              <ErrorState message={error} retry={() => window.location.reload()} />
+            ) : (
+              <IncidentTable
+                filters={{
+                  category: activeCategory,
+                  severity: activeSeverity,
+                  status: activeStatus,
+                  search: searchQuery,
+                }}
+              />
+            )}
           </div>
         </div>
       </main>

@@ -1,28 +1,49 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { ALERTS } from '@/lib/mockData'
+import { alertApi } from '@/lib/api'
+import { Alert } from '@/lib/types'
 import { getSeverityColor, getSeverityLabel } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { AlertSkeleton } from '@/components/shared/LoadingSkeleton'
+import { ErrorState, EmptyState } from '@/components/shared/ErrorState'
 
 export default function AlertesPage() {
-  const highAlerts = ALERTS.filter((a) => a.severity === 'HIGH')
-  const medAlerts = ALERTS.filter((a) => a.severity === 'MED')
-  const lowAlerts = ALERTS.filter((a) => a.severity === 'LOW')
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    alertApi
+      .getAll({})
+      .then((res: { data: { content: Alert[] } }) => {
+        setAlerts(res.data.content)
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('Impossible de charger les alertes')
+        setLoading(false)
+      })
+  }, [])
+
+  const highAlerts = alerts.filter((a) => a.severity === 'HIGH')
+  const medAlerts = alerts.filter((a) => a.severity === 'MED')
+  const lowAlerts = alerts.filter((a) => a.severity === 'LOW')
 
   const AlertGroup = ({
     title,
-    alerts,
+    alerts: groupAlerts,
     severity,
     headerColor,
   }: {
     title: string
-    alerts: typeof ALERTS
+    alerts: Alert[]
     severity: 'HIGH' | 'MED' | 'LOW'
     headerColor: string
   }) => {
-    if (alerts.length === 0) return null
+    if (groupAlerts.length === 0) return null
 
     return (
       <div className="mb-6">
@@ -32,11 +53,11 @@ export default function AlertesPage() {
         >
           <h3 className="text-sm font-semibold text-white">{title}</h3>
           <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-xs font-mono">
-            {alerts.length}
+            {groupAlerts.length}
           </span>
         </div>
         <div className="space-y-2 p-4 rounded-b-lg bg-[var(--bg-card)] border border-[var(--border)] border-t-0">
-          {alerts.map((alert) => (
+          {groupAlerts.map((alert) => (
             <div
               key={alert.id}
               className="flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)]"
@@ -63,13 +84,13 @@ export default function AlertesPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs text-[var(--t2)]">
-                    <span>{alert.service}</span>
+                    <span>{alert.incident.title}</span>
                     <span className="text-[var(--t3)]">·</span>
-                    <span className="text-[var(--t3)]">{alert.time}</span>
+                    <span className="text-[var(--t3)]">{new Date(alert.sentAt).toLocaleTimeString('fr-FR')}</span>
                   </div>
                   <button className="flex items-center gap-1 px-2 py-1 rounded text-xs text-[var(--t2)] hover:text-[var(--t1)] hover:bg-[var(--bg-base)] transition-colors">
                     <Check className="w-3 h-3" />
-                    Marquer résolu
+                    Acquitter
                   </button>
                 </div>
               </div>
@@ -81,10 +102,11 @@ export default function AlertesPage() {
   }
 
   // Stats by service
-  const serviceAlertCounts = ALERTS.reduce((acc, alert) => {
-    acc[alert.service] = (acc[alert.service] || 0) + 1
+  const serviceAlertCounts = alerts.reduce((acc: Record<string, number>, alert) => {
+    const service = alert.incident.title.split(' ')[0] || 'Autre'
+    acc[service] = (acc[service] || 0) + 1
     return acc
-  }, {} as Record<string, number>)
+  }, {})
 
   const maxCount = Math.max(...Object.values(serviceAlertCounts))
 
@@ -108,24 +130,38 @@ export default function AlertesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main alert list */}
           <div className="lg:col-span-2">
-            <AlertGroup
-              title="HAUTE CRITICITÉ"
-              alerts={highAlerts}
-              severity="HIGH"
-              headerColor="#ef4444"
-            />
-            <AlertGroup
-              title="CRITICITÉ MOYENNE"
-              alerts={medAlerts}
-              severity="MED"
-              headerColor="#f59e0b"
-            />
-            <AlertGroup
-              title="FAIBLE CRITICITÉ"
-              alerts={lowAlerts}
-              severity="LOW"
-              headerColor="#22c55e"
-            />
+            {loading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <AlertSkeleton key={i} />
+                ))}
+              </div>
+            ) : error ? (
+              <ErrorState message={error} retry={() => window.location.reload()} />
+            ) : alerts.length === 0 ? (
+              <EmptyState message="Aucune alerte" />
+            ) : (
+              <>
+                <AlertGroup
+                  title="HAUTE CRITICITÉ"
+                  alerts={highAlerts}
+                  severity="HIGH"
+                  headerColor="#ef4444"
+                />
+                <AlertGroup
+                  title="CRITICITÉ MOYENNE"
+                  alerts={medAlerts}
+                  severity="MED"
+                  headerColor="#f59e0b"
+                />
+                <AlertGroup
+                  title="FAIBLE CRITICITÉ"
+                  alerts={lowAlerts}
+                  severity="LOW"
+                  headerColor="#22c55e"
+                />
+              </>
+            )}
           </div>
 
           {/* Stats sidebar */}
