@@ -7,27 +7,14 @@ import { HowItWorks } from '@/components/landing/HowItWorks'
 
 export default function Home() {
   return (
-    <main 
-      className="dark:bg-[var(--bg-base)] dark:bg-none"
-      style={{
-        minHeight: '100vh',
-        backgroundImage: "url('/images/background.jpg')",
-        backgroundSize: '100% auto',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center top',
-        backgroundAttachment: 'local',
-        backgroundColor: '#f8fafc',
-        position: 'relative'
-      }}
-    >
-      <div 
-        className="dark:hidden"
-        style={{
-          position: 'absolute', inset: 0,
-          background: "rgba(255,255,255,0.38)",
-          backdropFilter: "blur(2px)",
-          zIndex: 0
-        }}
+    <main className="relative min-h-screen overflow-hidden bg-background">
+      <div
+        className="pointer-events-none absolute inset-0 bg-mesh-light opacity-90 dark:bg-mesh-dark dark:opacity-100"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[url('/images/background.jpg')] bg-cover bg-[center_top] bg-no-repeat opacity-[0.14] mix-blend-overlay dark:opacity-[0.08]"
+        aria-hidden
       />
       <div className="relative z-10">
         <Navbar />

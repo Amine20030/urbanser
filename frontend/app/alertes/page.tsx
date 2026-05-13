@@ -1,10 +1,13 @@
 'use client'
 
 import { Check } from 'lucide-react'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { motion } from 'framer-motion'
+import { DashboardShell } from '@/components/layout/DashboardShell'
 import { ALERTS } from '@/lib/mockData'
-import { getSeverityColor, getSeverityLabel } from '@/lib/utils'
+import { getSeverityColor } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 export default function AlertesPage() {
   const highAlerts = ALERTS.filter((a) => a.severity === 'HIGH')
@@ -15,147 +18,142 @@ export default function AlertesPage() {
     title,
     alerts,
     severity,
-    headerColor,
+    headerClass,
   }: {
     title: string
     alerts: typeof ALERTS
     severity: 'HIGH' | 'MED' | 'LOW'
-    headerColor: string
+    headerClass: string
   }) => {
     if (alerts.length === 0) return null
 
     return (
-      <div className="mb-6">
+      <div className="mb-8">
         <div
-          className="flex items-center gap-2 px-4 py-2 rounded-t-lg"
-          style={{ backgroundColor: headerColor }}
+          className={cn(
+            'flex items-center justify-between rounded-t-xl px-4 py-3 text-sm font-bold text-white shadow-sm',
+            headerClass
+          )}
         >
-          <h3 className="text-sm font-semibold text-white">{title}</h3>
-          <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-xs font-mono">
+          <h3>{title}</h3>
+          <Badge variant="secondary" className="border-white/30 bg-white/15 text-white">
             {alerts.length}
-          </span>
+          </Badge>
         </div>
-        <div className="space-y-2 p-4 rounded-b-lg bg-[var(--bg-card)] border border-[var(--border)] border-t-0">
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className="flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)]"
-            >
-              {/* Severity bar */}
+        <Card className="rounded-t-none border-t-0 shadow-md">
+          <CardContent className="space-y-2 p-4">
+            {alerts.map((alert) => (
               <div
-                className="w-1 h-full min-h-[50px] rounded-full"
-                style={{ backgroundColor: getSeverityColor(severity) }}
-              />
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={cn(
-                      'w-2 h-2 rounded-full',
-                      severity === 'HIGH' && 'animate-pulse'
-                    )}
-                    style={{ backgroundColor: getSeverityColor(severity) }}
-                  />
-                  <h4 className="text-sm font-medium text-[var(--t1)] line-clamp-1">
-                    {alert.title}
-                  </h4>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-[var(--t2)]">
-                    <span>{alert.service}</span>
-                    <span className="text-[var(--t3)]">·</span>
-                    <span className="text-[var(--t3)]">{alert.time}</span>
+                key={alert.id}
+                className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-3 transition-colors hover:border-primary/25"
+              >
+                <div
+                  className="mt-0.5 h-full min-h-[48px] w-1 shrink-0 rounded-full"
+                  style={{ backgroundColor: getSeverityColor(severity) }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'h-2 w-2 shrink-0 rounded-full',
+                        severity === 'HIGH' && 'animate-pulse'
+                      )}
+                      style={{ backgroundColor: getSeverityColor(severity) }}
+                    />
+                    <h4 className="truncate text-sm font-semibold text-t1">{alert.title}</h4>
                   </div>
-                  <button className="flex items-center gap-1 px-2 py-1 rounded text-xs text-[var(--t2)] hover:text-[var(--t1)] hover:bg-[var(--bg-base)] transition-colors">
-                    <Check className="w-3 h-3" />
-                    Marquer résolu
-                  </button>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-t2">
+                    <span>
+                      {alert.service} <span className="text-t3">·</span> {alert.time}
+                    </span>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-t2 transition-colors hover:bg-hover hover:text-t1"
+                    >
+                      <Check className="h-3 w-3" />
+                      Marquer résolu
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
-  // Stats by service
-  const serviceAlertCounts = ALERTS.reduce((acc, alert) => {
-    acc[alert.service] = (acc[alert.service] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+  const serviceAlertCounts = ALERTS.reduce(
+    (acc, alert) => {
+      acc[alert.service] = (acc[alert.service] || 0) + 1
+      return acc
+    },
+    {} as Record<string, number>
+  )
 
-  const maxCount = Math.max(...Object.values(serviceAlertCounts))
+  const maxCount = Math.max(...Object.values(serviceAlertCounts), 1)
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)]">
-      <Sidebar />
+    <DashboardShell>
+      <main className="p-4 sm:p-6">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight text-t1 sm:text-3xl">Alertes</h1>
+          <p className="mt-1 text-sm text-t2">
+            <span className="font-mono font-semibold text-red-500">{highAlerts.length}</span> critiques
+            <span className="mx-2 text-t3">·</span>
+            <span className="font-mono font-semibold text-amber-500">{medAlerts.length}</span> moyennes
+          </p>
+        </motion.div>
 
-      <main className="ml-[220px] p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--t1)] mb-1">Alertes</h1>
-            <p className="text-sm text-[var(--t2)]">
-              <span className="text-red-400 font-mono">{highAlerts.length}</span> critiques
-              <span className="text-[var(--t3)] mx-2">·</span>
-              <span className="text-amber-400 font-mono">{medAlerts.length}</span> moyennes
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main alert list */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-2 lg:col-span-2">
             <AlertGroup
               title="HAUTE CRITICITÉ"
               alerts={highAlerts}
               severity="HIGH"
-              headerColor="#ef4444"
+              headerClass="bg-gradient-to-r from-red-600 to-rose-500"
             />
             <AlertGroup
               title="CRITICITÉ MOYENNE"
               alerts={medAlerts}
               severity="MED"
-              headerColor="#f59e0b"
+              headerClass="bg-gradient-to-r from-amber-500 to-orange-500"
             />
             <AlertGroup
               title="FAIBLE CRITICITÉ"
               alerts={lowAlerts}
               severity="LOW"
-              headerColor="#22c55e"
+              headerClass="bg-gradient-to-r from-emerald-600 to-teal-500"
             />
           </div>
 
-          {/* Stats sidebar */}
-          <aside className="space-y-4">
-            <div className="p-4 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border)]">
-              <h3 className="text-[13px] font-medium text-[var(--t1)] mb-4">
-                Alertes par service
-              </h3>
-              <div className="space-y-3">
+          <aside>
+            <Card className="border-border/80 lg:sticky lg:top-24">
+              <CardHeader>
+                <CardTitle>Par service</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
                 {Object.entries(serviceAlertCounts).map(([service, count]) => (
-                  <div key={service} className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-[var(--t2)]">{service}</span>
-                        <span className="text-xs font-mono text-[var(--t1)]">{count}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-[var(--bg-hover)] overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-blue-500 transition-all duration-500"
-                          style={{ width: `${(count / maxCount) * 100}%` }}
-                        />
-                      </div>
+                  <div key={service}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="text-t2">{service}</span>
+                      <span className="font-mono text-t1">{count}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(count / maxCount) * 100}%` }}
+                        transition={{ duration: 0.5 }}
+                        className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500"
+                      />
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </aside>
         </div>
       </main>
-    </div>
+    </DashboardShell>
   )
 }

@@ -1,23 +1,45 @@
 'use client'
 
-import { AlertTriangle, CheckCircle2, Clock, FileText } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { statsAPI } from '@/lib/api'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function KpiCards() {
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<{
+    totalIncidents?: number
+    openIncidents?: number
+    inProgressIncidents?: number
+    resolvedIncidents?: number
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    statsAPI.getDashboard()
-      .then(res => setData(res.data))
-      .catch(err => setError(err.message))
+    statsAPI
+      .getDashboard()
+      .then((res) => setData(res.data))
+      .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">{Array(4).fill(0).map((_,i) => <div key={i} className="h-24 bg-[var(--bg-card)] animate-pulse rounded-[10px] border border-[var(--border)]" />)}</div>
-  if (error) return <div className="p-4 rounded-[10px] bg-red-500/10 text-red-500 border border-red-500/20">Erreur stats: {error}</div>
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 rounded-xl" />
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">
+        Erreur stats : {error}
+      </div>
+    )
+  }
 
   const total = data?.totalIncidents || 0
   const open = data?.openIncidents || 0
@@ -25,65 +47,42 @@ export function KpiCards() {
   const resolved = data?.resolvedIncidents || 0
 
   const cards = [
-    {
-      title: 'Total incidents',
-      value: total,
-      icon: FileText,
-      color: 'text-blue-400',
-      bg: 'bg-blue-400/10 border-blue-400/20',
-    },
-    {
-      title: 'Ouverts',
-      value: open,
-      icon: AlertTriangle,
-      color: 'text-amber-400',
-      bg: 'bg-amber-400/10 border-amber-400/20',
-    },
-    {
-      title: 'En cours',
-      value: inProgress,
-      icon: Clock,
-      color: 'text-purple-400',
-      bg: 'bg-purple-400/10 border-purple-400/20',
-    },
-    {
-      title: 'Résolus',
-      value: resolved,
-      icon: CheckCircle2,
-      color: 'text-green-400',
-      bg: 'bg-green-400/10 border-green-400/20',
-    },
+    { label: 'Total incidents', value: total, icon: '📋', color: '#0ea5e9' },
+    { label: 'Ouverts', value: open, icon: '⚠️', color: '#f59e0b' },
+    { label: 'En cours', value: inProgress, icon: '⏱', color: '#8b5cf6' },
+    { label: 'Résolus', value: resolved, icon: '✓', color: '#22c55e' },
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card) => {
-        const Icon = card.icon
-        return (
-          <div
-            key={card.title}
-            className={`p-4 rounded-[10px] border ${card.bg}`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-[var(--t2)] uppercase tracking-wider">
-                {card.title}
-              </span>
-              <Icon className={`w-4 h-4 ${card.color}`} />
-            </div>
-            <div className={`text-2xl font-bold ${card.color} font-mono`}>
-              <AnimatedNumber value={card.value} />
-            </div>
-          </div>
-        )
-      })}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {cards.map((card, i) => (
+        <motion.div
+          key={card.label}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05, duration: 0.35 }}
+        >
+          <KpiStatCard label={card.label} displayedValue={card.value} icon={card.icon} color={card.color} />
+        </motion.div>
+      ))}
     </div>
   )
 }
 
-function AnimatedNumber({ value }: { value: number }) {
+function KpiStatCard({
+  label,
+  displayedValue,
+  icon,
+  color,
+}: {
+  label: string
+  displayedValue: number
+  icon: string
+  color: string
+}) {
   const [displayed, setDisplayed] = useState(0)
   useEffect(() => {
-    const target = value
+    const target = displayedValue
     if (target === 0) return setDisplayed(0)
     const step = Math.max(1, Math.ceil(target / 40))
     let current = 0
@@ -93,6 +92,53 @@ function AnimatedNumber({ value }: { value: number }) {
       if (current >= target) clearInterval(timer)
     }, 25)
     return () => clearInterval(timer)
-  }, [value])
-  return <>{displayed}</>
+  }, [displayedValue])
+
+  return (
+    <div
+      className="bg-card dark:bg-card/80"
+      style={{
+        border: '1px solid #e2e8f0',
+        borderTop: `3px solid ${color}`,
+        borderRadius: 12,
+        padding: '20px 24px',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: 11,
+            color: '#94a3b8',
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            marginBottom: 8,
+          }}
+        >
+          {label}
+        </div>
+        <div style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', lineHeight: 1 }} className="dark:text-t1">
+          {displayed}
+        </div>
+      </div>
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 10,
+          background: `${color}15`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 20,
+        }}
+      >
+        {icon}
+      </div>
+    </div>
+  )
 }

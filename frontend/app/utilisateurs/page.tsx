@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { motion } from 'framer-motion'
+import { DashboardShell } from '@/components/layout/DashboardShell'
 import { userAPI } from '@/lib/api'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type UserRow = {
   id: number
@@ -37,59 +40,67 @@ export default function UtilisateursPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)]">
-      <Sidebar />
-      <main className="ml-[220px] p-6">
-        <h1 className="text-xl font-semibold text-[var(--t1)] mb-2">Utilisateurs</h1>
-        <p className="text-sm text-[var(--t3)] mb-6">
-          Liste des comptes (réservée aux administrateurs).
-        </p>
+    <DashboardShell>
+      <main className="p-4 sm:p-6">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight text-t1">Utilisateurs</h1>
+          <p className="mt-1 text-sm text-t3">Liste des comptes (administrateurs).</p>
+        </motion.div>
 
-        {loading && <p className="text-[var(--t3)]">Chargement…</p>}
+        {loading && (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <Skeleton className="h-48 w-full rounded-xl" />
+          </div>
+        )}
 
         {forbidden && (
-          <div className="max-w-lg rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            Vous n’avez pas les droits d’administrateur pour consulter cette page. Les citoyens peuvent utiliser
-            le tableau de bord et signaler des incidents.
+          <div className="max-w-xl rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+            Vous n&apos;avez pas les droits d&apos;administrateur pour consulter cette page.
           </div>
         )}
 
         {error && (
-          <div className="max-w-lg rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <div className="max-w-xl rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-200">
             {error}
           </div>
         )}
 
         {!loading && !forbidden && !error && (
-          <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--bg-card)]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border)] text-left text-[var(--t3)] text-xs uppercase">
-                  <th className="py-3 px-4">Nom</th>
-                  <th className="py-3 px-4">Email</th>
-                  <th className="py-3 px-4">Rôle</th>
-                  <th className="py-3 px-4">Secteur</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {users.map((u) => (
-                  <tr key={u.id} className="text-[var(--t1)]">
-                    <td className="py-2 px-4">
-                      {u.firstName} {u.lastName}
-                    </td>
-                    <td className="py-2 px-4 font-mono text-xs text-[var(--t2)]">{u.email}</td>
-                    <td className="py-2 px-4">{u.role}</td>
-                    <td className="py-2 px-4 text-[var(--t2)]">{u.sector ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {users.length === 0 && (
-              <p className="p-6 text-center text-[var(--t3)]">Aucun utilisateur.</p>
-            )}
-          </div>
+          <Card className="overflow-hidden border-border/80">
+            <CardHeader>
+              <CardTitle>Annuaire</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-t3">
+                      <th className="px-4 py-3">Nom</th>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Rôle</th>
+                      <th className="px-4 py-3">Secteur</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/80">
+                    {users.map((u) => (
+                      <tr key={u.id} className="transition-colors hover:bg-muted/40">
+                        <td className="px-4 py-3 font-medium text-t1">
+                          {u.firstName} {u.lastName}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-t2">{u.email}</td>
+                        <td className="px-4 py-3 text-t2">{u.role}</td>
+                        <td className="px-4 py-3 text-t2">{u.sector ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {users.length === 0 && <p className="p-8 text-center text-t3">Aucun utilisateur.</p>}
+            </CardContent>
+          </Card>
         )}
       </main>
-    </div>
+    </DashboardShell>
   )
 }

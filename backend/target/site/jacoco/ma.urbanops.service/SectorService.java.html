@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SectorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.service</a> &gt; <span class="el_source">SectorService.java</span></div><h1>SectorService.java</h1><pre class="source lang-java linenums">package ma.urbanops.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import ma.urbanops.dto.response.SectorResponse;
+import ma.urbanops.entity.Sector;
+import ma.urbanops.entity.Incident;
+import ma.urbanops.exception.ResourceNotFoundException;
+import ma.urbanops.repository.SectorRepository;
+import ma.urbanops.repository.IncidentRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+
+<span class="nc" id="L15">@Service @Slf4j @RequiredArgsConstructor @Transactional</span>
+public class SectorService {
+    private final SectorRepository sectorRepository;
+    private final IncidentRepository incidentRepository;
+
+    @Transactional(readOnly=true)
+<span class="nc" id="L21">    public List&lt;Sector&gt; findAll() { return sectorRepository.findAll(); }</span>
+
+    @Transactional(readOnly=true)
+    public Sector findById(Long id) {
+<span class="nc" id="L25">        return sectorRepository.findById(id)</span>
+<span class="nc" id="L26">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Sector&quot;,&quot;id&quot;,id));</span>
+    }
+
+    @Transactional(readOnly=true)
+<span class="nc" id="L30">    public List&lt;Sector&gt; findAllActive() { return sectorRepository.findAll(); }</span>
+
+<span class="nc" id="L32">    public Sector create(Sector s) { return sectorRepository.save(s); }</span>
+
+    public List&lt;Incident&gt; getIncidentsBySector(Long sectorId) {
+<span class="nc" id="L35">        Sector sector = findById(sectorId);</span>
+<span class="nc" id="L36">        return incidentRepository.findAll((root, query, cb) -&gt; cb.equal(root.get(&quot;sector&quot;), sector));</span>
+    }
+
+    public SectorResponse toResponse(Sector s) {
+<span class="nc" id="L40">        return SectorResponse.builder()</span>
+<span class="nc" id="L41">            .id(s.getId()).name(s.getName()).city(s.getCity())</span>
+<span class="nc" id="L42">            .centerLat(s.getCenterLat()).centerLng(s.getCenterLng())</span>
+<span class="nc" id="L43">            .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

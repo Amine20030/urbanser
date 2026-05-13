@@ -4,176 +4,165 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-base: #ffffff;
-  --bg-sidebar: #ffffff;
-  --bg-card: #ffffff;
-  --bg-hover: #f3f4f6;
-  --border: #e5e7eb;
-  --border2: #d1d5db;
-  --t1: #111827;
-  --t2: #4b5563;
-  --t3: #9ca3af;
-  --red: #ef4444;
-  --amber: #f59e0b;
-  --green: #22c55e;
-  --blue: #3b82f6;
-  --cyan: #06b6d4;
-  --purple: #8b5cf6;
+@layer base {
+  :root {
+    --font-geist-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-geist-mono: 'Geist Mono', ui-monospace, monospace;
+
+    --bg-base: #f6f8fc;
+    --bg-sidebar: rgba(255, 255, 255, 0.72);
+    --bg-card: rgba(255, 255, 255, 0.78);
+    --bg-hover: rgba(15, 23, 42, 0.04);
+    --border: rgba(15, 23, 42, 0.08);
+    --border2: rgba(15, 23, 42, 0.14);
+    --t1: #0f172a;
+    --t2: #475569;
+    --t3: #94a3b8;
+
+    --primary: #0ea5e9;
+    --primary-foreground: #f0f9ff;
+    --accent: rgba(14, 165, 233, 0.12);
+    --accent-foreground: #0369a1;
+    --muted: rgba(15, 23, 42, 0.06);
+    --muted-foreground: #64748b;
+    --input: rgba(15, 23, 42, 0.1);
+    --ring: #0ea5e9;
+    --destructive: #ef4444;
+    --destructive-foreground: #fef2f2;
+
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+
+    --shadow-glass: 0 1px 0 rgba(255, 255, 255, 0.65) inset, 0 8px 32px rgba(15, 23, 42, 0.08);
+    --shadow-card: 0 4px 24px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-glow: 0 0 0 1px rgba(14, 165, 233, 0.2), 0 12px 40px rgba(14, 165, 233, 0.15);
+  }
+
+  .dark {
+    --bg-base: #070a0f;
+    --bg-sidebar: rgba(10, 14, 22, 0.85);
+    --bg-card: rgba(17, 24, 39, 0.65);
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.08);
+    --border2: rgba(255, 255, 255, 0.14);
+    --t1: #f1f5f9;
+    --t2: #94a3b8;
+    --t3: #64748b;
+
+    --primary: #38bdf8;
+    --primary-foreground: #082f49;
+    --accent: rgba(56, 189, 248, 0.12);
+    --accent-foreground: #7dd3fc;
+    --muted: rgba(255, 255, 255, 0.06);
+    --muted-foreground: #94a3b8;
+    --input: rgba(255, 255, 255, 0.1);
+    --ring: #38bdf8;
+    --destructive: #f87171;
+    --destructive-foreground: #450a0a;
+
+    --shadow-glass: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 12px 48px rgba(0, 0, 0, 0.45);
+    --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --shadow-glow: 0 0 0 1px rgba(56, 189, 248, 0.25), 0 16px 48px rgba(56, 189, 248, 0.12);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply antialiased text-foreground bg-background;
+    font-family: var(--font-geist-sans);
+  }
 }
 
-.dark {
-  --bg-base: #0b0f14;
-  --bg-sidebar: #0e1218;
-  --bg-card: #131920;
-  --bg-hover: #1a2230;
-  --border: rgba(255, 255, 255, 0.07);
-  --border2: rgba(255, 255, 255, 0.13);
-  --t1: #e8edf3;
-  --t2: #7a8899;
-  --t3: #3a4556;
-}
+@layer utilities {
+  .glass-panel {
+    backdrop-filter: blur(24px);
+    background-color: color-mix(in srgb, var(--bg-card) 82%, transparent);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: var(--shadow-glass);
+  }
 
-* {
-  box-sizing: border-box;
-}
+  .dark .glass-panel {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  .glass-nav {
+    backdrop-filter: blur(20px);
+    background-color: color-mix(in srgb, var(--bg-card) 65%, transparent);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
 
-body {
-  color: var(--t1);
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
+  .dark .glass-nav {
+    background-color: color-mix(in srgb, var(--bg-sidebar) 78%, transparent);
+  }
 
-.font-mono {
-  font-family: 'Geist Mono', ui-monospace, monospace;
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-500 via-cyan-500 to-emerald-500;
+  }
+
+  .focus-ring {
+    @apply outline-none ring-2 ring-sky-500/40 ring-offset-2;
+    --tw-ring-offset-color: var(--bg-base);
+  }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-base);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--t3);
-  border-radius: 3px;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--t2);
 }
 
-/* Animations */
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.9), 0 0 30px rgba(239, 68, 68, 0.4);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes countUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-fade-up {
-  animation: fadeUp 0.5s ease-out forwards;
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 2s ease-in-out infinite;
-}
-
-.animate-slide-in-right {
-  animation: slideInRight 0.3s ease-out;
-}
-
-.animate-count-up {
-  animation: countUp 0.5s ease-out forwards;
-}
-
-/* Stagger delay utilities */
-.delay-0 { animation-delay: 0ms; }
-.delay-50 { animation-delay: 50ms; }
-.delay-100 { animation-delay: 100ms; }
-.delay-150 { animation-delay: 150ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-250 { animation-delay: 250ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-350 { animation-delay: 350ms; }
-.delay-400 { animation-delay: 400ms; }
-
-/* Initial opacity for animated elements */
-.opacity-0-initial {
-  opacity: 0;
-}
-
-/* Leaflet map custom styles */
+/* Leaflet */
 .leaflet-container {
   background: var(--bg-base) !important;
+  font-family: var(--font-geist-sans), sans-serif;
 }
 
-/* Custom marker styles */
-.marker-high {
-  animation: pulseGlow 2s ease-in-out infinite;
+.leaflet-popup-content-wrapper {
+  @apply rounded-xl border border-border shadow-card bg-card text-t1;
 }
 
-/* Card hover effect */
-.card-hover {
-  transition: border-color 0.15s ease;
+.leaflet-popup-tip {
+  @apply bg-card border-border;
 }
 
-.card-hover:hover {
-  border-color: var(--border2);
+.marker-pulse .leaflet-interactive {
+  animation: pulse-ring-marker 2s ease-out infinite;
 }
 
-/* Live indicator */
-.live-dot {
-  animation: pulse 2s ease-in-out infinite;
+@keyframes pulse-ring-marker {
+  0% {
+    stroke-opacity: 1;
+    stroke-width: 2;
+  }
+  100% {
+    stroke-opacity: 0;
+    stroke-width: 8;
+  }
+}
+
+.leaflet-fade-anim .leaflet-tile,
+.leaflet-zoom-anim .leaflet-zoom-animated {
+  will-change: auto !important;
 }

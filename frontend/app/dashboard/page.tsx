@@ -2,14 +2,18 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { Search, Bell, Settings, User } from 'lucide-react'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { DashboardShell } from '@/components/layout/DashboardShell'
 import { KpiCards } from '@/components/dashboard/KpiCards'
 import { ServiceCards } from '@/components/dashboard/ServiceCards'
 import { ActivityChart } from '@/components/dashboard/ActivityChart'
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel'
 import { IncidentTable } from '@/components/dashboard/IncidentTable'
 import { SignalerModal } from '@/components/shared/SignalerModal'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -18,119 +22,118 @@ export default function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [currentDate] = useState(() => {
     const date = new Date()
-    const options: Intl.DateTimeFormatOptions = {
+    return date.toLocaleDateString('fr-FR', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-    }
-    return date.toLocaleDateString('fr-FR', options)
+    })
   })
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)]">
-      <Sidebar />
+    <DashboardShell>
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/75 px-4 py-3 backdrop-blur-xl sm:px-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2 text-xs text-t2">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+            <span>Live · {currentDate}</span>
+          </div>
 
-      {/* Main content */}
-      <main className="ml-[220px] min-h-screen">
-        {/* Topbar */}
-        <header className="sticky top-0 z-30 bg-[var(--bg-base)]/90 backdrop-blur-md border-b border-[var(--border)] px-6 py-3">
-          <div className="flex items-center justify-between">
-            {/* Left: Live indicator */}
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs text-[var(--t2)]">
-                Live · {currentDate}
-              </span>
-            </div>
+          <div className="relative w-full max-w-md flex-1 lg:mx-6">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-t3" />
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher un incident, un secteur…"
+              className="h-10 border-border/80 bg-card/80 pl-10 backdrop-blur-md"
+            />
+          </div>
 
-            {/* Center: Search */}
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t3)]" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher un incident, un secteur..."
-                  className="w-full pl-10 pr-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--t1)] placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
-                />
-              </div>
-            </div>
-
-            {/* Right: Actions */}
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setNotifOpen((o) => !o)}
-                  className="relative p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--t2)] hover:text-[var(--t1)] transition-colors"
-                  aria-label="Notifications"
-                  aria-expanded={notifOpen}
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
-                    2
-                  </span>
-                </button>
-                {notifOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-72 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] shadow-xl z-50 py-2 text-sm">
-                    <p className="px-3 py-2 text-[var(--t3)] text-xs uppercase tracking-wide">Notifications</p>
-                    <ul className="max-h-48 overflow-y-auto">
-                      <li className="px-3 py-2 text-[var(--t2)] border-t border-[var(--border)]">
-                        Rapport quotidien UrbanOps (tâche planifiée côté serveur).
-                      </li>
-                      <li className="px-3 py-2 text-[var(--t2)] border-t border-[var(--border)]">
-                        Vérifiez les incidents à forte criticité sur la carte.
-                      </li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <button onClick={() => setModalOpen(true)} className="ml-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-                Signaler un problème
-              </button>
-              <button
+          <div className="flex items-center justify-end gap-2">
+            <div className="relative">
+              <Button
                 type="button"
-                onClick={() => router.push('/parametres')}
-                className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--t2)] hover:text-[var(--t1)] transition-colors"
-                aria-label="Paramètres"
+                variant="secondary"
+                size="icon"
+                className="relative border-border/80 bg-card/80 backdrop-blur-md"
+                onClick={() => setNotifOpen((o) => !o)}
+                aria-label="Notifications"
+                aria-expanded={notifOpen}
               >
-                <Settings className="w-5 h-5" />
-              </button>
-              <div className="flex items-center gap-2 ml-2 pl-3 border-l border-[var(--border)]">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-sm font-medium text-[var(--t1)]">OP</span>
-              </div>
+                <Bell className="h-5 w-5" />
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  2
+                </span>
+              </Button>
+              {notifOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl border border-border bg-card/95 py-2 text-sm shadow-xl backdrop-blur-xl"
+                >
+                  <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-t3">Notifications</p>
+                  <ul className="max-h-48 overflow-y-auto">
+                    <li className="border-t border-border px-3 py-2 text-t2">
+                      Rapport quotidien UrbanOps (tâche planifiée côté serveur).
+                    </li>
+                    <li className="border-t border-border px-3 py-2 text-t2">
+                      Vérifiez les incidents à forte criticité sur la carte.
+                    </li>
+                  </ul>
+                </motion.div>
+              )}
             </div>
-          </div>
-        </header>
-
-        {/* Page content */}
-        <div className="p-6 space-y-6">
-          {/* KPI Cards */}
-          <KpiCards />
-
-          {/* Service Cards */}
-          <ServiceCards />
-
-          {/* Chart + Alerts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ActivityChart />
-            <AlertsPanel />
-          </div>
-
-          {/* Incidents Table */}
-          <div className="p-4 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border)]">
-            <h3 className="text-[13px] font-medium text-[var(--t1)] mb-4">
-              Tous les incidents
-            </h3>
-            <IncidentTable filters={{ search: searchQuery }} />
+            <Button className="hidden sm:inline-flex" onClick={() => setModalOpen(true)}>
+              Signaler
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              className="border-border/80 bg-card/80 backdrop-blur-md"
+              onClick={() => router.push('/parametres')}
+              aria-label="Paramètres"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+            <div className="ml-1 flex items-center gap-2 border-l border-border pl-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-md">
+                <User className="h-4 w-4" />
+              </div>
+              <span className="hidden text-sm font-medium text-t1 sm:inline">Opérateur</span>
+            </div>
           </div>
         </div>
-        <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
-      </main>
-    </div>
+      </header>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35 }}
+        className="space-y-6 p-4 sm:p-6"
+      >
+        <KpiCards />
+        <ServiceCards />
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <ActivityChart />
+          <AlertsPanel />
+        </div>
+
+        <Card className="border-border/80">
+          <CardHeader>
+            <CardTitle>Tous les incidents</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <IncidentTable filters={{ search: searchQuery }} />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+    </DashboardShell>
   )
 }

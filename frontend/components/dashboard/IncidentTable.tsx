@@ -39,82 +39,70 @@ export function IncidentTable({ filters }: IncidentTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
+    <div className="overflow-x-auto rounded-lg border border-border/60">
+      <table className="w-full min-w-[720px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-[var(--border)]">
-            <th className="text-left py-3 px-4 text-xs font-medium text-[var(--t3)] uppercase tracking-wider">
+          <tr className="border-b border-border bg-muted/40 text-left">
+            <th className="whitespace-nowrap px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-t3">
               ID
             </th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-[var(--t3)] uppercase tracking-wider">
+            <th className="whitespace-nowrap px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-t3">
               Titre
             </th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-[var(--t3)] uppercase tracking-wider">
+            <th className="whitespace-nowrap px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-t3">
               Secteur
             </th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-[var(--t3)] uppercase tracking-wider">
+            <th className="whitespace-nowrap px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-t3">
               Autorité
             </th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-[var(--t3)] uppercase tracking-wider">
+            <th className="whitespace-nowrap px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-t3">
               Criticité
             </th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-[var(--t3)] uppercase tracking-wider">
+            <th className="whitespace-nowrap px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-t3">
               Statut
             </th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-[var(--t3)] uppercase tracking-wider">
+            <th className="whitespace-nowrap px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-t3">
               Date
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[var(--border)]">
+        <tbody className="divide-y divide-border/80">
           {filtered.map((incident) => (
             <tr
               key={incident.id}
-              className="hover:bg-[var(--bg-hover)] transition-colors"
+              className="transition-colors hover:bg-muted/50"
             >
-              <td className="py-3 px-4 text-xs font-mono text-blue-500">
-                {incident.id}
-              </td>
-              <td className="py-3 px-4 text-sm text-[var(--t1)]">
+              <td className="px-4 py-3 font-mono text-xs text-primary">{incident.id}</td>
+              <td className="px-4 py-3">
                 <Link
                   href={`/incidents/${encodeURIComponent(incident.id)}`}
-                  className="text-blue-400 hover:text-blue-300 hover:underline"
+                  className="font-medium text-t1 underline-offset-4 hover:text-primary hover:underline"
                 >
                   {incident.title}
                 </Link>
               </td>
-              <td className="py-3 px-4 text-xs text-[var(--t2)]">
-                {incident.sector}
-              </td>
-              <td className="py-3 px-4 text-xs text-[var(--t2)]">
-                {incident.authority}
-              </td>
-              <td className="py-3 px-4">
+              <td className="px-4 py-3 text-xs text-t2">{incident.sector}</td>
+              <td className="px-4 py-3 text-xs text-t2">{incident.authority}</td>
+              <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full"
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full ring-2 ring-white/30"
                     style={{ backgroundColor: getSeverityColor(incident.severity) }}
                   />
-                  <span className="text-xs text-[var(--t2)]">
-                    {incident.severity}
-                  </span>
+                  <span className="text-xs text-t2">{incident.severity}</span>
                 </div>
               </td>
-              <td className="py-3 px-4">
+              <td className="px-4 py-3">
                 <StatusBadge status={incident.status} size="sm" />
               </td>
-              <td className="py-3 px-4 text-xs text-[var(--t3)]">
-                {incident.date}
-              </td>
+              <td className="px-4 py-3 font-mono text-[11px] text-t3">{incident.date}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       {filtered.length === 0 && (
-        <div className="text-center py-8 text-sm text-[var(--t3)]">
-          Aucun incident trouvé
-        </div>
+        <div className="py-10 text-center text-sm text-t3">Aucun incident trouvé</div>
       )}
     </div>
   )

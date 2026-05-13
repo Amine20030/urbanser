@@ -3,6 +3,16 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { categoryAPI, sectorAPI, incidentAPI } from '@/lib/api'
 import { Toast } from './Toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
 interface SignalerModalProps {
   isOpen: boolean
@@ -13,10 +23,12 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [toast, setToast] = useState<{message: string, type: 'success'|'error'} | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const [categories, setCategories] = useState<any[]>([])
-  const [sectors, setSectors] = useState<any[]>([])
+  const [categories, setCategories] = useState<{ id: number; name: string; icon?: string }[]>([])
+  const [sectors, setSectors] = useState<
+    { id: number; name: string; centerLat?: number; centerLng?: number }[]
+  >([])
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -26,43 +38,74 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
   const [longitude, setLongitude] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
 
-  const [aiResult, setAiResult] = useState<any>(null)
+  const [aiResult, setAiResult] = useState<{
+    referenceCode?: string
+    severity?: string
+    category?: { name?: string }
+    authorityNotified?: string
+    aiAnalysisResult?: string
+  } | null>(null)
 
   useEffect(() => {
-    if (isOpen) {
-      setStep(1)
-      setTitle('')
-      setDescription('')
-      setCategoryId('')
-      setSectorId('')
-      setLatitude('')
-      setLongitude('')
-      setPhoto(null)
-      setError(null)
-      setAiResult(null)
+    if (!isOpen) return
+    setStep(1)
+    setTitle('')
+    setDescription('')
+    setCategoryId('')
+    setSectorId('')
+    setLatitude('')
+    setLongitude('')
+    setPhoto(null)
+    setError(null)
+    setAiResult(null)
 
-      if (categories.length === 0) {
-        Promise.all([categoryAPI.getAll(), sectorAPI.getAll()]).then(([catRes, secRes]) => {
-          setCategories(catRes.data)
-          setSectors(secRes.data)
-        }).catch(err => console.error("Failed to fetch form data", err))
+    const fetchData = async () => {
+      try {
+        const [catRes, secRes] = await Promise.all([categoryAPI.getAll(), sectorAPI.getAll()])
+        const catData = catRes.data
+        const secData = secRes.data
+        const cats = Array.isArray(catData) ? catData : catData?.content ?? []
+        const secs = Array.isArray(secData) ? secData : secData?.content ?? []
+        setCategories(cats)
+        setSectors(secs)
+      } catch (err) {
+        console.error('Failed to load categories/sectors:', err)
       }
     }
+    void fetchData()
   }, [isOpen])
 
-  const handleSectorChange = (id: string) => {
-    setSectorId(id)
-    const sector = sectors.find(s => s.id === Number(id))
-    if (sector?.centerLat && sector?.centerLng) {
-      setLatitude(String(sector.centerLat))
-      setLongitude(String(sector.centerLng))
+  const handleSectorChange = (value: string) => {
+    setSectorId(value)
+    const sec = sectors.find((s) => String(s.id) === value)
+    if (sec?.centerLat != null && sec?.centerLng != null) {
+      setLatitude(String(sec.centerLat))
+      setLongitude(String(sec.centerLng))
     }
   }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!title || !description || !categoryId || !sectorId) {
-      setError("Veuillez remplir tous les champs obligatoires")
+    if (!title?.trim() || !description?.trim()) {
+      setError('Veuillez remplir tous les champs obligatoires')
+      return
+    }
+
+    const catId = parseInt(categoryId, 10)
+    const secId = parseInt(sectorId, 10)
+    const lat = parseFloat(latitude)
+    const lng = parseFloat(longitude)
+
+    if (Number.isNaN(catId) || catId <= 0) {
+      setError('Veuillez sélectionner une catégorie')
+      return
+    }
+    if (Number.isNaN(secId) || secId <= 0) {
+      setError('Veuillez sélectionner un secteur')
+      return
+    }
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      setError('Coordonnées invalides')
       return
     }
 
@@ -71,18 +114,24 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
 
     try {
       const formData = new FormData()
-      const lat = parseFloat(latitude) || sectors.find(s=>s.id===Number(sectorId))?.centerLat || 31.6295
-      const lng = parseFloat(longitude) || sectors.find(s=>s.id===Number(sectorId))?.centerLng || -7.9811
 
-      formData.append('data', new Blob([JSON.stringify({
-        title,
-        description,
-        categoryId: parseInt(categoryId),
-        sectorId: parseInt(sectorId),
-        latitude: lat,
-        longitude: lng
-      })], { type: 'application/json' }))
-      
+      formData.append(
+        'data',
+        new Blob(
+          [
+            JSON.stringify({
+              title: title.trim(),
+              description: description.trim(),
+              categoryId: catId,
+              sectorId: secId,
+              latitude: lat,
+              longitude: lng,
+            }),
+          ],
+          { type: 'application/json' }
+        )
+      )
+
       if (photo) {
         formData.append('photo', photo)
       }
@@ -91,10 +140,11 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
       setAiResult(res.data)
       setStep(3)
       window.dispatchEvent(new CustomEvent('incident-created'))
-      setToast({ message: "Incident signalé avec succès !", type: 'success' })
-    } catch (err: any) {
+      setToast({ message: 'Incident signalé avec succès !', type: 'success' })
+    } catch (err: unknown) {
       console.error(err)
-      const msg = err.response?.data?.message || "Erreur lors de la création de l'incident"
+      const ax = err as { response?: { data?: { message?: string } } }
+      const msg = ax.response?.data?.message || "Erreur lors de la création de l'incident"
       setError(msg)
       setToast({ message: msg, type: 'error' })
     } finally {
@@ -102,153 +152,195 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
     }
   }
 
-  if (!isOpen) return null
-
   const getSeverityStyle = (severity: string) => {
     switch (severity) {
-      case 'HIGH': case 'CRITICAL': return { bg: '#ef4444', text: 'Critique / Élevé' }
-      case 'MEDIUM': return { bg: '#f59e0b', text: 'Moyen' }
-      case 'LOW': return { bg: '#22c55e', text: 'Faible' }
-      default: return { bg: '#3b82f6', text: severity }
+      case 'HIGH':
+      case 'CRITICAL':
+        return { bg: '#ef4444', text: 'Critique / Élevé' }
+      case 'MEDIUM':
+        return { bg: '#f59e0b', text: 'Moyen' }
+      case 'LOW':
+        return { bg: '#22c55e', text: 'Faible' }
+      default:
+        return { bg: '#3b82f6', text: severity }
     }
   }
 
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999,
-      display: 'flex', alignItems: 'center', justifyContent: 'center'
-    }}>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <div style={{
-        background: '#131920',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: '12px',
-        padding: '2rem',
-        maxWidth: '600px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflowY: 'auto'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#e8edf3', margin: 0 }}>
-            {step === 3 ? "Signalement Envoyé" : "Signaler un problème"}
-          </h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#7a8899', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
-        </div>
+  const fieldClass =
+    'w-full rounded-lg border border-input bg-bg-base/80 px-3 py-2.5 text-sm text-t1 shadow-sm placeholder:text-t3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-bg-hover/50'
 
-        {error && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>{error}</div>}
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto border-border/80 bg-card/95 backdrop-blur-xl sm:max-w-xl">
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <DialogHeader>
+          <DialogTitle>{step === 3 ? 'Signalement envoyé' : 'Signaler un problème'}</DialogTitle>
+        </DialogHeader>
+
+        {error && (
+          <div className="rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-300">
+            {error}
+          </div>
+        )}
 
         {step === 1 && (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ color: '#e8edf3', fontSize: '14px' }}>Titre *</label>
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required style={inputStyle} placeholder="Ex: Câble exposé" />
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="uo-title">Titre *</Label>
+              <Input
+                id="uo-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                placeholder="Ex : câble exposé"
+                className={fieldClass}
+              />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ color: '#e8edf3', fontSize: '14px' }}>Description *</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} style={inputStyle} placeholder="Détails du problème..."></textarea>
+            <div className="space-y-2">
+              <Label htmlFor="uo-desc">Description *</Label>
+              <textarea
+                id="uo-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                rows={3}
+                className={cn(fieldClass, 'min-h-[96px] resize-y')}
+                placeholder="Détails du problème…"
+              />
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                <label style={{ color: '#e8edf3', fontSize: '14px' }}>Catégorie *</label>
-                <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required style={inputStyle}>
-                  <option value="">Sélectionnez</option>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="uo-cat">Catégorie *</Label>
+                <select
+                  id="uo-cat"
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  required
+                  className={fieldClass}
+                >
+                  <option value="">-- Choisir une catégorie --</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.icon ? `${c.icon} ` : ''}
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                <label style={{ color: '#e8edf3', fontSize: '14px' }}>Secteur *</label>
-                <select value={sectorId} onChange={(e) => handleSectorChange(e.target.value)} required style={inputStyle}>
-                  <option value="">Sélectionnez</option>
-                  {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              <div className="space-y-2">
+                <Label htmlFor="uo-sec">Secteur *</Label>
+                <select
+                  id="uo-sec"
+                  value={sectorId}
+                  onChange={(e) => handleSectorChange(e.target.value)}
+                  required
+                  className={fieldClass}
+                >
+                  <option value="">-- Choisir un secteur --</option>
+                  {sectors.map((s) => (
+                    <option key={s.id} value={String(s.id)}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                <label style={{ color: '#e8edf3', fontSize: '14px' }}>Latitude *</label>
-                <input type="number" step="any" value={latitude} onChange={(e) => setLatitude(e.target.value)} required style={inputStyle} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="uo-lat">Latitude *</Label>
+                <Input
+                  id="uo-lat"
+                  type="number"
+                  step="any"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  required
+                  className={fieldClass}
+                />
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                <label style={{ color: '#e8edf3', fontSize: '14px' }}>Longitude *</label>
-                <input type="number" step="any" value={longitude} onChange={(e) => setLongitude(e.target.value)} required style={inputStyle} />
+              <div className="space-y-2">
+                <Label htmlFor="uo-lng">Longitude *</Label>
+                <Input
+                  id="uo-lng"
+                  type="number"
+                  step="any"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  required
+                  className={fieldClass}
+                />
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ color: '#e8edf3', fontSize: '14px' }}>Photo (Optionnel)</label>
-              <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] || null)} style={{ color: '#7a8899', fontSize: '14px' }} />
+            <div className="space-y-2">
+              <Label htmlFor="uo-photo">Photo (optionnel)</Label>
+              <input
+                id="uo-photo"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setPhoto(e.target.files?.[0] || null)}
+                className="text-xs text-t2 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground"
+              />
             </div>
 
-            <button type="submit" disabled={loading} style={{
-              background: '#3b82f6', color: '#fff', padding: '0.75rem', borderRadius: '8px', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '1rem', fontWeight: 600, marginTop: '1rem'
-            }}>
-              {loading ? 'Envoi en cours...' : 'Envoyer le signalement'}
-            </button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Envoi en cours…' : 'Envoyer le signalement'}
+            </Button>
           </form>
         )}
 
         {step === 3 && aiResult && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ color: '#7a8899', margin: '0 0 0.5rem 0' }}>Référence</p>
-              <h3 style={{ color: '#e8edf3', fontSize: '2rem', margin: 0 }}>{aiResult.referenceCode}</h3>
-            </div>
-            
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '1.5rem' }}>
-              <h4 style={{ color: '#e8edf3', marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Analyse IA</h4>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <span style={{ display: 'block', color: '#7a8899', fontSize: '12px', marginBottom: '4px' }}>Sévérité</span>
-                  <span style={{ 
-                    display: 'inline-block', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold',
-                    background: `${getSeverityStyle(aiResult.severity).bg}20`,
-                    color: getSeverityStyle(aiResult.severity).bg 
-                  }}>
-                    {getSeverityStyle(aiResult.severity).text}
-                  </span>
-                </div>
-                <div>
-                  <span style={{ display: 'block', color: '#7a8899', fontSize: '12px', marginBottom: '4px' }}>Catégorie détectée</span>
-                  <span style={{ color: '#e8edf3', fontSize: '14px' }}>{aiResult.category?.name || "N/A"}</span>
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <span style={{ display: 'block', color: '#7a8899', fontSize: '12px', marginBottom: '4px' }}>Autorité notifiée</span>
-                  <span style={{ color: '#e8edf3', fontSize: '14px' }}>{aiResult.authorityNotified}</span>
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <span style={{ display: 'block', color: '#7a8899', fontSize: '12px', marginBottom: '4px' }}>Note de l'IA</span>
-                  <span style={{ color: '#e8edf3', fontSize: '14px', fontStyle: 'italic' }}>{aiResult.aiAnalysisResult}</span>
-                </div>
-              </div>
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-muted/40 p-4 text-center">
+              <p className="text-xs font-medium uppercase tracking-wide text-t3">Référence</p>
+              <p className="mt-1 font-mono text-2xl font-bold text-t1">{aiResult.referenceCode}</p>
             </div>
 
-            <button onClick={onClose} style={{
-              background: '#3b82f6', color: '#fff', padding: '0.75rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, width: '100%'
-            }}>
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <h4 className="mb-3 text-sm font-semibold text-t1">Analyse IA</h4>
+              <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs text-t3">Sévérité</dt>
+                  <dd className="mt-1">
+                    <span
+                      className="inline-flex rounded-md px-2 py-0.5 text-xs font-bold text-white"
+                      style={{
+                        backgroundColor: getSeverityStyle(aiResult.severity ?? '').bg,
+                      }}
+                    >
+                      {getSeverityStyle(aiResult.severity ?? '').text}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-t3">Catégorie détectée</dt>
+                  <dd className="mt-1 text-t1">{aiResult.category?.name ?? 'N/A'}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-xs text-t3">Autorité notifiée</dt>
+                  <dd className="mt-1 text-t1">{aiResult.authorityNotified}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-xs text-t3">Note de l&apos;IA</dt>
+                  <dd className="mt-1 italic text-t2">{aiResult.aiAnalysisResult}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <Button className="w-full" onClick={onClose}>
               Fermer
-            </button>
+            </Button>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
-}
-
-const inputStyle = {
-  background: '#0b0f14',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: '8px',
-  padding: '0.75rem',
-  color: '#e8edf3',
-  fontSize: '14px',
-  width: '100%',
-  boxSizing: 'border-box' as 'border-box'
 }

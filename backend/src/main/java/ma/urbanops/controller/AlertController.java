@@ -75,7 +75,7 @@ public class AlertController {
     }
 
     @GetMapping("/recent")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get 10 most recent alerts")
     public ResponseEntity<List<AlertResponse>> getRecentAlerts() {
         List<Alert> alerts = alertService.getRecentAlerts(10);
@@ -83,7 +83,7 @@ public class AlertController {
     }
 
     @GetMapping("/critical")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get critical unacknowledged alerts")
     public ResponseEntity<List<AlertResponse>> getCriticalAlerts() {
         List<Alert> alerts = alertService.getCriticalUnacknowledgedAlerts();

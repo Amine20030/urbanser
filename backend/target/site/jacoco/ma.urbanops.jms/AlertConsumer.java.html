@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlertConsumer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.jms</a> &gt; <span class="el_source">AlertConsumer.java</span></div><h1>AlertConsumer.java</h1><pre class="source lang-java linenums">package ma.urbanops.jms;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import ma.urbanops.dto.jms.AlertMessage;
+import ma.urbanops.service.EmailService;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+
+@Component
+<span class="nc" id="L11">@Slf4j</span>
+@RequiredArgsConstructor
+public class AlertConsumer {
+
+    private final EmailService emailService;
+
+    /**
+     * Flow: IncidentService → AlertService → AlertProducer → [JMS Queue] → AlertConsumer → EmailService
+     */
+    @JmsListener(destination = &quot;${jms.queue.alert}&quot;,
+            containerFactory = &quot;jmsListenerContainerFactory&quot;)
+    public void receiveAlert(AlertMessage message) {
+<span class="nc" id="L23">        log.info(&quot;[JMS CONSUMER] Received alert from queue for incident {}&quot;,</span>
+<span class="nc" id="L24">                message.getReferenceCode());</span>
+
+        try {
+<span class="nc" id="L27">            emailService.sendAlertEmailFromJms(</span>
+<span class="nc" id="L28">                    message.getAuthorityEmail(),</span>
+<span class="nc" id="L29">                    message.getAuthorityName(),</span>
+<span class="nc" id="L30">                    message.getReferenceCode(),</span>
+<span class="nc" id="L31">                    message.getTitle(),</span>
+<span class="nc" id="L32">                    message.getDescription(),</span>
+<span class="nc" id="L33">                    message.getSeverity(),</span>
+<span class="nc" id="L34">                    message.getCategory(),</span>
+<span class="nc" id="L35">                    message.getSector(),</span>
+<span class="nc" id="L36">                    message.getLatitude(),</span>
+<span class="nc" id="L37">                    message.getLongitude()</span>
+            );
+
+<span class="nc" id="L40">            log.info(&quot;[JMS CONSUMER] Email sent successfully to {} for incident {}&quot;,</span>
+<span class="nc" id="L41">                    message.getAuthorityEmail(), message.getReferenceCode());</span>
+
+<span class="nc" id="L43">        } catch (Exception e) {</span>
+<span class="nc" id="L44">            log.error(&quot;[JMS CONSUMER] Failed to send email for {}: {}&quot;,</span>
+<span class="nc" id="L45">                    message.getReferenceCode(), e.getMessage());</span>
+        }
+<span class="nc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

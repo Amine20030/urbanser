@@ -107,4 +107,27 @@ public class UserService {
                 .createdAt(u.getCreatedAt())
                 .build();
     }
+
+    // Admin helpers
+    @Transactional(readOnly = true)
+    public java.util.List<User> findAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<User> findByRole(Role role) {
+        return userRepository.findByRole(role);
+    }
+
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    public void deleteById(Long id) {
+        userRepository.deleteById(id);
+    }
 }

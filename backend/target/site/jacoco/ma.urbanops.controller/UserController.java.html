@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.controller</a> &gt; <span class="el_source">UserController.java</span></div><h1>UserController.java</h1><pre class="source lang-java linenums">package ma.urbanops.controller;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import ma.urbanops.dto.response.UserResponse;
+import ma.urbanops.entity.User;
+import ma.urbanops.security.UserDetailsImpl;
+import ma.urbanops.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/users&quot;)
+@RequiredArgsConstructor
+@Tag(name = &quot;Users&quot;, description = &quot;User management endpoints (Admin only)&quot;)
+@SecurityRequirement(name = &quot;bearerAuth&quot;)
+public class UserController {
+
+    private final UserService userService;
+
+    @GetMapping
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @Operation(summary = &quot;Get all users (paginated)&quot;)
+    public ResponseEntity&lt;Page&lt;UserResponse&gt;&gt; getAllUsers(Pageable pageable) {
+<span class="nc" id="L33">        Page&lt;User&gt; users = userService.findAll(pageable);</span>
+<span class="nc" id="L34">        return ResponseEntity.ok(users.map(userService::toResponse));</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @Operation(summary = &quot;Get user by ID&quot;)
+    public ResponseEntity&lt;UserResponse&gt; getUserById(@PathVariable Long id) {
+<span class="nc" id="L41">        User user = userService.findById(id);</span>
+<span class="nc" id="L42">        return ResponseEntity.ok(userService.toResponse(user));</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @Operation(summary = &quot;Deactivate user&quot;)
+    public ResponseEntity&lt;Void&gt; deactivateUser(@PathVariable Long id) {
+<span class="nc" id="L49">        userService.deactivateUser(id);</span>
+<span class="nc" id="L50">        return ResponseEntity.noContent().build();  // HTTP 204 No Content</span>
+    }
+
+    @GetMapping(&quot;/stats&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @Operation(summary = &quot;Get user statistics&quot;)
+    public ResponseEntity&lt;Map&lt;String, Long&gt;&gt; getUserStats() {
+<span class="nc" id="L57">        return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L58">                &quot;totalCitizens&quot;, userService.countCitizens(),</span>
+<span class="nc" id="L59">                &quot;activeThisWeek&quot;, userService.countActiveThisWeek(),</span>
+<span class="nc" id="L60">                &quot;totalUsers&quot;, userService.countAll()</span>
+        ));
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

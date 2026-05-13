@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
@@ -60,56 +61,64 @@ export default function IncidentDetailPage() {
   }, [raw])
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)]">
+    <div className="min-h-screen bg-background">
       <Navbar />
       <main className="max-w-3xl mx-auto px-4 pt-24 pb-16">
         <Link
           href="/incidents"
-          className="inline-flex items-center gap-2 text-sm text-[var(--t2)] hover:text-[var(--t1)] mb-6"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-t2 transition-colors hover:text-primary"
         >
           <ArrowLeft className="w-4 h-4" />
           Retour aux incidents
         </Link>
 
-        {loading && <p className="text-[var(--t3)]">Chargement…</p>}
+        {loading && <p className="text-t3">Chargement…</p>}
         {error && (
-          <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300">{error}</div>
+          <div className="rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">
+            {error}
+          </div>
         )}
 
         {!loading && !error && data && (
-          <article className="rounded-[12px] border border-[var(--border)] bg-[var(--bg-card)] p-6 space-y-4">
-            <div className="flex flex-wrap items-center gap-2 justify-between">
-              <span className="text-sm font-mono text-cyan-400">{String(data.referenceCode ?? '')}</span>
-              <div className="flex gap-2">
+          <motion.article
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6 rounded-2xl border border-border/80 bg-card/90 p-6 shadow-card backdrop-blur-md sm:p-8"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-1 font-mono text-sm font-semibold text-primary">
+                {String(data.referenceCode ?? '')}
+              </span>
+              <div className="flex flex-wrap gap-2">
                 <SeverityBadge severity={severityForBadge(String(data.severity ?? ''))} size="sm" />
                 <StatusBadge status={normalizeStatus(String(data.status ?? ''))} size="sm" />
               </div>
             </div>
-            <h1 className="text-xl font-semibold text-[var(--t1)]">{String(data.title ?? '')}</h1>
-            <p className="text-sm text-[var(--t2)] whitespace-pre-wrap">{String(data.description ?? '')}</p>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <h1 className="text-2xl font-bold tracking-tight text-t1">{String(data.title ?? '')}</h1>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-t2">{String(data.description ?? '')}</p>
+            <dl className="grid grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/30 p-4 text-sm sm:grid-cols-2 sm:p-5">
               <div>
-                <dt className="text-[var(--t3)] text-xs uppercase tracking-wide">Catégorie</dt>
-                <dd className="text-[var(--t1)]">{labelRef(data.category)}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-t3">Catégorie</dt>
+                <dd className="mt-1 font-medium text-t1">{labelRef(data.category)}</dd>
               </div>
               <div>
-                <dt className="text-[var(--t3)] text-xs uppercase tracking-wide">Secteur</dt>
-                <dd className="text-[var(--t1)]">{labelRef(data.sector)}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-t3">Secteur</dt>
+                <dd className="mt-1 font-medium text-t1">{labelRef(data.sector)}</dd>
               </div>
               <div>
-                <dt className="text-[var(--t3)] text-xs uppercase tracking-wide">Latitude</dt>
-                <dd className="text-[var(--t1)] font-mono">{String(data.latitude ?? '')}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-t3">Latitude</dt>
+                <dd className="mt-1 font-mono text-t1">{String(data.latitude ?? '')}</dd>
               </div>
               <div>
-                <dt className="text-[var(--t3)] text-xs uppercase tracking-wide">Longitude</dt>
-                <dd className="text-[var(--t1)] font-mono">{String(data.longitude ?? '')}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-t3">Longitude</dt>
+                <dd className="mt-1 font-mono text-t1">{String(data.longitude ?? '')}</dd>
               </div>
               <div className="sm:col-span-2">
-                <dt className="text-[var(--t3)] text-xs uppercase tracking-wide">Créé le</dt>
-                <dd className="text-[var(--t1)]">{String(data.createdAt ?? '')}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-t3">Créé le</dt>
+                <dd className="mt-1 text-t1">{String(data.createdAt ?? '')}</dd>
               </div>
             </dl>
-          </article>
+          </motion.article>
         )}
       </main>
       <Footer />

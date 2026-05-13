@@ -5,41 +5,44 @@ interface StatusBadgeProps {
   size?: 'sm' | 'md'
 }
 
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  open: {
-    label: 'Ouvert',
-    color: 'text-red-500',
-    bg: 'bg-red-500/10 border-red-500/20',
-  },
-  in_progress: {
-    label: 'En cours',
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10 border-amber-500/20',
-  },
-  resolved: {
-    label: 'Résolu',
-    color: 'text-green-500',
-    bg: 'bg-green-500/10 border-green-500/20',
-  },
+function normalizeKey(status: string): string {
+  const u = (status || '').toUpperCase().replace(/-/g, '_')
+  if (u === 'IN_PROGRESS') return 'IN_PROGRESS'
+  if (u === 'RESOLVED') return 'RESOLVED'
+  if (u === 'OPEN') return 'OPEN'
+  const low = (status || '').toLowerCase()
+  if (low === 'in_progress') return 'IN_PROGRESS'
+  if (low === 'resolved') return 'RESOLVED'
+  return 'OPEN'
+}
+
+const statusConfig: Record<string, { bg: string; color: string; text: string }> = {
+  OPEN: { bg: '#fef2f2', color: '#dc2626', text: '🔴 Ouvert' },
+  IN_PROGRESS: { bg: '#fffbeb', color: '#d97706', text: '🟡 En cours' },
+  RESOLVED: { bg: '#f0fdf4', color: '#16a34a', text: '✅ Résolu' },
 }
 
 export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
-  const config = statusConfig[status] || {
-    label: status,
-    color: 'text-gray-400',
-    bg: 'bg-gray-400/10 border-gray-400/20',
+  const key = normalizeKey(status)
+  const config = statusConfig[key] ?? {
+    bg: '#f1f5f9',
+    color: '#64748b',
+    text: status || '—',
   }
 
   return (
     <span
-      className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
-        config.bg,
-        config.color,
-        size === 'sm' && 'text-[10px] px-1.5'
-      )}
+      className={cn('inline-flex items-center font-semibold', size === 'sm' && 'text-[10px]')}
+      style={{
+        background: config.bg,
+        color: config.color,
+        padding: '2px 8px',
+        borderRadius: 20,
+        fontSize: size === 'sm' ? 11 : 12,
+        fontWeight: key === 'RESOLVED' ? 600 : 700,
+      }}
     >
-      {config.label}
+      {config.text}
     </span>
   )
 }

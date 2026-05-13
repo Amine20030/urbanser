@@ -2,14 +2,18 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import api from '@/lib/api'
 import { SignalerModal } from '@/components/shared/SignalerModal'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Stats {
-  totalIncidents: number
-  openIncidents: number
-  inProgressIncidents: number
-  resolvedIncidents: number
+  totalIncidents?: number
+  openIncidents?: number
+  inProgressIncidents?: number
+  resolvedIncidents?: number
+  totalCitizens?: number
 }
 
 export function HeroSection() {
@@ -19,152 +23,146 @@ export function HeroSection() {
   const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
-    // Debug: Log environment variable
-    console.log('[HeroSection] API URL:', process.env.NEXT_PUBLIC_API_URL)
-    
     const fetchStats = async () => {
       try {
-        console.log('[HeroSection] Fetching stats...')
         const response = await api.get('/stats/dashboard')
-        console.log('[HeroSection] Stats received:', response.data)
         setStats(response.data)
       } catch (err: unknown) {
-        console.error('[HeroSection] Fetch error:', err)
         const ax = err as { response?: { data?: { message?: string } }; message?: string }
         setError(ax.response?.data?.message || ax.message || 'Impossible de charger les statistiques.')
       } finally {
         setLoading(false)
       }
     }
-
-    fetchStats()
+    void fetchStats()
   }, [])
 
   return (
-    <section className="relative" style={{
-      padding: '4rem 1.5rem',
-      textAlign: 'center'
-    }}>
-      <h1 style={{
-        fontSize: 'clamp(2rem, 5vw, 3.5rem)',
-        fontWeight: 800,
-        color: 'var(--t1)',
-        marginBottom: '1rem',
-        lineHeight: 1.1
-      }}>
-        Signalez les incidents urbains
-        <br />
-        <span style={{ color: '#3b82f6' }}>de Marrakech</span>
-      </h1>
+    <section className="relative px-4 pb-16 pt-12 text-center sm:px-6 sm:pt-16">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="mx-auto max-w-4xl"
+      >
+        <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-t2 shadow-sm backdrop-blur-md">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          Supervision urbaine — Marrakech
+        </p>
 
-      <p style={{
-        fontSize: '1.125rem',
-        color: 'var(--t2)',
-        maxWidth: '600px',
-        margin: '0 auto 2rem',
-        lineHeight: 1.6
-      }}>
-        UrbanOps connecte citoyens et autorités locales pour une gestion
-        efficace des problèmes urbains : éclairage, voirie, propreté, et plus.
-      </p>
+        <h1
+          className="text-balance font-black leading-[1.1] tracking-tight"
+          style={{
+            fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+          }}
+        >
+          <span
+            style={{
+              background: 'linear-gradient(135deg, #1d4ed8, #06b6d4)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            Marrakech
+          </span>{' '}
+          <span className="text-t1">signale,</span>
+          <br />
+          <span className="text-t1">la ville répond.</span>
+        </h1>
 
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        justifyContent: 'center',
-        marginBottom: '3rem',
-        flexWrap: 'wrap'
-      }}>
-        <button onClick={() => setModalOpen(true)} style={{
-          background: '#1d4ed8',
-          color: '#fff',
-          textDecoration: 'none',
-          padding: '12px 28px',
-          borderRadius: '8px',
-          fontWeight: 600,
-          fontSize: '15px',
-          border: 'none',
-          cursor: 'pointer'
-        }}>
-          📍 Signaler un incident
-        </button>
-        <Link href="/carte" style={{
-          background: 'var(--bg-card)',
-          color: 'var(--t1)',
-          textDecoration: 'none',
-          padding: '12px 28px',
-          borderRadius: '8px',
-          fontWeight: 500,
-          fontSize: '15px',
-          border: '1px solid var(--border)'
-        }}>
-          Voir la carte
-        </Link>
+        <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-t2 sm:text-lg">
+          Photographiez un problème. Notre IA l&apos;analyse en secondes.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <Button
+            size="lg"
+            className="gap-2 px-8 py-6 text-base shadow-lg shadow-primary/25"
+            onClick={() => setModalOpen(true)}
+          >
+            📷 Signaler maintenant
+          </Button>
+          <Button size="lg" variant="outline" className="gap-2 px-8 py-6 text-base" asChild>
+            <Link href="/carte">Voir la carte →</Link>
+          </Button>
+        </div>
+      </motion.div>
+
+      <div className="mx-auto mt-14 max-w-4xl">
+        {loading && (
+          <div className="flex justify-center gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 flex-1 rounded-full" />
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">
+            {error}
+          </div>
+        )}
+
+        {stats && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.45 }}
+            className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card/70 px-4 py-3 shadow-card backdrop-blur-md sm:gap-4 sm:px-8"
+          >
+            <HeroStat label="Signalements" value={Number(stats.totalIncidents ?? 0)} delay={0} />
+            <span className="hidden text-t3 sm:inline">·</span>
+            <HeroStat label="Résolus" value={Number(stats.resolvedIncidents ?? 0)} delay={0.06} />
+            <span className="hidden text-t3 sm:inline">·</span>
+            <HeroStat label="Citoyens" value={Number(stats.totalCitizens ?? 0)} delay={0.12} />
+            <span className="hidden text-t3 sm:inline">·</span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-sm font-bold tabular-nums text-primary sm:text-base"
+            >
+              &lt;2min IA
+            </motion.span>
+          </motion.div>
+        )}
       </div>
-
-      {/* Stats */}
-      {loading && (
-        <div style={{ color: '#7a8899', fontSize: '14px' }}>
-          Chargement des statistiques...
-        </div>
-      )}
-
-      {error && (
-        <div style={{
-          background: 'rgba(239,68,68,0.1)',
-          color: '#ef4444',
-          padding: '1rem',
-          borderRadius: '8px',
-          maxWidth: '400px',
-          margin: '0 auto',
-          fontSize: '14px'
-        }}>
-          ⚠️ Erreur: {error}
-        </div>
-      )}
-
-      {stats && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-          gap: '1rem',
-          maxWidth: '600px',
-          margin: '0 auto'
-        }}>
-          <StatCard label="Total" value={Number(stats.totalIncidents ?? 0)} color="#3b82f6" />
-          <StatCard label="Ouverts" value={Number(stats.openIncidents ?? 0)} color="#f59e0b" />
-          <StatCard label="En cours" value={Number(stats.inProgressIncidents ?? 0)} color="#8b5cf6" />
-          <StatCard label="Résolus" value={Number(stats.resolvedIncidents ?? 0)} color="#10b981" />
-        </div>
-      )}
 
       <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </section>
   )
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function HeroStat({ label, value, delay }: { label: string; value: number; delay: number }) {
+  const [displayed, setDisplayed] = useState(0)
+  useEffect(() => {
+    if (value === 0) {
+      setDisplayed(0)
+      return
+    }
+    const step = Math.max(1, Math.ceil(value / 45))
+    let current = 0
+    const timer = setInterval(() => {
+      current = Math.min(current + step, value)
+      setDisplayed(current)
+      if (current >= value) clearInterval(timer)
+    }, 22)
+    return () => clearInterval(timer)
+  }, [value])
+
   return (
-    <div style={{
-      background: 'var(--bg-card)',
-      border: '1px solid var(--border)',
-      borderRadius: '12px',
-      padding: '1.5rem 1rem'
-    }}>
-      <div style={{
-        fontSize: '2rem',
-        fontWeight: 700,
-        color: color
-      }}>
-        {value.toLocaleString()}
-      </div>
-      <div style={{
-        fontSize: '12px',
-        color: 'var(--t2)',
-        marginTop: '0.25rem'
-      }}>
-        {label}
-      </div>
-    </div>
+    <motion.span
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay, duration: 0.35 }}
+      className="inline-flex min-w-[5.5rem] flex-col items-center sm:min-w-0"
+    >
+      <span className="font-mono text-lg font-extrabold tabular-nums text-t1 sm:text-xl">{displayed}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-t3">{label}</span>
+    </motion.span>
   )
 }

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AIAnalysisRemoteImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.rmi</a> &gt; <span class="el_source">AIAnalysisRemoteImpl.java</span></div><h1>AIAnalysisRemoteImpl.java</h1><pre class="source lang-java linenums">package ma.urbanops.rmi;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import ma.urbanops.dto.response.AIAnalysisResult;
+import ma.urbanops.service.AIAnalysisService;
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+<span class="nc" id="L13">@Slf4j</span>
+public class AIAnalysisRemoteImpl extends UnicastRemoteObject implements AIAnalysisRemote {
+
+<span class="nc" id="L16">    private static final ObjectMapper JSON = new ObjectMapper();</span>
+
+    private final AIAnalysisService aiAnalysisService;
+
+    public AIAnalysisRemoteImpl(AIAnalysisService aiAnalysisService) throws RemoteException {
+<span class="nc" id="L21">        super();</span>
+<span class="nc" id="L22">        this.aiAnalysisService = aiAnalysisService;</span>
+<span class="nc" id="L23">    }</span>
+
+    @Override
+    public String classifyIncident(String description, String categoryHint) throws RemoteException {
+<span class="nc" id="L27">        log.info(&quot;[RMI] classifyIncident called&quot;);</span>
+        try {
+<span class="nc" id="L29">            AIAnalysisResult result = aiAnalysisService.analyze(description, categoryHint);</span>
+<span class="nc" id="L30">            return toJson(result, Boolean.TRUE.equals(result.getFallbackUsed()));</span>
+<span class="nc" id="L31">        } catch (Exception e) {</span>
+<span class="nc" id="L32">            log.error(&quot;[RMI] classifyIncident error: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L33">            AIAnalysisResult fallback = aiAnalysisService.fallback(description, categoryHint);</span>
+<span class="nc" id="L34">            return toJson(fallback, true);</span>
+        }
+    }
+
+    @Override
+    public String getSeverity(String description) throws RemoteException {
+<span class="nc" id="L40">        log.info(&quot;[RMI] getSeverity called&quot;);</span>
+        try {
+<span class="nc" id="L42">            AIAnalysisResult result = aiAnalysisService.analyze(description, null);</span>
+<span class="nc" id="L43">            return result.getSeverity();</span>
+<span class="nc" id="L44">        } catch (Exception e) {</span>
+<span class="nc" id="L45">            return &quot;MEDIUM&quot;;</span>
+        }
+    }
+
+    @Override
+    public String ping() throws RemoteException {
+<span class="nc" id="L51">        return &quot;OK — UrbanOps RMI AI Service running&quot;;</span>
+    }
+
+    private String toJson(AIAnalysisResult r, boolean fallback) throws RemoteException {
+        try {
+<span class="nc" id="L56">            Map&lt;String, Object&gt; m = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L57">            m.put(&quot;category&quot;, r.getCategory());</span>
+<span class="nc" id="L58">            m.put(&quot;severity&quot;, r.getSeverity());</span>
+<span class="nc" id="L59">            m.put(&quot;authority&quot;, r.getAuthorityName());</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            m.put(&quot;confidence&quot;, r.getConfidence() != null ? r.getConfidence() : 0.0);</span>
+<span class="nc" id="L61">            m.put(&quot;fallback&quot;, fallback);</span>
+<span class="nc" id="L62">            return JSON.writeValueAsString(m);</span>
+<span class="nc" id="L63">        } catch (Exception e) {</span>
+<span class="nc" id="L64">            throw new RemoteException(&quot;JSON encoding failed&quot;, e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

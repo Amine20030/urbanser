@@ -80,7 +80,7 @@ public class IncidentController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     @Operation(summary = "Update incident status")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<IncidentResponse> updateStatus(

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlertService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.service</a> &gt; <span class="el_source">AlertService.java</span></div><h1>AlertService.java</h1><pre class="source lang-java linenums">package ma.urbanops.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import ma.urbanops.entity.Alert;
+import ma.urbanops.entity.Category;
+import ma.urbanops.entity.Incident;
+import ma.urbanops.enums.Severity;
+import ma.urbanops.exception.ResourceNotFoundException;
+import ma.urbanops.repository.AlertRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+<span class="fc" id="L18">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class AlertService {
+
+    private final AlertRepository alertRepository;
+    private final ma.urbanops.jms.AlertProducer alertProducer;
+
+    @Transactional
+    public Alert createAndSendAlert(Incident incident) {
+<span class="nc" id="L29">        log.info(&quot;Creating alert for incident: {}&quot;, incident.getReferenceCode());</span>
+        
+<span class="nc" id="L31">        Category category = incident.getCategory();</span>
+<span class="nc" id="L32">        String authorityEmail = category.getAuthorityEmail();</span>
+<span class="nc" id="L33">        String authorityName = category.getDefaultAuthority();</span>
+        
+<span class="nc" id="L35">        Alert alert = Alert.builder()</span>
+<span class="nc" id="L36">                .incident(incident)</span>
+<span class="nc" id="L37">                .severity(incident.getSeverity())</span>
+<span class="nc" id="L38">                .title(incident.getTitle())</span>
+<span class="nc" id="L39">                .message(buildAlertMessage(incident))</span>
+<span class="nc" id="L40">                .sentTo(authorityEmail)</span>
+<span class="nc" id="L41">                .emailSent(false)</span>
+<span class="nc" id="L42">                .acknowledged(false)</span>
+<span class="nc" id="L43">                .build();</span>
+        
+<span class="nc" id="L45">        Alert savedAlert = alertRepository.save(alert);</span>
+        
+        // Queue authority alert email via JMS (consumer calls EmailService)
+<span class="nc bnc" id="L48" title="All 4 branches missed.">        if (authorityEmail != null &amp;&amp; !authorityEmail.isEmpty()) {</span>
+<span class="nc" id="L49">            alertProducer.sendAlertToQueue(incident);</span>
+<span class="nc" id="L50">            savedAlert.setEmailSent(true);</span>
+<span class="nc" id="L51">            alertRepository.save(savedAlert);</span>
+<span class="nc" id="L52">            log.info(&quot;[JMS] Alert queued for incident {}&quot;, incident.getReferenceCode());</span>
+        }
+        
+<span class="nc" id="L55">        log.info(&quot;Alert created and sent for incident: {}&quot;, incident.getReferenceCode());</span>
+<span class="nc" id="L56">        return savedAlert;</span>
+    }
+
+    private String buildAlertMessage(Incident incident) {
+<span class="nc" id="L60">        return String.format(&quot;[%s] %s in %s - %s&quot;,</span>
+<span class="nc" id="L61">                incident.getSeverity(),</span>
+<span class="nc" id="L62">                incident.getTitle(),</span>
+<span class="nc" id="L63">                incident.getSector().getName(),</span>
+<span class="nc" id="L64">                incident.getDescription());</span>
+    }
+
+    @Transactional
+    public void resendAlert(Long alertId) {
+<span class="nc" id="L69">        log.info(&quot;Resending alert: {}&quot;, alertId);</span>
+<span class="nc" id="L70">        Alert alert = alertRepository.findById(alertId)</span>
+<span class="nc" id="L71">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Alert&quot;, &quot;id&quot;, alertId));</span>
+        
+<span class="nc" id="L73">        Incident incident = alert.getIncident();</span>
+<span class="nc" id="L74">        Category category = incident.getCategory();</span>
+        
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (category.getAuthorityEmail() != null) {</span>
+<span class="nc" id="L77">            alertProducer.sendAlertToQueue(incident);</span>
+<span class="nc" id="L78">            alert.setEmailSent(true);</span>
+<span class="nc" id="L79">            alertRepository.save(alert);</span>
+        }
+<span class="nc" id="L81">    }</span>
+
+    @Transactional
+    public void acknowledgeAlert(Long alertId) {
+<span class="nc" id="L85">        log.info(&quot;Acknowledging alert: {}&quot;, alertId);</span>
+<span class="nc" id="L86">        Alert alert = alertRepository.findById(alertId)</span>
+<span class="nc" id="L87">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Alert&quot;, &quot;id&quot;, alertId));</span>
+        
+<span class="nc" id="L89">        alert.acknowledge();</span>
+<span class="nc" id="L90">        alertRepository.save(alert);</span>
+<span class="nc" id="L91">    }</span>
+
+    public List&lt;Alert&gt; getCriticalUnacknowledgedAlerts() {
+<span class="nc" id="L94">        return alertRepository.findCriticalUnacknowledged(Severity.HIGH);</span>
+    }
+
+    public List&lt;Alert&gt; getAllUnacknowledgedAlerts() {
+<span class="nc" id="L98">        return alertRepository.findAllUnacknowledgedOrderBySeverity();</span>
+    }
+
+    public List&lt;Alert&gt; getRecentAlerts(int limit) {
+<span class="nc" id="L102">        return alertRepository.findRecentAlerts(Pageable.ofSize(limit));</span>
+    }
+
+    public Page&lt;Alert&gt; getAllAlerts(Pageable pageable) {
+<span class="nc" id="L106">        return alertRepository.findAll(pageable);</span>
+    }
+
+    public Alert findById(Long id) {
+<span class="nc" id="L110">        return alertRepository.findById(id)</span>
+<span class="nc" id="L111">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Alert&quot;, &quot;id&quot;, id));</span>
+    }
+
+    public List&lt;Alert&gt; findByIncident(Long incidentId) {
+<span class="nc" id="L115">        return alertRepository.findByIncident(Incident.builder().id(incidentId).build());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

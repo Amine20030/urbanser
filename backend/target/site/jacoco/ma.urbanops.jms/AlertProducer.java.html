@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlertProducer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.jms</a> &gt; <span class="el_source">AlertProducer.java</span></div><h1>AlertProducer.java</h1><pre class="source lang-java linenums">package ma.urbanops.jms;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import ma.urbanops.dto.jms.AlertMessage;
+import ma.urbanops.entity.Incident;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Component;
+
+@Component
+<span class="nc" id="L12">@Slf4j</span>
+@RequiredArgsConstructor
+public class AlertProducer {
+
+    private final JmsTemplate jmsTemplate;
+
+    @Value(&quot;${jms.queue.alert}&quot;)
+    private String alertQueue;
+
+    /**
+     * Sends an alert message to the JMS queue.
+     * Returns immediately — the consumer processes it asynchronously.
+     */
+    public void sendAlertToQueue(Incident incident) {
+        try {
+<span class="nc" id="L27">            AlertMessage message = AlertMessage.builder()</span>
+<span class="nc" id="L28">                    .incidentId(incident.getId())</span>
+<span class="nc" id="L29">                    .referenceCode(incident.getReferenceCode())</span>
+<span class="nc" id="L30">                    .title(incident.getTitle())</span>
+<span class="nc" id="L31">                    .description(incident.getDescription())</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">                    .severity(incident.getSeverity() != null ? incident.getSeverity().name() : &quot;MEDIUM&quot;)</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">                    .category(incident.getCategory() != null ? incident.getCategory().getName() : &quot;&quot;)</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">                    .sector(incident.getSector() != null ? incident.getSector().getName() : &quot;&quot;)</span>
+<span class="nc" id="L35">                    .authorityName(incident.getAuthorityNotified())</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">                    .authorityEmail(incident.getCategory() != null</span>
+<span class="nc" id="L37">                            ? incident.getCategory().getAuthorityEmail() : &quot;&quot;)</span>
+<span class="nc" id="L38">                    .latitude(incident.getLatitude())</span>
+<span class="nc" id="L39">                    .longitude(incident.getLongitude())</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                    .reporterEmail(incident.getReportedBy() != null</span>
+<span class="nc" id="L41">                            ? incident.getReportedBy().getEmail() : &quot;anonyme&quot;)</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                    .createdAt(incident.getCreatedAt() != null</span>
+<span class="nc" id="L43">                            ? incident.getCreatedAt().toString() : &quot;&quot;)</span>
+<span class="nc" id="L44">                    .build();</span>
+
+<span class="nc" id="L46">            jmsTemplate.convertAndSend(alertQueue, message);</span>
+<span class="nc" id="L47">            log.info(&quot;[JMS PRODUCER] Alert message sent to queue '{}' for incident {}&quot;,</span>
+<span class="nc" id="L48">                    alertQueue, incident.getReferenceCode());</span>
+
+<span class="nc" id="L50">        } catch (Exception e) {</span>
+<span class="nc" id="L51">            log.error(&quot;[JMS PRODUCER] Failed to send to queue, incident saved anyway: {}&quot;,</span>
+<span class="nc" id="L52">                    e.getMessage());</span>
+        }
+<span class="nc" id="L54">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -22,7 +22,7 @@ import java.util.List;
 public class AlertService {
 
     private final AlertRepository alertRepository;
-    private final EmailService emailService;
+    private final ma.urbanops.jms.AlertProducer alertProducer;
 
     @Transactional
     public Alert createAndSendAlert(Incident incident) {
@@ -44,11 +44,12 @@ public class AlertService {
         
         Alert savedAlert = alertRepository.save(alert);
         
-        // Send email
+        // Queue authority alert email via JMS (consumer calls EmailService)
         if (authorityEmail != null && !authorityEmail.isEmpty()) {
-            emailService.sendAlertEmail(authorityEmail, authorityName, incident);
+            alertProducer.sendAlertToQueue(incident);
             savedAlert.setEmailSent(true);
             alertRepository.save(savedAlert);
+            log.info("[JMS] Alert queued for incident {}", incident.getReferenceCode());
         }
         
         log.info("Alert created and sent for incident: {}", incident.getReferenceCode());
@@ -73,7 +74,7 @@ public class AlertService {
         Category category = incident.getCategory();
         
         if (category.getAuthorityEmail() != null) {
-            emailService.sendAlertEmail(category.getAuthorityEmail(), category.getDefaultAuthority(), incident);
+            alertProducer.sendAlertToQueue(incident);
             alert.setEmailSent(true);
             alertRepository.save(alert);
         }

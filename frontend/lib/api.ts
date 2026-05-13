@@ -153,6 +153,20 @@ export const sectorAPI = {
   getIncidents: (id: number) => api.get(`/sectors/${id}/incidents`),
 };
 
+// Admin incidents API (admin actions)
+export const incidentsApi = {
+  changeStatus: async (id: number, newStatus: string) => {
+    const response = await api.patch(`/incidents/${id}/status`, { newStatus });
+    return response.data;
+  },
+
+  delete: async (id: number) => {
+    await api.delete(`/incidents/${id}`);
+  },
+
+  getAll: (params?: any) => api.get('/incidents', { params }),
+};
+
 // Users API (Admin only)
 export const userAPI = {
   getAll: (params?: { page?: number; size?: number }) => api.get('/users', { params }),
@@ -162,6 +176,28 @@ export const userAPI = {
   deactivate: (id: number) => api.delete(`/users/${id}`),
   
   getStats: () => api.get('/users/stats'),
+};
+
+// Admin Users API
+export const adminUsersApi = {
+  getAll: async () => {
+    const response = await api.get('/admin/users');
+    return response.data;
+  },
+
+  create: async (userData: any) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  },
+
+  update: async (id: number, userData: any) => {
+    const response = await api.put(`/admin/users/${id}`, userData);
+    return response.data;
+  },
+
+  delete: async (id: number) => {
+    await api.delete(`/admin/users/${id}`);
+  },
 };
 
 export default api;

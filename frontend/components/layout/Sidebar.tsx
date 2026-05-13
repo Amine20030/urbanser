@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import {
   LayoutDashboard,
   Map,
@@ -35,47 +36,64 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-[220px] bg-[var(--bg-sidebar)] border-r border-[var(--border)]">
-      {/* Logo */}
-      <div className="h-[52px] flex items-center px-4 border-b border-[var(--border)]">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg font-bold text-[var(--t1)]">🏙 UrbanOps</span>
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[220px] flex-col border-r border-border bg-sidebar/90 backdrop-blur-xl shadow-card lg:w-60">
+      <div className="flex h-16 items-center border-b border-border px-4">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-cyan-600 text-base shadow-md">
+            🏙
+          </span>
+          <span className="text-sm font-bold tracking-tight text-t1">UrbanOps</span>
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="p-3 space-y-1">
-        {navItems.map((item) => {
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        {navItems.map((item, i) => {
           const Icon = item.icon
-          const isActive = pathname.startsWith(item.href)
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
 
           return (
-            <Link
+            <motion.div
               key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
-                isActive
-                  ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20'
-                  : 'text-[var(--t2)] hover:text-[var(--t1)] hover:bg-[var(--bg-hover)]'
-              )}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.25 }}
             >
-              <Icon className="w-4 h-4" />
-              <span className="font-medium">{item.label}</span>
-            </Link>
+              <Link
+                href={item.href}
+                className={cn(
+                  'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                  isActive
+                    ? 'bg-gradient-to-r from-sky-500/20 to-cyan-500/10 text-t1 shadow-sm ring-1 ring-primary/25'
+                    : 'text-t2 hover:bg-hover hover:text-t1'
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-lg border transition-colors',
+                    isActive
+                      ? 'border-primary/30 bg-primary/10 text-primary'
+                      : 'border-transparent bg-muted/50 text-t3 group-hover:border-border group-hover:text-t2'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span>{item.label}</span>
+              </Link>
+            </motion.div>
           )
         })}
       </nav>
 
-      {/* Bottom section */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-[var(--border)]">
+      <div className="border-t border-border p-3">
         <button
           type="button"
           onClick={logout}
-          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm text-[var(--t2)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-t2 transition-colors hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400"
         >
-          <LogOut className="w-4 h-4" />
-          <span className="font-medium">Déconnexion</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50">
+            <LogOut className="h-4 w-4" />
+          </span>
+          Déconnexion
         </button>
       </div>
     </aside>

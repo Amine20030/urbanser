@@ -26,17 +26,45 @@ public class EmailService {
     private String fromEmail;
 
     /**
-     * Sends alert email asynchronously — does NOT block the API response.
-     * If SMTP is slow (30s timeout), the incident creation API returns immediately.
-     *
-     * @Async runs this in a separate thread pool (see AsyncConfig).
-     *
-     * @param toEmail recipient email
-     * @param authorityName authority name
-     * @param incident the incident to alert about
-     * @return CompletableFuture for async completion tracking
+     * Called by the JMS consumer — sends alert email to the authority.
+     * Not {@code @Async}: already invoked from a JMS listener thread.
      */
-    @Async  // FIX 4: Non-blocking async execution
+    public void sendAlertEmailFromJms(String toEmail, String authorityName,
+            String referenceCode, String title, String description,
+            String severity, String category, String sector,
+            Double lat, Double lng) {
+        try {
+            if (toEmail == null || toEmail.isBlank()) {
+                log.warn("[EMAIL] No authority email for incident {}", referenceCode);
+                return;
+            }
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setFrom(fromEmail);
+            mail.setTo(toEmail);
+            mail.setSubject("[UrbanOps] Alerte " + severity + " — " + referenceCode);
+            mail.setText(
+                    "Autorité : " + authorityName + "\n" +
+                            "Référence : " + referenceCode + "\n" +
+                            "Catégorie : " + category + "\n" +
+                            "Secteur : " + sector + "\n" +
+                            "Titre : " + title + "\n" +
+                            "Description : " + description + "\n" +
+                            "Niveau de danger : " + severity + "\n" +
+                            "Localisation : " + lat + ", " + lng + "\n" +
+                            "Carte : https://www.google.com/maps?q=" + lat + "," + lng + "\n\n" +
+                            "— UrbanOps Marrakech"
+            );
+            mailSender.send(mail);
+            log.info("[EMAIL] Alert mail sent to {} for {}", toEmail, referenceCode);
+        } catch (Exception e) {
+            log.error("[EMAIL] Send failed: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Legacy direct alert send (HTML). Prefer the JMS path ({@link #sendAlertEmailFromJms}) for new alerts.
+     */
+    @Async
     public CompletableFuture<Void> sendAlertEmail(String toEmail, String authorityName, Incident incident) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -50,7 +78,6 @@ public class EmailService {
             log.info("Alert email sent to: {} for incident {}", toEmail, incident.getReferenceCode());
         } catch (MessagingException e) {
             log.error("Failed to send alert email: {}", e.getMessage());
-            // FIX 4: Do NOT rethrow — async failure must not break the API response
         }
         return CompletableFuture.completedFuture(null);
     }

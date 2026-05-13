@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package ma.urbanops.controller;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import ma.urbanops.dto.request.LoginRequest;
+import ma.urbanops.dto.request.RegisterRequest;
+import ma.urbanops.dto.response.AuthResponse;
+import ma.urbanops.dto.response.UserResponse;
+import ma.urbanops.entity.User;
+import ma.urbanops.security.JwtTokenProvider;
+import ma.urbanops.security.UserDetailsImpl;
+import ma.urbanops.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping(&quot;/auth&quot;)
+@RequiredArgsConstructor
+@Tag(name = &quot;Authentication&quot;, description = &quot;User registration and login endpoints&quot;)
+public class AuthController {
+
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider tokenProvider;
+    private final UserService userService;
+
+    @PostMapping(&quot;/register&quot;)
+    @Operation(summary = &quot;Register a new citizen account&quot;)
+    public ResponseEntity&lt;UserResponse&gt; register(@Valid @RequestBody RegisterRequest request) {
+<span class="fc" id="L37">        User user = userService.register(request);</span>
+<span class="fc" id="L38">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="fc" id="L39">                .header(&quot;Location&quot;, &quot;/api/v1/users/&quot; + user.getId())</span>
+<span class="fc" id="L40">                .body(userService.toResponse(user));</span>
+    }
+
+    @PostMapping(&quot;/login&quot;)
+    @Operation(summary = &quot;Login and receive JWT token&quot;)
+    public ResponseEntity&lt;AuthResponse&gt; login(@Valid @RequestBody LoginRequest request) {
+<span class="fc" id="L46">        Authentication authentication = authenticationManager.authenticate(</span>
+<span class="fc" id="L47">                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())</span>
+        );
+
+<span class="fc" id="L50">        SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+<span class="fc" id="L51">        String jwt = tokenProvider.generateToken(authentication);</span>
+<span class="fc" id="L52">        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();</span>
+
+<span class="fc" id="L54">        User user = userService.findByEmail(userDetails.getUsername());</span>
+
+<span class="fc" id="L56">        return ResponseEntity.ok(AuthResponse.builder()</span>
+<span class="fc" id="L57">                .token(jwt)</span>
+<span class="fc" id="L58">                .tokenType(&quot;Bearer&quot;)</span>
+<span class="fc" id="L59">                .expiresIn(tokenProvider.getExpirationTime())</span>
+<span class="fc" id="L60">                .user(userService.toResponse(user))</span>
+<span class="fc" id="L61">                .build());</span>
+    }
+
+    @GetMapping(&quot;/me&quot;)
+    @Operation(summary = &quot;Get current authenticated user profile&quot;)
+    public ResponseEntity&lt;UserResponse&gt; getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+<span class="fc" id="L67">        User user = userService.findByEmail(userDetails.getUsername());</span>
+<span class="fc" id="L68">        return ResponseEntity.ok(userService.toResponse(user));</span>
+    }
+
+    @PutMapping(&quot;/me&quot;)
+    @Operation(summary = &quot;Update current user profile&quot;)
+    public ResponseEntity&lt;UserResponse&gt; updateProfile(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @Valid @RequestBody RegisterRequest request) {
+<span class="nc" id="L76">        User updatedUser = userService.updateProfile(userDetails.getId(), request);</span>
+<span class="nc" id="L77">        return ResponseEntity.ok(userService.toResponse(updatedUser));</span>
+    }
+
+    @PostMapping(&quot;/logout&quot;)
+    @Operation(summary = &quot;Logout (token invalidation handled client-side)&quot;)
+    public ResponseEntity&lt;Void&gt; logout() {
+<span class="fc" id="L83">        SecurityContextHolder.clearContext();</span>
+<span class="fc" id="L84">        return ResponseEntity.noContent().build();  // HTTP 204 No Content</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

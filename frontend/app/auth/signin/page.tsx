@@ -2,9 +2,14 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Building2, Eye, EyeOff } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Eye, EyeOff } from 'lucide-react'
 import { FormEvent, useState } from 'react'
 import { authAPI } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function SignInPage() {
   const router = useRouter()
@@ -30,6 +35,7 @@ export default function SignInPage() {
       if (data.user) {
         localStorage.setItem('urbanops_user', JSON.stringify(data.user))
       }
+      window.dispatchEvent(new Event('urbanops-auth-changed'))
       if (rememberMe) {
         localStorage.setItem('urbanops_remember', '1')
       } else {
@@ -51,108 +57,107 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 bg-mesh-light dark:bg-mesh-dark" aria-hidden />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative z-10 w-full max-w-md"
+      >
+        <div className="mb-8 flex justify-center">
           <Link href="/" className="flex items-center gap-2">
-            <Building2 className="w-8 h-8 text-cyan-400" />
-            <span className="text-2xl font-bold text-[var(--t1)]">UrbanOps</span>
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-lg shadow-lg">
+              🏙
+            </span>
+            <span className="text-2xl font-bold tracking-tight text-t1">UrbanOps</span>
           </Link>
         </div>
 
-        <div className="p-8 rounded-[12px] bg-[var(--bg-card)] border border-[var(--border)]">
-          <h1 className="text-xl font-semibold text-[var(--t1)] text-center mb-6">
-            Connexion à UrbanOps
-          </h1>
+        <Card className="border-border/80 shadow-glass backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-center text-xl">Connexion</CardTitle>
+            <CardDescription className="text-center">Accédez au tableau de bord opérationnel.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <div className="mb-4 rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-300">
+                {error}
+              </div>
+            )}
 
-          {error && (
-            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-              {error}
-            </div>
-          )}
-
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <div>
-              <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre@email.com"
-                className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                Mot de passe
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+            <form className="space-y-4" onSubmit={onSubmit}>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vous@email.com"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t3)] hover:text-[var(--t2)]"
-                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Mot de passe</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-t3 hover:bg-hover hover:text-t1"
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="remember"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-input text-primary focus:ring-ring/40"
+                />
+                <Label htmlFor="remember" className="normal-case tracking-normal text-t2">
+                  Se souvenir de moi
+                </Label>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Connexion…' : 'Se connecter'}
+              </Button>
+            </form>
+
+            <div className="mt-6 space-y-3 text-center text-sm">
+              <p>
+                <span className="text-t2">Pas encore de compte ? </span>
+                <Link href="/auth/signup" className="font-semibold text-primary hover:underline">
+                  S&apos;inscrire
+                </Link>
+              </p>
+              <div className="border-t border-border pt-4">
+                <Link href="/" className="text-t3 transition-colors hover:text-t2">
+                  Continuer en tant que citoyen →
+                </Link>
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="remember"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-hover)] text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="remember" className="text-sm text-[var(--t2)]">
-                Se souvenir de moi
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors disabled:opacity-60"
-            >
-              {loading ? 'Connexion…' : 'Se connecter'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center space-y-3">
-            <p className="text-sm">
-              <span className="text-[var(--t2)]">Pas encore de compte ? </span>
-              <Link href="/auth/signup" className="text-blue-400 hover:text-blue-300">
-                S&apos;inscrire →
-              </Link>
-            </p>
-
-            <div className="pt-4 border-t border-[var(--border)]">
-              <Link
-                href="/"
-                className="text-sm text-[var(--t3)] hover:text-[var(--t2)] transition-colors"
-              >
-                Ou continuer en tant que citoyen →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   )
 }

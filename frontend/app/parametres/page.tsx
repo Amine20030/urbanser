@@ -2,7 +2,10 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { motion } from 'framer-motion'
+import { DashboardShell } from '@/components/layout/DashboardShell'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 type StoredUser = {
   firstName?: string
@@ -31,57 +34,50 @@ export default function ParametresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)]">
-      <Sidebar />
-      <main className="ml-[220px] p-6 max-w-2xl">
-        <h1 className="text-xl font-semibold text-[var(--t1)] mb-2">Paramètres</h1>
-        <p className="text-sm text-[var(--t3)] mb-8">
-          Session locale et préférences minimales (le compte est géré côté serveur).
-        </p>
+    <DashboardShell>
+      <main className="mx-auto max-w-2xl p-4 sm:p-6">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight text-t1">Paramètres</h1>
+          <p className="mt-1 text-sm text-t3">Session locale et préférences.</p>
+        </motion.div>
 
-        <div className="rounded-[10px] border border-[var(--border)] bg-[var(--bg-card)] p-6 space-y-4">
-          <h2 className="text-sm font-medium text-[var(--t1)]">Profil (navigateur)</h2>
-          {user ? (
-            <dl className="text-sm space-y-2 text-[var(--t2)]">
-              <div>
-                <dt className="text-[var(--t3)] text-xs uppercase">Nom</dt>
-                <dd>
-                  {user.firstName} {user.lastName}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[var(--t3)] text-xs uppercase">Email</dt>
-                <dd className="font-mono">{user.email}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--t3)] text-xs uppercase">Rôle</dt>
-                <dd>{user.role}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="text-sm text-[var(--t3)]">
-              Non connecté — les paramètres de profil détaillés seront disponibles après connexion.
-            </p>
-          )}
+        <Card className="border-border/80">
+          <CardHeader>
+            <CardTitle>Profil (navigateur)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {user ? (
+              <dl className="space-y-4 text-sm text-t2">
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-t3">Nom</dt>
+                  <dd className="mt-1 text-t1">
+                    {user.firstName} {user.lastName}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-t3">Email</dt>
+                  <dd className="mt-1 font-mono text-t1">{user.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-t3">Rôle</dt>
+                  <dd className="mt-1 text-t1">{user.role}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-sm text-t3">Non connecté — connectez-vous pour afficher le profil.</p>
+            )}
 
-          <div className="pt-4 border-t border-[var(--border)] flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={logout}
-              className="px-4 py-2 rounded-lg bg-red-600/90 text-white text-sm font-medium hover:bg-red-500"
-            >
-              Se déconnecter sur cet appareil
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 rounded-lg border border-[var(--border)] text-sm text-[var(--t1)] hover:bg-[var(--bg-hover)]"
-            >
-              Retour au tableau de bord
-            </button>
-          </div>
-        </div>
+            <div className="flex flex-wrap gap-3 border-t border-border pt-6">
+              <Button variant="destructive" onClick={logout}>
+                Se déconnecter sur cet appareil
+              </Button>
+              <Button variant="secondary" onClick={() => router.push('/dashboard')}>
+                Retour au tableau de bord
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </main>
-    </div>
+    </DashboardShell>
   )
 }

@@ -30,7 +30,7 @@ export function SignalerModal({ isOpen, onClose, initialLocation }: SignalerModa
 
   useEffect(() => {
     if (isOpen) {
-      Promise.all([categoryApi.getAll(), sectorApi.getAll()])
+      Promise.all([categoryApi.getAll(), sectorApi.getByCity('Marrakech')])
         .then(([catRes, secRes]) => {
           setCategories(catRes.data)
           setSectors(secRes.data)

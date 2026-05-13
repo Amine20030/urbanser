@@ -5,6 +5,8 @@
 **Architecture:** Spring Boot Backend + Next.js Frontend  
 **Méthodologie:** SCRUM avec 3 sprints de 2 semaines  
 
+> **Middleware REST :** L'API REST est le middleware principal — 40+ endpoints sous `/api/v1`, sécurisés par JWT, documentés via Swagger UI.
+
 ---
 
 ## 1. Architecture générale

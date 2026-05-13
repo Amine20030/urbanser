@@ -2,9 +2,14 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Building2, Eye, EyeOff } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Eye, EyeOff } from 'lucide-react'
 import { FormEvent, useEffect, useState } from 'react'
 import { authAPI, sectorAPI } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 type Sector = { id: number; name: string }
 
@@ -71,195 +76,159 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 bg-mesh-light dark:bg-mesh-dark" aria-hidden />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative z-10 w-full max-w-lg"
+      >
+        <div className="mb-8 flex justify-center">
           <Link href="/" className="flex items-center gap-2">
-            <Building2 className="w-8 h-8 text-cyan-400" />
-            <span className="text-2xl font-bold text-[var(--t1)]">UrbanOps</span>
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-lg shadow-lg">
+              🏙
+            </span>
+            <span className="text-2xl font-bold tracking-tight text-t1">UrbanOps</span>
           </Link>
         </div>
 
-        <div className="p-8 rounded-[12px] bg-[var(--bg-card)] border border-[var(--border)]">
-          <h1 className="text-xl font-semibold text-[var(--t1)] text-center mb-6">
-            Rejoindre UrbanOps
-          </h1>
+        <Card className="border-border/80 shadow-glass backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-center text-xl">Créer un compte</CardTitle>
+            <CardDescription className="text-center">Rejoignez la communauté des signaleurs.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <div className="mb-4 rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-300">
+                {error}
+              </div>
+            )}
 
-          {error && (
-            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-              {error}
-            </div>
-          )}
+            <form className="space-y-4" onSubmit={onSubmit}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="fn">Prénom</Label>
+                  <Input id="fn" required minLength={2} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Jean" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ln">Nom</Label>
+                  <Input id="ln" required minLength={2} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Dupont" />
+                </div>
+              </div>
 
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                  Prénom
-                </label>
-                <input
-                  type="text"
+              <div className="space-y-2">
+                <Label htmlFor="em">Email</Label>
+                <Input
+                  id="em"
+                  type="email"
                   required
-                  minLength={2}
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Jean"
-                  className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vous@email.com"
                 />
               </div>
-              <div>
-                <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                  Nom
-                </label>
-                <input
-                  type="text"
-                  required
-                  minLength={2}
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Dupont"
-                  className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
-                />
+
+              <div className="space-y-2">
+                <Label htmlFor="ph">Téléphone (optionnel)</Label>
+                <Input id="ph" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+212612345678" />
+                <p className="text-[11px] text-t3">Chiffres ou + suivi des chiffres (8–20 caractères).</p>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre@email.com"
-                className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                Téléphone (optionnel)
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+212612345678"
-                className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
-              />
-              <p className="mt-1 text-[11px] text-[var(--t3)]">Chiffres uniquement ou + suivi des chiffres (8–20 caractères).</p>
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                Quartier (optionnel)
-              </label>
-              <select
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm focus:outline-none focus:border-blue-500/50"
-              >
-                <option value="">—</option>
-                {sectors.map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                Mot de passe
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t3)] hover:text-[var(--t2)]"
-                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              <div className="space-y-2">
+                <Label htmlFor="sec">Quartier (optionnel)</Label>
+                <select
+                  id="sec"
+                  value={sector}
+                  onChange={(e) => setSector(e.target.value)}
+                  className="flex h-10 w-full rounded-lg border border-input bg-bg-base/80 px-3 text-sm text-t1 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-bg-hover/50"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                  <option value="">—</option>
+                  {sectors.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs uppercase tracking-[1px] text-[var(--t3)] font-mono mb-2">
-                Confirmer le mot de passe
-              </label>
-              <div className="relative">
+              <div className="space-y-2">
+                <Label htmlFor="pw">Mot de passe</Label>
+                <div className="relative">
+                  <Input
+                    id="pw"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-t3 hover:bg-hover"
+                    aria-label={showPassword ? 'Masquer' : 'Afficher'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pw2">Confirmer le mot de passe</Label>
+                <div className="relative">
+                  <Input
+                    id="pw2"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-t3 hover:bg-hover"
+                    aria-label={showConfirmPassword ? 'Masquer' : 'Afficher'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-lg bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--t1)] text-sm placeholder:text-[var(--t3)] focus:outline-none focus:border-blue-500/50"
+                  type="checkbox"
+                  id="alerts"
+                  checked={alertsEnabled}
+                  onChange={(e) => setAlertsEnabled(e.target.checked)}
+                  className="h-4 w-4 rounded border-input text-primary"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t3)] hover:text-[var(--t2)]"
-                  aria-label={
-                    showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
-                  }
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
+                <Label htmlFor="alerts" className="normal-case tracking-normal text-t2">
+                  Recevoir des alertes pour mon quartier
+                </Label>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="alerts"
-                checked={alertsEnabled}
-                onChange={(e) => setAlertsEnabled(e.target.checked)}
-                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-hover)] text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="alerts" className="text-sm text-[var(--t2)]">
-                Je souhaite recevoir des alertes pour mon quartier
-              </label>
-            </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Création…' : 'Créer mon compte'}
+              </Button>
+            </form>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors disabled:opacity-60"
-            >
-              {loading ? 'Création…' : 'Créer mon compte'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm">
-              <span className="text-[var(--t2)]">Déjà inscrit ? </span>
-              <Link href="/auth/signin" className="text-blue-400 hover:text-blue-300">
-                Se connecter →
+            <p className="mt-6 text-center text-sm">
+              <span className="text-t2">Déjà inscrit ? </span>
+              <Link href="/auth/signin" className="font-semibold text-primary hover:underline">
+                Se connecter
               </Link>
             </p>
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   )
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 import ma.urbanops.entity.Incident;
@@ -44,6 +45,10 @@ public class StatsService {
             .inProgressIncidents(inProg).resolvedIncidents(resolved)
             .highSeverityCount(high).totalCitizens(citizens)
             .resolvedLast24h(res24h).resolutionRate(Math.round(rate * 10.0) / 10.0)
+            .incidentsByCategory(Collections.emptyList())
+            .incidentsBySector(Collections.emptyList())
+            .incidentsByHour(Collections.emptyList())
+            .servicesHealth(Collections.emptyList())
             .build();
     }
 

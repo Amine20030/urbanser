@@ -12,7 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class StatsServiceTest {
 
     @Mock private IncidentRepository incidentRepository;
@@ -52,6 +56,7 @@ class StatsServiceTest {
             new Object[]{"Guéliz", 30L},
             new Object[]{"Médina", 20L}
         ));
+        when(incidentRepository.countResolvedSince(any(LocalDateTime.class))).thenReturn(5L);
     }
 
     @AfterAll

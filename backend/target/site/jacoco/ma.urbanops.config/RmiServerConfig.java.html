@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RmiServerConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.config</a> &gt; <span class="el_source">RmiServerConfig.java</span></div><h1>RmiServerConfig.java</h1><pre class="source lang-java linenums">package ma.urbanops.config;
+
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import ma.urbanops.rmi.AIAnalysisRemoteImpl;
+import ma.urbanops.service.AIAnalysisService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+@Configuration
+<span class="nc" id="L14">@Slf4j</span>
+public class RmiServerConfig {
+
+    private final AIAnalysisService aiAnalysisService;
+
+    @Value(&quot;${rmi.port:1099}&quot;)
+    private int rmiPort;
+
+<span class="nc" id="L22">    public RmiServerConfig(AIAnalysisService aiAnalysisService) {</span>
+<span class="nc" id="L23">        this.aiAnalysisService = aiAnalysisService;</span>
+<span class="nc" id="L24">    }</span>
+
+    @PostConstruct
+    public void registerRmiService() {
+        try {
+<span class="nc" id="L29">            AIAnalysisRemoteImpl remoteService = new AIAnalysisRemoteImpl(aiAnalysisService);</span>
+
+            Registry registry;
+            try {
+<span class="nc" id="L33">                registry = LocateRegistry.createRegistry(rmiPort);</span>
+<span class="nc" id="L34">                log.info(&quot;[RMI] Registry created on port {}&quot;, rmiPort);</span>
+<span class="nc" id="L35">            } catch (Exception e) {</span>
+<span class="nc" id="L36">                registry = LocateRegistry.getRegistry(rmiPort);</span>
+<span class="nc" id="L37">                log.info(&quot;[RMI] Using existing registry on port {} ({})&quot;, rmiPort, e.getMessage());</span>
+            }
+
+<span class="nc" id="L40">            registry.rebind(&quot;AIAnalysisService&quot;, remoteService);</span>
+<span class="nc" id="L41">            log.info(&quot;[RMI] AIAnalysisService bound — rmi://localhost:{}/AIAnalysisService&quot;, rmiPort);</span>
+<span class="nc" id="L42">        } catch (Exception e) {</span>
+<span class="nc" id="L43">            log.error(&quot;[RMI] Failed to start RMI server: {}&quot;, e.getMessage());</span>
+        }
+<span class="nc" id="L45">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

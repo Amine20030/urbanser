@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AIAnalysisService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UrbanOps Backend</a> &gt; <a href="index.source.html" class="el_package">ma.urbanops.service</a> &gt; <span class="el_source">AIAnalysisService.java</span></div><h1>AIAnalysisService.java</h1><pre class="source lang-java linenums">package ma.urbanops.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import ma.urbanops.dto.response.AIAnalysisResult;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.Map;
+
+@Service
+<span class="fc" id="L19">@Slf4j</span>
+public class AIAnalysisService {
+
+    @Value(&quot;${ai.gemini.api-key:}&quot;)
+    private String apiKey;
+
+    @Value(&quot;${ai.gemini.endpoint:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent}&quot;)
+    private String endpoint;
+
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+
+<span class="nc" id="L31">    public AIAnalysisService(RestTemplate restTemplate, ObjectMapper objectMapper) {</span>
+<span class="nc" id="L32">        this.restTemplate = restTemplate;</span>
+<span class="nc" id="L33">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L34">    }</span>
+
+    // ── MAIN ENTRY POINT ─────────────────────────────────────
+    // NEVER throws — always returns a result (real or fallback)
+    public AIAnalysisResult analyze(String description, String categoryHint) {
+<span class="nc bnc" id="L39" title="All 6 branches missed.">        if (apiKey == null || apiKey.isBlank() || apiKey.equals(&quot;YOUR_GEMINI_API_KEY&quot;)) {</span>
+<span class="nc" id="L40">            log.warn(&quot;Gemini API key not configured — using fallback&quot;);</span>
+<span class="nc" id="L41">            return fallback(description, categoryHint);</span>
+        }
+        try {
+<span class="nc" id="L44">            return callGemini(description, categoryHint);</span>
+<span class="nc" id="L45">        } catch (org.springframework.web.client.HttpClientErrorException e) {</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            if (e.getStatusCode().value() == 429) {</span>
+<span class="nc" id="L47">                log.warn(&quot;Gemini rate limit hit, retrying in 3s...&quot;);</span>
+                try {
+<span class="nc" id="L49">                    Thread.sleep(3000);</span>
+<span class="nc" id="L50">                    return callGemini(description, categoryHint);</span>
+<span class="nc" id="L51">                } catch (Exception e2) {</span>
+<span class="nc" id="L52">                    return fallback(description, categoryHint);</span>
+                }
+            }
+<span class="nc" id="L55">            return fallback(description, categoryHint);</span>
+<span class="nc" id="L56">        } catch (Exception e) {</span>
+<span class="nc" id="L57">            log.warn(&quot;Gemini call failed ({}), using fallback&quot;, e.getMessage());</span>
+<span class="nc" id="L58">            return fallback(description, categoryHint);</span>
+        }
+    }
+
+    // ── GEMINI CALL ───────────────────────────────────────────
+    private AIAnalysisResult callGemini(String description, String categoryHint) {
+<span class="nc" id="L64">        String prompt = buildPrompt(description, categoryHint);</span>
+
+<span class="nc" id="L66">        Map&lt;String, Object&gt; part = Map.of(&quot;text&quot;, prompt);</span>
+<span class="nc" id="L67">        Map&lt;String, Object&gt; content = Map.of(&quot;parts&quot;, List.of(part));</span>
+<span class="nc" id="L68">        Map&lt;String, Object&gt; genConfig = Map.of(</span>
+<span class="nc" id="L69">            &quot;temperature&quot;, 0.1,</span>
+<span class="nc" id="L70">            &quot;maxOutputTokens&quot;, 300,</span>
+<span class="nc" id="L71">            &quot;responseMimeType&quot;, &quot;application/json&quot;</span>
+        );
+<span class="nc" id="L73">        Map&lt;String, Object&gt; body = Map.of(</span>
+<span class="nc" id="L74">            &quot;contents&quot;, List.of(content),</span>
+<span class="nc" id="L75">            &quot;generationConfig&quot;, genConfig</span>
+        );
+
+<span class="nc" id="L78">        String url = endpoint + &quot;?key=&quot; + apiKey;</span>
+
+<span class="nc" id="L80">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L81">        headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="nc" id="L83">        ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
+<span class="nc" id="L84">            url, HttpMethod.POST,</span>
+<span class="nc" id="L85">            new HttpEntity&lt;&gt;(body, headers),</span>
+<span class="nc" id="L86">            Map.class</span>
+        );
+
+<span class="nc" id="L89">        String text = extractText(response.getBody());</span>
+<span class="nc" id="L90">        return parseResponse(text, categoryHint);</span>
+    }
+
+    // ── PROMPT ────────────────────────────────────────────────
+    private String buildPrompt(String description, String categoryHint) {
+<span class="nc" id="L95">        return &quot;&quot;&quot;</span>
+            Tu es un système expert d'analyse d'incidents urbains pour Marrakech, Maroc.
+            Analyse cet incident et réponds UNIQUEMENT en JSON valide, sans texte avant ou après.
+
+            DESCRIPTION: &quot;%s&quot;
+            CATÉGORIE SUGGÉRÉE: %s
+
+            RÈGLES:
+            - severity: &quot;HIGH&quot; si danger immédiat (câble exposé, gaz, accident), &quot;MEDIUM&quot; si sérieux, &quot;LOW&quot; si gêne
+            - En cas de doute HIGH vs MEDIUM → choisir HIGH (précaution)
+            - category: Transport | Eau | Déchets | Éclairage | Électricité | Voirie | Sécurité | Espaces_Verts
+
+            AUTORITÉS:
+            Transport→Police Circulation | Eau→RADEEMA | Déchets→Commune | Éclairage→Commune
+            Électricité→ONEE | Voirie→Travaux Publics | Sécurité→Police Nationale | Espaces_Verts→Commune
+
+            Réponds avec exactement ce JSON:
+            {&quot;category&quot;:&quot;...&quot;,&quot;severity&quot;:&quot;...&quot;,&quot;authorityName&quot;:&quot;...&quot;,&quot;authorityEmail&quot;:&quot;...&quot;,&quot;reason&quot;:&quot;...&quot;,&quot;confidence&quot;:0.0}
+<span class="nc" id="L113">            &quot;&quot;&quot;.formatted(description, categoryHint);</span>
+    }
+
+    // ── PARSE ─────────────────────────────────────────────────
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private String extractText(Map&lt;String, Object&gt; body) {
+        try {
+<span class="nc" id="L120">            List&lt;Map&lt;String, Object&gt;&gt; candidates = (List&lt;Map&lt;String, Object&gt;&gt;) body.get(&quot;candidates&quot;);</span>
+<span class="nc" id="L121">            Map&lt;String, Object&gt; content = (Map&lt;String, Object&gt;) candidates.get(0).get(&quot;content&quot;);</span>
+<span class="nc" id="L122">            List&lt;Map&lt;String, Object&gt;&gt; parts = (List&lt;Map&lt;String, Object&gt;&gt;) content.get(&quot;parts&quot;);</span>
+<span class="nc" id="L123">            return (String) parts.get(0).get(&quot;text&quot;);</span>
+<span class="nc" id="L124">        } catch (Exception e) {</span>
+<span class="nc" id="L125">            throw new RuntimeException(&quot;Cannot parse Gemini response structure&quot;);</span>
+        }
+    }
+
+    private AIAnalysisResult parseResponse(String json, String categoryHint) {
+        try {
+<span class="nc" id="L131">            String clean = json.replaceAll(&quot;```json&quot;, &quot;&quot;).replaceAll(&quot;```&quot;, &quot;&quot;).trim();</span>
+<span class="nc" id="L132">            Map&lt;String, Object&gt; map = objectMapper.readValue(clean, Map.class);</span>
+
+<span class="nc" id="L134">            String severity = normalizeSeverity((String) map.get(&quot;severity&quot;));</span>
+
+<span class="nc" id="L136">            return AIAnalysisResult.builder()</span>
+<span class="nc" id="L137">                .category(getString(map, &quot;category&quot;, categoryHint))</span>
+<span class="nc" id="L138">                .severity(severity)</span>
+<span class="nc" id="L139">                .authorityName(getString(map, &quot;authorityName&quot;, &quot;Commune Marrakech&quot;))</span>
+<span class="nc" id="L140">                .authorityEmail(getString(map, &quot;authorityEmail&quot;, &quot;contact@commune.marrakech.ma&quot;))</span>
+<span class="nc" id="L141">                .reason(getString(map, &quot;reason&quot;, &quot;Analyse automatique&quot;))</span>
+<span class="nc" id="L142">                .confidence(getDouble(map, &quot;confidence&quot;, 0.8))</span>
+<span class="nc" id="L143">                .fallbackUsed(false)</span>
+<span class="nc" id="L144">                .rawResponse(json)</span>
+<span class="nc" id="L145">                .build();</span>
+<span class="nc" id="L146">        } catch (Exception e) {</span>
+<span class="nc" id="L147">            log.warn(&quot;Failed to parse Gemini JSON: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L148">            return fallback(json, categoryHint);</span>
+        }
+    }
+
+    // ── FALLBACK — keyword rules ───────────────────────────────
+    public AIAnalysisResult fallback(String description, String categoryHint) {
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        String desc = description == null ? &quot;&quot; : description.toLowerCase();</span>
+
+<span class="nc" id="L156">        String severity = &quot;MEDIUM&quot;;</span>
+<span class="nc" id="L157">        String authority = &quot;Commune Urbaine Marrakech&quot;;</span>
+<span class="nc" id="L158">        String email = &quot;contact@commune.marrakech.ma&quot;;</span>
+<span class="nc" id="L159">        String reason = &quot;Classification automatique par règles métier&quot;;</span>
+
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (containsAny(desc, &quot;câble&quot;,&quot;électrique&quot;,&quot;haute tension&quot;,&quot;électrocution&quot;,&quot;court-circuit&quot;)) {</span>
+<span class="nc" id="L162">            severity = &quot;HIGH&quot;; authority = &quot;ONEE Marrakech&quot;; email = &quot;urgences.elec@onee.ma&quot;;</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        } else if (containsAny(desc, &quot;accident&quot;,&quot;blessé&quot;,&quot;agression&quot;,&quot;mort&quot;,&quot;feu&quot;,&quot;incendie&quot;)) {</span>
+<span class="nc" id="L164">            severity = &quot;HIGH&quot;; authority = &quot;Police Nationale&quot;; email = &quot;police@marrakech.ma&quot;;</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        } else if (containsAny(desc, &quot;inondation&quot;,&quot;fuite&quot;,&quot;rupture&quot;,&quot;gaz&quot;)) {</span>
+<span class="nc" id="L166">            severity = &quot;HIGH&quot;; authority = &quot;RADEEMA&quot;; email = &quot;urgences@radeema.ma&quot;;</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        } else if (containsAny(desc, &quot;embouteillage&quot;,&quot;trafic&quot;,&quot;route bloquée&quot;,&quot;signalisation&quot;)) {</span>
+<span class="nc" id="L168">            severity = &quot;MEDIUM&quot;; authority = &quot;Police Circulation&quot;; email = &quot;circulation@marrakech.ma&quot;;</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        } else if (containsAny(desc, &quot;lampadaire&quot;,&quot;éclairage&quot;,&quot;lumière&quot;)) {</span>
+<span class="nc" id="L170">            severity = &quot;MEDIUM&quot;;</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        } else if (containsAny(desc, &quot;poubelle&quot;,&quot;ordures&quot;,&quot;déchet&quot;)) {</span>
+<span class="nc" id="L172">            severity = &quot;LOW&quot;;</span>
+        }
+
+<span class="nc" id="L175">        return AIAnalysisResult.builder()</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            .category(categoryHint != null ? categoryHint : &quot;Voirie&quot;)</span>
+<span class="nc" id="L177">            .severity(severity)</span>
+<span class="nc" id="L178">            .authorityName(authority)</span>
+<span class="nc" id="L179">            .authorityEmail(email)</span>
+<span class="nc" id="L180">            .reason(reason)</span>
+<span class="nc" id="L181">            .confidence(0.5)</span>
+<span class="nc" id="L182">            .fallbackUsed(true)</span>
+<span class="nc" id="L183">            .rawResponse(&quot;fallback&quot;)</span>
+<span class="nc" id="L184">            .build();</span>
+    }
+
+    // ── HELPERS ───────────────────────────────────────────────
+    private String normalizeSeverity(String s) {
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if (s == null) return &quot;MEDIUM&quot;;</span>
+<span class="nc bnc" id="L190" title="All 3 branches missed.">        return switch (s.toUpperCase().trim()) {</span>
+<span class="nc" id="L191">            case &quot;HIGH&quot;, &quot;HAUTE&quot;, &quot;ÉLEVÉ&quot; -&gt; &quot;HIGH&quot;;</span>
+<span class="nc" id="L192">            case &quot;LOW&quot;, &quot;FAIBLE&quot;, &quot;BAS&quot;   -&gt; &quot;LOW&quot;;</span>
+<span class="nc" id="L193">            default                         -&gt; &quot;MEDIUM&quot;;</span>
+        };
+    }
+
+    private boolean containsAny(String text, String... keywords) {
+<span class="nc" id="L198">        String normalized = java.text.Normalizer</span>
+<span class="nc" id="L199">            .normalize(text.toLowerCase(), java.text.Normalizer.Form.NFD)</span>
+<span class="nc" id="L200">            .replaceAll(&quot;\\p{M}&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        for (String k : keywords) {</span>
+<span class="nc" id="L202">            String normalizedKeyword = java.text.Normalizer</span>
+<span class="nc" id="L203">                .normalize(k.toLowerCase(), java.text.Normalizer.Form.NFD)</span>
+<span class="nc" id="L204">                .replaceAll(&quot;\\p{M}&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">            if (normalized.contains(normalizedKeyword)) return true;</span>
+        }
+<span class="nc" id="L207">        return false;</span>
+    }
+
+    private String getString(Map&lt;String, Object&gt; m, String key, String def) {
+<span class="nc" id="L211">        Object v = m.get(key);</span>
+<span class="nc bnc" id="L212" title="All 4 branches missed.">        return (v instanceof String s &amp;&amp; !s.isBlank()) ? s : def;</span>
+    }
+
+    private Double getDouble(Map&lt;String, Object&gt; m, String key, Double def) {
+<span class="nc" id="L216">        try { return ((Number) m.get(key)).doubleValue(); }</span>
+<span class="nc" id="L217">        catch (Exception e) { return def; }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

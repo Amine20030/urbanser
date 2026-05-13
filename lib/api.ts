@@ -117,6 +117,14 @@ export const categoryApi = {
 export const sectorApi = {
   getAll: () => api.get<Sector[]>('/sectors'),
   getById: (id: number) => api.get<Sector>(`/sectors/${id}`),
+  getByCity: (city: string) => api.get<Sector[]>(`/sectors/city/${city}`),
+}
+
+export const adminUsersApi = {
+  getAll: () => api.get<User[]>('/admin/users'),
+  create: (data: any) => api.post<User>('/admin/users', data),
+  update: (id: number, data: any) => api.put<User>(`/admin/users/${id}`, data),
+  delete: (id: number) => api.delete(`/admin/users/${id}`),
 }
 
 export default api

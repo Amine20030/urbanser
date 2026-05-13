@@ -29,6 +29,9 @@ public class SectorService {
     @Transactional(readOnly=true)
     public List<Sector> findAllActive() { return sectorRepository.findAll(); }
 
+    @Transactional(readOnly=true)
+    public List<Sector> findByCity(String city) { return sectorRepository.findByCity(city); }
+
     public Sector create(Sector s) { return sectorRepository.save(s); }
 
     public List<Incident> getIncidentsBySector(Long sectorId) {

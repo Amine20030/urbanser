@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
 import java.util.Map;
 
@@ -56,5 +57,31 @@ public class StatsController {
     @Operation(summary = "Get overall resolution rate")
     public ResponseEntity<Map<String, Double>> getResolutionRate() {
         return ResponseEntity.ok(Map.of("rate", statsService.getResolutionRate()));
+    }
+
+    @GetMapping("/jms/status")
+    @Operation(summary = "JMS queue status")
+    public ResponseEntity<Map<String, Object>> getJmsStatus() {
+        return ResponseEntity.ok(Map.of(
+                "broker", "ActiveMQ Artemis (embedded)",
+                "queue", "urbanops.alert.queue",
+                "status", "active",
+                "description", "Asynchronous alert queue — incidents trigger JMS messages consumed by email service"
+        ));
+    }
+
+    @GetMapping("/rmi/status")
+    @Operation(summary = "RMI service status")
+    public ResponseEntity<Map<String, Object>> getRmiStatus() {
+        return ResponseEntity.ok(Map.of(
+                "service", "AIAnalysisService",
+                "protocol", "RMI (Java Remote Method Invocation)",
+                "url", "rmi://localhost:1099/AIAnalysisService",
+                "methods", List.of(
+                        "classifyIncident(description, categoryHint)",
+                        "getSeverity(description)",
+                        "ping()"),
+                "description", "Remote AI classification service — callable from any JVM"
+        ));
     }
 }
