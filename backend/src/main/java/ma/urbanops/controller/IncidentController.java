@@ -111,10 +111,25 @@ public class IncidentController {
     }
 
     @GetMapping("/map")
-    @Operation(summary = "Get all incidents for map display (projection)",
-               description = "Returns lightweight data using JPA interface projection — only 7 fields loaded from DB instead of 20+")
-    public ResponseEntity<List<MapIncidentProjection>> getAllForMap() {
-        return ResponseEntity.ok(incidentService.getAllForMapProjection());
+    @Operation(summary = "Get all incidents for map display")
+    public ResponseEntity<List<java.util.Map<String,Object>>> getForMap() {
+        List<Incident> incidents = incidentService.getAllForMap();
+        List<java.util.Map<String,Object>> result = incidents.stream().map(i -> {
+            java.util.Map<String,Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", i.getId());
+            m.put("title", i.getTitle());
+            m.put("latitude", i.getLatitude());
+            m.put("longitude", i.getLongitude());
+            m.put("severity", i.getSeverity() != null ? i.getSeverity().name() : "MEDIUM");
+            m.put("status", i.getStatus() != null ? i.getStatus().name() : "OPEN");
+            m.put("authorityNotified", i.getAuthorityNotified());
+            m.put("category", i.getCategory() != null ? java.util.Map.of(
+                "name", i.getCategory().getName(),
+                "icon", i.getCategory().getIcon() != null ? i.getCategory().getIcon() : "📍"
+            ) : java.util.Map.of("name","Autre","icon","📍"));
+            return m;
+        }).collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/recent")

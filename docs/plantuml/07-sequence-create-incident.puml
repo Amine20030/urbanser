@@ -1,0 +1,48 @@
+@startuml UrbanOps - Sequence creation incident
+
+title Diagramme de sequence - Creation d incident (logique reelle)
+
+actor Citoyen as C
+participant "IncidentController" as IC
+participant "IncidentService" as IS
+participant "CategoryRepository" as CR
+participant "SectorRepository" as SR
+participant "FileStorageService" as FS
+participant "AIAnalysisService" as AI
+participant "IncidentRepository" as IR
+participant "AlertService" as AS
+participant "EmailService" as EM
+
+C -> IC : POST /incidents\nmultipart(data + photo)
+IC -> IS : createIncident(request, photo, reporter)
+
+IS -> CR : findById(categoryId)
+CR --> IS : Category
+
+IS -> SR : findById(sectorId)
+SR --> IS : Sector
+
+opt photo presente
+  IS -> FS : storeFile(photo)
+  FS --> IS : photoUrl
+end
+
+IS -> AI : analyze(description, categoryName)
+AI --> IS : AIAnalysisResult\n(severity HIGH/MEDIUM/LOW)
+
+IS -> IR : save(incident)
+IR --> IS : Incident (id)
+
+IS -> IR : save(referenceCode)
+IR --> IS : Incident persiste
+
+opt severity HIGH ou MEDIUM
+  IS -> AS : createAndSendAlert(incident)
+  AS -> EM : sendAlertEmail (async)
+  AS --> IS : Alert
+end
+
+IS --> IC : Incident
+IC --> C : 201 IncidentResponse
+
+@enduml

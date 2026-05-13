@@ -5,16 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class SectorResponse {
-
-    private Long id;
-    private String name;
-    private String city;
-    private Double centerLat;
-    private Double centerLng;
-    private String description;
+    Long id; String name; String city;
+    Double centerLat; Double centerLng; String description;
 }

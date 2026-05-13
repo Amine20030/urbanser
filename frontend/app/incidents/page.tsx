@@ -8,12 +8,14 @@ import { INCIDENTS, Category, Severity, Status } from '@/lib/mockData'
 import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { cn, getSeverityLabel, getStatusLabel } from '@/lib/utils'
+import { SignalerModal } from '@/components/shared/SignalerModal'
 
 export default function IncidentsPage() {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null)
   const [activeSeverity, setActiveSeverity] = useState<Severity | null>(null)
   const [activeStatus, setActiveStatus] = useState<Status | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
 
   const categories: (Category | null)[] = [
     null,
@@ -157,6 +159,21 @@ export default function IncidentsPage() {
           </div>
         </div>
       </main>
+
+      <button
+        onClick={() => setModalOpen(true)}
+        style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 100,
+          background: '#1d4ed8', color: 'white', border: 'none',
+          borderRadius: '50px', padding: '14px 24px', fontSize: 14,
+          fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 20px rgba(29,78,216,0.4)',
+          display: 'flex', alignItems: 'center', gap: 8
+        }}
+      >
+        + Signaler un problème
+      </button>
+
+      <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
 
       <Footer />
     </div>

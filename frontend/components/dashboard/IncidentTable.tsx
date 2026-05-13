@@ -72,7 +72,7 @@ export function IncidentTable({ filters }: IncidentTableProps) {
               key={incident.id}
               className="hover:bg-[var(--bg-hover)] transition-colors"
             >
-              <td className="py-3 px-4 text-xs font-mono text-cyan-400">
+              <td className="py-3 px-4 text-xs font-mono text-blue-500">
                 {incident.id}
               </td>
               <td className="py-3 px-4 text-sm text-[var(--t1)]">

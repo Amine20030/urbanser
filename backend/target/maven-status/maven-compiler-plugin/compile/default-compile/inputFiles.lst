@@ -48,7 +48,6 @@ C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\enums\
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\exception\GlobalExceptionHandler.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\repository\UserRepository.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\response\UserResponse.java
-C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\response\AIAnalysisResponse.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\EmailService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\response\IncidentResponse.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\repository\IncidentRepository.java

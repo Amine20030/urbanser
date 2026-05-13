@@ -71,11 +71,28 @@ export function KpiCards() {
               <Icon className={`w-4 h-4 ${card.color}`} />
             </div>
             <div className={`text-2xl font-bold ${card.color} font-mono`}>
-              {card.value}
+              <AnimatedNumber value={card.value} />
             </div>
           </div>
         )
       })}
     </div>
   )
+}
+
+function AnimatedNumber({ value }: { value: number }) {
+  const [displayed, setDisplayed] = useState(0)
+  useEffect(() => {
+    const target = value
+    if (target === 0) return setDisplayed(0)
+    const step = Math.max(1, Math.ceil(target / 40))
+    let current = 0
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target)
+      setDisplayed(current)
+      if (current >= target) clearInterval(timer)
+    }, 25)
+    return () => clearInterval(timer)
+  }, [value])
+  return <>{displayed}</>
 }

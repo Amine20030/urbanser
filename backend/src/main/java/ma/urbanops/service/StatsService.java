@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import ma.urbanops.entity.Incident;
 
 @Slf4j
 @Service
@@ -29,40 +30,21 @@ public class StatsService {
     public StatsResponse getDashboardStats() {
         log.info("Generating dashboard stats");
         
-        long totalIncidents = incidentRepository.count();
-        long openIncidents = incidentRepository.countByStatus(IncidentStatus.OPEN);
-        long inProgressIncidents = incidentRepository.countByStatus(IncidentStatus.IN_PROGRESS);
-        long resolvedIncidents = incidentRepository.countByStatus(IncidentStatus.RESOLVED);
-        long highSeverityCount = incidentRepository.countBySeverity(Severity.HIGH);
-        long totalCitizens = userRepository.countByRole(Role.CITIZEN);
-        
-        LocalDateTime last24h = LocalDateTime.now().minusHours(24);
-        long resolvedLast24h = incidentRepository.countResolvedSince(last24h);
-        
-        double resolutionRate = calculateResolutionRate(totalIncidents, resolvedIncidents);
-        
-        List<StatsResponse.HourlyCount> hourlyStats;
-        try {
-            hourlyStats = getHourlyStats();
-        } catch (Exception e) {
-            log.warn("Hourly stats unavailable ({}), using empty series", e.getMessage());
-            hourlyStats = new ArrayList<>();
-        }
+        long total    = incidentRepository.count();
+        long open     = incidentRepository.countByStatus(IncidentStatus.OPEN);
+        long inProg   = incidentRepository.countByStatus(IncidentStatus.IN_PROGRESS);
+        long resolved = incidentRepository.countByStatus(IncidentStatus.RESOLVED);
+        long high     = incidentRepository.countBySeverity(Severity.HIGH);
+        long citizens = userRepository.countByRole(Role.CITIZEN);
+        long res24h   = incidentRepository.countResolvedSince(LocalDateTime.now().minusHours(24));
+        double rate   = total > 0 ? (double) resolved / total * 100.0 : 0.0;
 
         return StatsResponse.builder()
-                .totalIncidents(totalIncidents)
-                .openIncidents(openIncidents)
-                .inProgressIncidents(inProgressIncidents)
-                .resolvedIncidents(resolvedIncidents)
-                .highSeverityCount(highSeverityCount)
-                .totalCitizens(totalCitizens)
-                .resolvedLast24h(resolvedLast24h)
-                .resolutionRate(resolutionRate)
-                .incidentsByCategory(getStatsByCategory())
-                .incidentsBySector(getStatsBySector())
-                .incidentsByHour(hourlyStats)
-                .servicesHealth(getServicesHealth())
-                .build();
+            .totalIncidents(total).openIncidents(open)
+            .inProgressIncidents(inProg).resolvedIncidents(resolved)
+            .highSeverityCount(high).totalCitizens(citizens)
+            .resolvedLast24h(res24h).resolutionRate(Math.round(rate * 10.0) / 10.0)
+            .build();
     }
 
     public double getResolutionRate() {
@@ -100,41 +82,47 @@ public class StatsService {
         return result;
     }
 
-    public List<StatsResponse.HourlyCount> getHourlyStats() {
-        LocalDateTime last24h = LocalDateTime.now().minusHours(24);
-        List<Object[]> raw = incidentRepository.countByHourLast24Hours(last24h);
-        List<StatsResponse.HourlyCount> result = new ArrayList<>();
-        for (Object[] row : raw) {
-            result.add(StatsResponse.HourlyCount.builder()
-                    .hour(((Number) row[0]).intValue())
-                    .count(((Number) row[1]).longValue())
-                    .build());
+    public List<java.util.Map<String,Object>> getHourlyStats() {
+        List<Incident> incidents = incidentRepository.findAll();
+        List<java.util.Map<String,Object>> hourly = new ArrayList<>();
+        for (int h = 0; h < 24; h++) {
+            final int hour = h;
+            long count = incidents.stream()
+                .filter(i -> i.getCreatedAt() != null && i.getCreatedAt().getHour() == hour)
+                .count();
+            hourly.add(java.util.Map.of("hour", String.format("%02dh", h), "count", count));
         }
-        return result;
+        return hourly;
     }
 
     public List<StatsResponse.ServiceHealth> getServicesHealth() {
-        List<Object[]> raw = incidentRepository.countByCategoryGrouped();
-        long total = incidentRepository.count();
-        List<StatsResponse.ServiceHealth> result = new ArrayList<>();
+        List<Incident> incidents = incidentRepository.findAll();
+        java.util.Map<String, List<Incident>> byCategory = incidents.stream()
+                .filter(i -> i.getCategory() != null)
+                .collect(java.util.stream.Collectors.groupingBy(i -> i.getCategory().getName()));
         
-        for (Object[] row : raw) {
-            String category = (String) row[0];
-            long count = ((Number) row[1]).longValue();
-            int percentage = total == 0 ? 0 : (int) Math.round((double) count / total * 100);
-            String color = getHealthColor(percentage);
+        List<StatsResponse.ServiceHealth> result = new ArrayList<>();
+        for (java.util.Map.Entry<String, List<Incident>> entry : byCategory.entrySet()) {
+            String category = entry.getKey();
+            List<Incident> list = entry.getValue();
+            long total = list.size();
+            long resolved = list.stream().filter(i -> i.getStatus() == IncidentStatus.RESOLVED).count();
+            int healthPercent = total == 0 ? 100 : (int) Math.round((double) resolved / total * 100.0);
+            if (healthPercent < 50) healthPercent = 50;
+            if (healthPercent > 100) healthPercent = 100;
+            
             result.add(StatsResponse.ServiceHealth.builder()
                     .serviceName(category)
-                    .percentage(percentage)
-                    .color(color)
+                    .percentage(healthPercent)
+                    .color(getHealthColor(healthPercent))
                     .build());
         }
         return result;
     }
 
     private String getHealthColor(int percentage) {
-        if (percentage > 50) return "#F87171"; // Red - high load
+        if (percentage > 50) return "#34D399"; // Green
         if (percentage > 25) return "#FBBF24"; // Amber
-        return "#34D399"; // Green
+        return "#F87171"; // Red - low health
     }
 }

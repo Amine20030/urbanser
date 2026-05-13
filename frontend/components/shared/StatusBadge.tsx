@@ -8,18 +8,18 @@ interface StatusBadgeProps {
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   open: {
     label: 'Ouvert',
-    color: 'text-amber-400',
-    bg: 'bg-amber-400/10 border-amber-400/20',
+    color: 'text-red-500',
+    bg: 'bg-red-500/10 border-red-500/20',
   },
   in_progress: {
     label: 'En cours',
-    color: 'text-blue-400',
-    bg: 'bg-blue-400/10 border-blue-400/20',
+    color: 'text-amber-500',
+    bg: 'bg-amber-500/10 border-amber-500/20',
   },
   resolved: {
     label: 'Résolu',
-    color: 'text-green-400',
-    bg: 'bg-green-400/10 border-green-400/20',
+    color: 'text-green-500',
+    bg: 'bg-green-500/10 border-green-500/20',
   },
 }
 

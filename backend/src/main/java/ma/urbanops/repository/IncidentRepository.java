@@ -115,11 +115,6 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
             @Param("status") IncidentStatus status,
             @Param("before") LocalDateTime before);
 
-    // Interface-based projection — Spring Data JPA generates SELECT with only needed columns
-    // Returns lightweight data for map display without loading full entities
-    @Query("SELECT i.id as id, i.referenceCode as referenceCode, i.title as title, " +
-           "i.latitude as latitude, i.longitude as longitude, " +
-           "i.severity as severity, i.status as status, i.category.name as categoryName " +
-           "FROM Incident i WHERE i.status != 'RESOLVED'")
-    List<MapIncidentProjection> findAllForMapProjection();
+    @Query("SELECT i FROM Incident i JOIN FETCH i.category JOIN FETCH i.sector WHERE i.latitude IS NOT NULL AND i.longitude IS NOT NULL")
+    List<Incident> findAllForMap();
 }

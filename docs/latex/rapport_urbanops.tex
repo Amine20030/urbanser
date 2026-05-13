@@ -1,0 +1,636 @@
+% =============================================================================
+% RAPPORT PROFESSIONNEL — UrbanOps (version enrichie)
+% Compilation : pdflatex x2 (ou xelatex x2) depuis docs/latex/
+% Numérotation : pages i, ii… (frontmatter) ; chapitres I–IV puis Chapitre 1, 2… (arabe)
+% =============================================================================
+\documentclass[12pt,a4paper,twoside,openright]{book}
+
+% --- Encodage & langue ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{microtype}
+
+% --- Mise en page & texte ---
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm,bindingoffset=0.5cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.22}
+\usepackage{ragged2e}
+\usepackage{enumitem}
+\setlist{itemsep=0.35em, parsep=0pt, topsep=0.4em}
+
+% --- Graphiques & couleurs ---
+\usepackage{graphicx}
+\usepackage[table]{xcolor}
+\definecolor{UrbanBlue}{HTML}{1E3A5F}
+\definecolor{UrbanAccent}{HTML}{2563EB}
+\definecolor{UrbanGray}{HTML}{4B5563}
+\definecolor{LightBand}{HTML}{F3F4F6}
+\definecolor{CodeBg}{HTML}{F8FAFC}
+
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small,labelfont={bf,color=UrbanBlue}}
+
+% --- Tableaux ---
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+
+% --- Maths ---
+\usepackage{amsmath,amssymb}
+
+% --- Code & encadrés ---
+\usepackage{listings}
+\lstdefinestyle{urban}{%
+  backgroundcolor=\color{CodeBg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{UrbanBlue!40},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=2,
+}
+\lstset{style=urban}
+\lstdefinestyle{sqlurban}{style=urban,language=SQL}
+\lstdefinestyle{javaurban}{style=urban,language=Java}
+\lstdefinestyle{bashurban}{style=urban,language=bash}
+
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+% --- Apparence table des matières ---
+\usepackage{tocloft}
+\renewcommand{\cftchapfont}{\bfseries\color{UrbanBlue}}
+\renewcommand{\cftsecfont}{\color{UrbanGray}}
+\setlength{\cftbeforechapskip}{0.55em}
+
+% --- Titres (numérotés = arabe 1, 2… après introduction) ---
+\usepackage{titlesec}
+% Chapitres numérotés (corps principal)
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{UrbanBlue}}
+  {\chaptertitlename~\thechapter}
+  {12pt}
+  {\Huge}
+\titlespacing*{\chapter}{0pt}{-8pt}{22pt}
+% Chapitres sans numéro (dédicaces, chapitres I–IV en \chapter*)
+\titleformat{name=\chapter,numberless}[display]
+  {\normalfont\huge\bfseries\color{UrbanBlue}}
+  {}
+  {0pt}
+  {\Huge}
+\titlespacing*{name=\chapter,numberless}{0pt}{-8pt}{22pt}
+
+\titleformat{\section}
+  {\Large\bfseries\color{UrbanAccent}}
+  {\thesection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.1em}{0.65em}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{UrbanGray}}
+  {\thesubsection}{0.65em}{}
+
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+% --- Liens PDF (après xcolor ; avant cleveref) ---
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=UrbanBlue,
+  urlcolor=UrbanAccent,
+  citecolor=UrbanBlue,
+  bookmarksnumbered=true,
+  pdftitle={UrbanOps - Rapport technique},
+  pdfauthor={Equipe UrbanOps},
+}
+\usepackage{bookmark}
+\usepackage[nameinlink]{cleveref}
+
+% --- En-têtes / pieds ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small\textcolor{UrbanGray}{UrbanOps — Supervision urbaine}}
+\fancyhead[RO]{\small\textcolor{UrbanGray}{2025--2026}}
+\fancyhead[LO,RE]{\small\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.45pt}
+\renewcommand{\footrulewidth}{0pt}
+\makeatletter
+\let\ps@plain\ps@fancy
+\makeatother
+
+% =============================================================================
+% Encadrés réutilisables
+% =============================================================================
+\newtcolorbox{resumebox}{
+  enhanced,
+  colback=LightBand,
+  colframe=UrbanBlue!55,
+  boxrule=0.6pt,
+  arc=3mm,
+  left=8mm,right=8mm,top=6mm,bottom=6mm,
+  breakable,
+}
+
+\newtcolorbox{archibox}[1][]{
+  enhanced,
+  colback=white,
+  colframe=UrbanBlue,
+  fonttitle=\bfseries,
+  title={#1},
+  attach boxed title to top center={yshift=-2mm},
+  boxed title style={colback=UrbanBlue,colframe=UrbanBlue},
+  arc=2mm,
+  breakable,
+}
+
+% =============================================================================
+% Figures : inclusion ou emplacement réservé
+% =============================================================================
+\newcommand{\urbanfig}[4]{%
+  \begin{figure}[htbp]%
+    \centering%
+    \IfFileExists{#2}{%
+      \includegraphics[width=#3\textwidth]{#2}%
+    }{%
+      \begin{tcolorbox}[
+        enhanced,colback=LightBand,colframe=UrbanBlue!50,
+        width=0.92\textwidth,arc=2mm,halign=center,valign=center,
+        height=0.30\textheight,boxrule=0.6pt]
+        {\large\bfseries Emplacement figure}\\[3mm]
+        {\small\texttt{#2}}\\[2mm]
+        {\itshape Insérer l’image exportée (PNG/PDF).}\\[1mm]
+        {\footnotesize Légende : \textbf{#4}}
+      \end{tcolorbox}%
+    }%
+    \caption{#4}%
+    \label{#1}%
+  \end{figure}%
+}
+
+% --- Chapitres I à IV (titres romains, hors compteur « Chapitre 1 ») ---
+\newcounter{prechapter}
+\setcounter{prechapter}{0}
+\newcommand{\ChapterRoman}[1]{%
+  \refstepcounter{prechapter}%
+  \phantomsection
+  \chapter*{Chapitre \Roman{prechapter} — #1}%
+  \addcontentsline{toc}{chapter}{Chapitre \Roman{prechapter} — #1}%
+  \markboth{Chapitre \Roman{prechapter} — #1}{}%
+}
+
+\newcommand{\SecRoman}[1]{%
+  \phantomsection
+  \section*{#1}%
+  \addcontentsline{toc}{section}{#1}%
+}
+
+% --- Méta ---
+\title{Rapport technique — UrbanOps\\\large Plateforme de supervision urbaine intelligente}
+\author{Équipe UrbanOps}
+\date{\today}
+
+\begin{document}
+
+% =============================================================================
+% PAGE DE GARDE — tout centré verticalement et horizontalement
+% =============================================================================
+\begin{titlepage}
+  \thispagestyle{empty}
+  \newgeometry{margin=2.2cm}
+  \centering
+  \null\vspace*{0.8cm}
+
+  {\color{UrbanBlue}\rule{0.82\textwidth}{2.2pt}}\par\vspace{0.75cm}
+
+  {\Large\bfseries\textsc{Institution ou école}}\par\vspace{0.2cm}
+  {\large Département / filière}\par\vspace{0.35cm}
+  {\normalsize\itshape Rapport de projet — PFE / stage / recherche appliquée}\par\vspace{1.6cm}
+
+  {\Huge\bfseries\color{UrbanBlue} UrbanOps}\par\vspace{0.45cm}
+  {\LARGE\bfseries Système intelligent de supervision urbaine}\par\vspace{0.25cm}
+  {\large Marrakech, Maroc — signalements, cartographie, alertes et pilotage}\par\vspace{1.4cm}
+
+  {\color{UrbanBlue}\rule{0.55\textwidth}{0.55pt}}\par\vspace{0.65cm}
+  {\LARGE\bfseries Rapport technique complet}\par\vspace{0.55cm}
+  {\color{UrbanBlue}\rule{0.55\textwidth}{0.55pt}}\par\vspace{1.6cm}
+
+  \begin{minipage}{0.88\textwidth}\centering
+    \color{UrbanGray}\large
+    Présentation de l’architecture \textbf{3~tiers} (Next.js, Spring Boot, PostgreSQL), de la sécurité \textbf{JWT}, du module \textbf{d’intelligence artificielle} (Gemini + repli), des tests \textbf{JUnit~5}, de la couverture \textbf{JaCoCo} et de l’analyse \textbf{SonarQube}.
+  \end{minipage}\par\vfill
+
+  {\color{UrbanBlue}\rule{0.82\textwidth}{0.6pt}}\par\vspace{0.65cm}
+
+  {\centering
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{@{}>{\bfseries}r @{\hspace{1em}} p{0.52\textwidth}@{}}
+    Auteur(s) :     & Prénom \textsc{Nom} (et coauteurs) \\
+    Encadrant(e) :  & Prénom \textsc{Nom} \\
+    Technologies :  & Spring Boot~3, Next.js~14, PostgreSQL, Gemini, JWT \\
+    Année :         & 2025 -- 2026 \\
+  \end{tabular}\par}
+
+  \vspace{0.9cm}
+  {\large\textbf{Version}~1.0 \quad\textemdash\quad \today}\par
+  \vspace*{0.6cm}
+  \restoregeometry
+\end{titlepage}
+
+\cleardoublepage
+
+% =============================================================================
+% PRÉLIMINAIRES — pages i, ii, …
+% =============================================================================
+\frontmatter
+
+% --- Dédicaces (centré) ---
+\chapter*{Dédicaces}
+\addcontentsline{toc}{chapter}{Dédicaces}
+\thispagestyle{empty}
+\vspace*{2.8cm}
+\begin{center}
+\begin{minipage}{0.82\textwidth}\centering\itshape\large
+À toutes les personnes qui contribuent à des villes plus sûres, plus lisibles et plus collaboratives.\\[1.2em]
+Aux encadrants et aux citoyens qui ont inspiré ce travail.\\[1.5em]
+\ldots
+\end{minipage}
+\end{center}
+\cleardoublepage
+
+% --- Remerciements ---
+\chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
+\begin{center}
+\begin{minipage}{0.88\textwidth}
+\justifying
+Nous exprimons notre gratitude envers notre encadrant(e) pour la disponibilité, les relectures et les conseils méthodologiques. Nous remercions les membres du jury pour l’attention portée à ce rapport. Les communautés open-source autour de \textbf{Spring}, \textbf{Next.js}, \textbf{PostgreSQL} et \textbf{Google Gemini} ont fourni documentation et outils indispensables.
+\end{minipage}
+\end{center}
+\cleardoublepage
+
+% --- Résumé ---
+\chapter*{Résumé}
+\addcontentsline{toc}{chapter}{Résumé}
+\thispagestyle{plain}
+\begin{resumebox}
+\justifying
+UrbanOps est une plateforme \textbf{full stack} pour le signalement et le suivi d’\textbf{incidents urbains} (voirie, eau, éclairage, déchets, sécurité, etc.). Le backend \textbf{Spring Boot~3} expose une API REST sous \texttt{/api/v1}, sécurisée par \textbf{JWT}, avec persistance \textbf{PostgreSQL} via \textbf{JPA/Hibernate}. Un module d’\textbf{analyse textuelle} s’appuie sur \textbf{Google Gemini} (réponse JSON) avec \textbf{repli par règles} si l’API est indisponible. Le frontend \textbf{Next.js~14} propose landing, tableau de bord, carte \textbf{Leaflet} et formulaires. Le rapport couvre besoins, conception \textbf{UML}, implémentation, tests \textbf{JUnit~5}, couverture \textbf{JaCoCo} et pilotage qualité \textbf{SonarQube}.
+\end{resumebox}
+
+\vspace{0.9cm}
+\begin{center}
+\textbf{Mots-clés :} ville intelligente ; Spring Boot ; Next.js ; PostgreSQL ; JWT ; Gemini ; JUnit~5 ; JaCoCo ; SonarQube.
+\end{center}
+\cleardoublepage
+
+% --- Abstract ---
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\thispagestyle{plain}
+\begin{center}
+\begin{minipage}{0.88\textwidth}
+\justifying
+\textit{UrbanOps is a full-stack smart-city supervision platform for incident reporting and monitoring in an urban context. The backend relies on Spring Boot~3, REST APIs, JWT, and JPA over PostgreSQL. AI-assisted triage uses the Google Gemini API with a deterministic fallback. The Next.js~14 frontend provides dashboards and maps. This document presents requirements, UML design, implementation, testing, and quality gates including JaCoCo and SonarQube.}
+\end{minipage}
+\end{center}
+
+\vspace{0.9cm}
+\begin{center}
+\textbf{Keywords:} smart city; Spring Boot; Next.js; PostgreSQL; JWT; Gemini; JUnit~5; JaCoCo; SonarQube.
+\end{center}
+\cleardoublepage
+
+% --- Abréviations (tabularx = largeurs équilibrées) ---
+\chapter*{Liste des abréviations et acronymes}
+\addcontentsline{toc}{chapter}{Liste des abréviations et acronymes}
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.22}
+  \begin{tabularx}{0.96\textwidth}{@{}l Y@{}}
+    \toprule
+    \textbf{Sigle} & \textbf{Définition} \\
+    \midrule
+    API & Interface de programmation d’application \\
+    CI/CD & Intégration et déploiement continus \\
+    CRUD & Create, Read, Update, Delete \\
+    DTO & Objet de transfert de données \\
+    GPS & Système mondial de positionnement \\
+    HTTP/S & Protocole de transfert hypertexte (sécurisé) \\
+    IA & Intelligence artificielle \\
+    IDE & Environnement de développement intégré \\
+    JPA & Jakarta Persistence API (ORM) \\
+    JSON & JavaScript Object Notation \\
+    JWT & Jeton d’authentification JSON Web Token \\
+    ORM & Mapping objet-relationnel \\
+    REST & Style d’architecture web \\
+    SMTP & Protocole d’envoi de courriels \\
+    TLS & Couche de transport sécurisée \\
+    UML & Langage de modélisation unifié \\
+    URI & Identifiant uniforme de ressource \\
+    JJWT & Bibliothèque Java pour JWT \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+\cleardoublepage
+
+\listoffigures
+\cleardoublepage
+
+\listoftables
+\cleardoublepage
+
+\tableofcontents
+\cleardoublepage
+
+% =============================================================================
+% PARTIE PRÉLUDE — Chapitres I à IV (ROMains), puis numérotation ARABE dès l’intro
+% =============================================================================
+\mainmatter
+
+\ChapterRoman{Cadre général et problématique}
+\label{chap:I}
+\begin{center}
+\begin{minipage}{0.92\textwidth}
+\justifying
+Ce chapitre situe le \textbf{contexte métropolitain} (Marrakech), la \textbf{problématique} (signalements dispersés, délais de traitement, priorisation) et les \textbf{objectifs} d’UrbanOps : centraliser, tracer, alerter et offrir une interface citoyenne moderne.
+\end{minipage}
+\end{center}
+
+\SecRoman{Contexte et enjeux}
+La transformation numérique des services urbains impose des canaux \textbf{unifiés} pour la remontée d’information et une \textbf{traçabilité} des traitements.
+
+\SecRoman{Objectifs du projet}
+\begin{itemize}
+  \item Permettre la \textbf{déclaration} d’incidents géolocalisés avec médias ;
+  \item Offrir un \textbf{tableau de bord} et des \textbf{alertes} ciblées vers les autorités ;
+  \item Garantir une \textbf{piste d’audit} (\texttt{INC-xxxx}, statuts, horodatage).
+\end{itemize}
+
+\SecRoman{Périmètre fonctionnel}
+Le périmètre couvre le cycle de vie d’un incident (création, suivi, résolution), l’authentification par rôles et les statistiques agrégées. Hors périmètre : application mobile native (perspective).
+
+\ChapterRoman{Analyse des besoins et spécifications}
+\label{chap:II}
+
+\begin{longtable}{@{}p{3.4cm} >{\RaggedRight\arraybackslash}p{10.8cm}@{}}
+  \toprule
+  \textbf{Fonctionnalité} & \textbf{Description} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Fonctionnalité} & \textbf{Description} \\
+  \midrule
+  \endhead
+  Authentification & Inscription, connexion, JWT, profil \texttt{/auth/me}. \\
+  Signalement & Création \texttt{POST /incidents} en multipart (JSON + photo). \\
+  Carte & Projection légère \texttt{GET /incidents/map}. \\
+  Tableau de bord & Agrégats \texttt{GET /stats/dashboard}. \\
+  Alertes & Création et envoi e-mail pour sévérités \texttt{HIGH} / \texttt{MEDIUM}. \\
+  Administration & Gestion utilisateurs, statut incident, alertes (rôle \texttt{ADMIN}). \\
+  \bottomrule
+\end{longtable}
+
+\SecRoman{Besoins non fonctionnels}
+\begin{itemize}
+  \item \textbf{Performance :} pagination et projections pour la carte ;
+  \item \textbf{Sécurité :} mots de passe \texttt{BCrypt}, filtre JWT, règles Spring Security ;
+  \item \textbf{Maintenabilité :} couches controller / service / repository, OpenAPI ;
+  \item \textbf{Disponibilité :} Actuator \texttt{/health}, journalisation fichier.
+\end{itemize}
+
+\SecRoman{Règles métier notables}
+Sévérités \texttt{HIGH}, \texttt{MEDIUM}, \texttt{LOW} ; alerte si \texttt{HIGH} ou \texttt{MEDIUM} ; rôles \texttt{ADMIN} / \texttt{CITIZEN}.
+
+\ChapterRoman{Conception et architecture}
+\label{chap:III}
+
+\begin{archibox}[Vue multicouche (logique)]
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|>{\centering\arraybackslash}p{0.82\textwidth}|}
+\hline
+\textbf{Présentation} — Next.js~14 (TypeScript, Tailwind, Axios, Leaflet, Recharts) \\
+\hline
+\textbf{Contrôleurs REST} — Spring MVC (\texttt{/api/v1}) \\
+\hline
+\textbf{Services métier} — transactions, règles, appels IA et mail \\
+\hline
+\textbf{Accès données} — Spring Data JPA, spécifications \\
+\hline
+\textbf{PostgreSQL} — schéma généré / mis à jour par Hibernate \\
+\hline
+\end{tabular}
+\end{center}
+\end{archibox}
+
+\SecRoman{Modèle de données (entités JPA)}
+Entités \texttt{User}, \texttt{Category}, \texttt{Sector}, \texttt{Incident}, \texttt{Alert} — voir \texttt{docs/AI\_PROJECT\_CONTEXT.md}.
+
+\SecRoman{Diagrammes UML (figures à insérer)}
+Exporter les fichiers \texttt{docs/plantuml/*.puml} vers \texttt{docs/latex/figures/} (noms ci-dessous).
+
+\urbanfig{fig:landing}{figures/landing_page.png}{0.85}{Capture — page d’accueil (landing).}
+\urbanfig{fig:gantt1}{figures/gantt1.png}{0.95}{Diagramme de Gantt — planning projet.}
+\urbanfig{fig:pert1}{figures/pert1.png}{0.92}{Diagramme PERT — tâches et dépendances.}
+\urbanfig{fig:classdomaine1}{figures/class_domaine1.png}{0.95}{Diagramme de classes — domaine.}
+\urbanfig{fig:classtech1}{figures/class_technique1.png}{0.95}{Diagramme de classes — couches techniques.}
+\urbanfig{fig:usecase1}{figures/usecase1.png}{0.95}{Diagramme de cas d’utilisation.}
+\urbanfig{fig:composants1}{figures/composants1.png}{0.92}{Diagramme par composants.}
+\urbanfig{fig:sequence1}{figures/sequence_incident1.png}{0.92}{Diagramme de séquence — création d’incident.}
+
+\ChapterRoman{Environnement technique et choix technologiques}
+\label{chap:IV}
+\SecRoman{Stack backend}
+Java~17, Spring Boot~3.2, Web, Data JPA, Security, Validation, Mail, Actuator, PostgreSQL, JJWT, Springdoc, Lombok, Maven.
+
+\SecRoman{Stack frontend}
+Next.js~14, TypeScript, Tailwind, Axios, Leaflet, Recharts.
+
+\SecRoman{Qualité et industrialisation}
+JUnit~5, Mockito, JaCoCo (seuil de contrôle dans \texttt{pom.xml}), SonarQube, logs fichier.
+
+% =============================================================================
+% À partir d'ici : Chapitre 1, 2, 3… en CHIFFRES ARABES (pas de numérotation romaine)
+% =============================================================================
+\setcounter{chapter}{0}
+
+\chapter{Introduction}
+\label{chap:intro}
+\markboth{Chapitre~\thechapter\ — Introduction}{}
+\begin{center}
+\begin{minipage}{0.9\textwidth}
+\justifying
+Ce \textbf{chapitre~\thechapter{}} (numérotation \textbf{arabe}) pose la problématique, la méthodologie et le plan. Les chapitres précédents \textbf{I à IV} sont hors séquence numérique arabe : ils servent de préliminaire structuré (cadre, besoins, conception, technologies).
+\end{minipage}
+\end{center}
+
+\section{Problématique}
+Comment offrir une plateforme \textbf{fiable}, \textbf{sécurisée} et \textbf{évolutive} pour agréger les signalements citoyens et accélérer la réponse opérationnelle ?
+
+\section{Méthodologie}
+Analyse des besoins, conception UML, implémentation incrémentale, tests automatisés, analyse statique.
+
+\section{Plan du document}
+Les chapitres~\textbf{I} à~\textbf{IV} (préambule structuré) précèdent cette introduction. À partir du \cref{chap:intro}, la numérotation des chapitres est \textbf{arabe} : \textbf{1}, \textbf{2}, \textbf{3}, \ldots{} Voir les chapitres~\ref{chap:real}, \ref{chap:frontend}, \ref{chap:api}, \ref{chap:tests}, \ref{chap:deploy} et~\ref{chap:concl}.
+
+\chapter{Réalisation — Backend et persistance}
+\label{chap:real}
+\section{Couche contrôleur (REST)}
+\texttt{AuthController}, \texttt{IncidentController}, \texttt{StatsController}, etc., préfixe \texttt{/api/v1}.
+
+\section{Couche service}
+\texttt{IncidentService.createIncident} : catégorie/secteur, fichier, \texttt{AIAnalysisService}, persistance, \texttt{AlertService}.
+
+\section{Repositories}
+Projections carte, \texttt{Specification} pour filtres, requêtes agrégées pour statistiques.
+
+\begin{lstlisting}[style=javaurban,caption={Exemple d'en-tête JWT (conceptuel).},label=lst:jwt]
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+\end{lstlisting}
+
+\chapter{Réalisation — Frontend et intégration}
+\label{chap:frontend}
+\section{Next.js~14}
+App Router, pages landing, dashboard, carte, incidents, authentification.
+
+\section{Client HTTP}
+\texttt{lib/api.ts} : intercepteur JWT, \texttt{fetch} + \texttt{FormData} pour création d’incident.
+
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize,backgroundcolor=\color{CodeBg},frame=single,breaklines=true,caption={Intercepteur Axios (schéma TypeScript / JavaScript).},label=lst:axios]
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('urbanops_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+\end{lstlisting}
+
+\urbanfig{fig:landing2}{figures/dashboard_capture.png}{0.9}{Capture optionnelle — tableau de bord.}
+
+\chapter{Persistance, sécurité et intelligence artificielle}
+\label{chap:api}
+\section{ORM et schéma}
+Hibernate, \texttt{ddl-auto}, index sur statuts et coordonnées.
+
+\begin{lstlisting}[style=sqlurban,caption={Exemple de colonnes incidents (schéma indicatif).},label=lst:sql]
+CREATE TABLE incidents (
+  id BIGSERIAL PRIMARY KEY,
+  reference_code VARCHAR(20),
+  severity VARCHAR(20),
+  status VARCHAR(20),
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION
+);
+\end{lstlisting}
+
+\section{Sécurité}
+\texttt{SecurityFilterChain}, \texttt{JwtAuthenticationFilter}, \texttt{BCryptPasswordEncoder}.
+
+\section{Module IA}
+Prompt JSON, parsing, \texttt{fallback} par mots-clés si quota ou panne API.
+
+\chapter{Tests, couverture et analyse SonarQube}
+\label{chap:tests}
+\section{Stratégie JUnit~5 et Mockito}
+Tests unitaires ciblés, mocks de dépôts et services, assertions \texttt{Assertions.*}.
+
+\section{JaCoCo}
+Commande : \texttt{mvn clean verify} ; rapport sous \texttt{target/site/jacoco/}.
+
+\urbanfig{fig:jacoco1}{figures/jacoco1.png}{0.95}{Capture — rapport JaCoCo (vue globale ou package).}
+
+\section{SonarQube}
+Analyse après \texttt{mvn sonar:sonar} ou scanner CI ; capture du tableau de bord projet.
+
+\urbanfig{fig:sonar1}{figures/sonarqube1.png}{0.95}{Capture — tableau de bord SonarQube.}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Grille d’interprétation des indicateurs SonarQube (à compléter).}
+  \label{tab:sonar-metrics}
+  \begin{tabularx}{0.92\textwidth}{@{}l X@{}}
+    \toprule
+    \textbf{Indicateur} & \textbf{Commentaire / valeur mesurée} \\
+    \midrule
+    Fiabilité (bugs) & \ldots \\
+    Vulnérabilités & \ldots \\
+    Dette technique & \ldots \\
+    Couverture & \ldots \\
+    Duplications & \ldots \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Limites et suites de tests}
+Tests \texttt{@Disabled} pour appels réseau ; intérêt des tests d’intégration \texttt{@SpringBootTest}.
+
+\chapter{Déploiement et exploitation}
+\label{chap:deploy}
+\section{Lancement backend}
+\begin{lstlisting}[style=bashurban]
+cd backend
+mvn spring-boot:run
+\end{lstlisting}
+
+\section{Lancement frontend}
+\begin{lstlisting}[style=bashurban]
+cd frontend
+npm install
+npm run dev
+\end{lstlisting}
+
+\chapter{Conclusion et perspectives}
+\label{chap:concl}
+Synthèse des apports, difficultés, perspectives (mobile, notifications push, IoT, conteneurisation Kubernetes).
+
+% =============================================================================
+% Bibliographie
+% =============================================================================
+\cleardoublepage
+\chapter*{Bibliographie / Webographie}
+\addcontentsline{toc}{chapter}{Bibliographie / Webographie}
+\begin{thebibliography}{99}
+  \bibitem{springdoc} Springdoc OpenAPI — \url{https://springdoc.org/}
+  \bibitem{nextjs} Next.js — \url{https://nextjs.org/docs}
+  \bibitem{gemini} Google AI Gemini — \url{https://ai.google.dev/docs}
+  \bibitem{plantuml} PlantUML — \url{https://plantuml.com/}
+  \bibitem{sonar} SonarQube — \url{https://docs.sonarsource.com/}
+\end{thebibliography}
+
+% =============================================================================
+% Annexes
+% =============================================================================
+\appendix
+\chapter{Endpoints REST représentatifs}
+\begin{longtable}{@{}l l >{\RaggedRight\arraybackslash}p{7.8cm}@{}}
+  \toprule
+  \textbf{Méthode} & \textbf{Ressource} & \textbf{Description} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Méthode} & \textbf{Ressource} & \textbf{Description} \\
+  \midrule
+  \endhead
+  POST & \texttt{/auth/login} & Obtention d’un jeton JWT \\
+  POST & \texttt{/auth/register} & Création de compte citoyen \\
+  GET  & \texttt{/incidents} & Liste paginée et filtres \\
+  POST & \texttt{/incidents} & Création (multipart) \\
+  GET  & \texttt{/stats/dashboard} & Agrégats statistiques \\
+  \bottomrule
+\end{longtable}
+
+\chapter{Extrait de configuration (à anonymiser)}
+\begin{lstlisting}[caption={Exemple indicatif (ne pas commiter de secrets).}]
+server.servlet.context-path=/api/v1
+spring.jpa.hibernate.ddl-auto=update
+\end{lstlisting}
+
+\end{document}

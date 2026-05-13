@@ -1,17 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useTheme } from 'next-themes'
+import { Sun, Moon } from 'lucide-react'
 import { SignalerModal } from '@/components/shared/SignalerModal'
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Avoid hydration mismatch by waiting for component mount
+  useEffect(() => setMounted(true), [])
 
   return (
     <nav style={{
-      background: '#0e1218',
-      borderBottom: '1px solid rgba(255,255,255,0.07)',
+      background: 'var(--bg-sidebar)',
+      borderBottom: '1px solid var(--border)',
       padding: '0 1.5rem',
       height: '52px',
       display: 'flex',
@@ -24,9 +31,9 @@ export function Navbar() {
       <Link href="/" style={{
         fontFamily: 'monospace',
         fontWeight: 700,
-        color: '#e8edf3',
+        color: 'var(--t1)',
         textDecoration: 'none',
-        fontSize: '14px'
+        fontSize: '16px'
       }}>
         🏙 UrbanOps
       </Link>
@@ -34,25 +41,36 @@ export function Navbar() {
       {/* Desktop Navigation */}
       <div style={{
         display: 'flex',
-        gap: '1rem',
+        gap: '1.2rem',
         alignItems: 'center'
-      }} className="desktop-nav">
+      }} className="flex items-center">
+        
+        {mounted && (
+          <button 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-1.5 rounded-full hover:bg-[var(--bg-hover)] transition-colors"
+            style={{ color: 'var(--t1)', border: 'none', background: 'transparent', cursor: 'pointer' }}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        )}
+
         <Link href="/incidents" style={{
-          color: '#7a8899',
+          color: 'var(--t2)',
           textDecoration: 'none',
           fontSize: '13px'
         }}>
           Signalements
         </Link>
         <Link href="/auth/signin" style={{
-          color: '#7a8899',
+          color: 'var(--t2)',
           textDecoration: 'none',
           fontSize: '13px'
         }}>
           Se connecter
         </Link>
         <Link href="/auth/signup" style={{
-          background: '#1d4ed8',
+          background: 'var(--blue)',
           color: '#fff',
           textDecoration: 'none',
           fontSize: '12px',
@@ -60,10 +78,10 @@ export function Navbar() {
           borderRadius: '7px',
           fontWeight: 600
         }}>
-          S&apos;inscrire
+          S'inscrire
         </Link>
         <button onClick={() => setModalOpen(true)} style={{
-          background: '#3b82f6',
+          background: 'var(--blue)',
           color: '#fff',
           textDecoration: 'none',
           fontSize: '12px',
@@ -77,67 +95,6 @@ export function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        style={{
-          display: 'none',
-          background: 'none',
-          border: 'none',
-          color: '#e8edf3',
-          fontSize: '18px',
-          cursor: 'pointer'
-        }}
-        className="mobile-menu-btn"
-      >
-        ☰
-      </button>
-
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div style={{
-          position: 'absolute',
-          top: '52px',
-          left: 0,
-          right: 0,
-          background: '#0e1218',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
-          padding: '1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem'
-        }}>
-          <Link href="/incidents" style={{
-            color: '#7a8899',
-            textDecoration: 'none',
-            fontSize: '14px',
-            padding: '0.5rem 0'
-          }}>
-            Signalements
-          </Link>
-          <Link href="/auth/signin" style={{
-            color: '#7a8899',
-            textDecoration: 'none',
-            fontSize: '14px',
-            padding: '0.5rem 0'
-          }}>
-            Se connecter
-          </Link>
-          <Link href="/auth/signup" style={{
-            background: '#1d4ed8',
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            padding: '0.75rem 1rem',
-            borderRadius: '7px',
-            fontWeight: 600,
-            textAlign: 'center'
-          }}>
-            S&apos;inscrire
-          </Link>
-        </div>
-      )}
-      
       <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </nav>
   )

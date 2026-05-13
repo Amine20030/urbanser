@@ -1,0 +1,58 @@
+@startuml UrbanOps - Cas d utilisation
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+title Diagramme de cas d utilisation - UrbanOps
+
+actor Citoyen as CIT
+actor Administrateur as ADM
+actor "API Gemini" as GEM
+actor "SMTP Email" as SMTP
+
+rectangle UrbanOps {
+  usecase "S inscrire" as UC1
+  usecase "Se connecter" as UC2
+  usecase "Consulter profil" as UC3
+  usecase "Declarer un incident\n(photo + GPS)" as UC4
+  usecase "Consulter mes incidents" as UC5
+  usecase "Lister / filtrer incidents" as UC6
+  usecase "Carte incidents" as UC7
+  usecase "Statistiques dashboard" as UC8
+  usecase "Categories et secteurs" as UC9
+  usecase "Modifier statut incident" as UC10
+  usecase "Supprimer incident" as UC11
+  usecase "Gerer utilisateurs" as UC12
+  usecase "Alertes (liste / accuse)" as UC13
+  usecase "Classification IA severite" as UC14
+  usecase "Envoi email autorite" as UC15
+}
+
+CIT --> UC1
+CIT --> UC2
+CIT --> UC3
+CIT --> UC4
+CIT --> UC5
+CIT --> UC6
+CIT --> UC7
+CIT --> UC8
+CIT --> UC9
+
+ADM --> UC2
+ADM --> UC3
+ADM --> UC6
+ADM --> UC7
+ADM --> UC8
+ADM --> UC9
+ADM --> UC10
+ADM --> UC11
+ADM --> UC12
+ADM --> UC13
+
+UC4 ..> UC14 : include
+UC4 ..> UC15 : include\nHIGH ou MEDIUM
+UC14 ..> GEM
+UC15 ..> SMTP
+
+@enduml

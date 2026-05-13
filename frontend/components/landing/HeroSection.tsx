@@ -41,15 +41,14 @@ export function HeroSection() {
   }, [])
 
   return (
-    <section style={{
-      background: 'linear-gradient(180deg, #0b0f14 0%, #0e1218 100%)',
+    <section className="relative" style={{
       padding: '4rem 1.5rem',
       textAlign: 'center'
     }}>
       <h1 style={{
         fontSize: 'clamp(2rem, 5vw, 3.5rem)',
         fontWeight: 800,
-        color: '#e8edf3',
+        color: 'var(--t1)',
         marginBottom: '1rem',
         lineHeight: 1.1
       }}>
@@ -60,7 +59,7 @@ export function HeroSection() {
 
       <p style={{
         fontSize: '1.125rem',
-        color: '#7a8899',
+        color: 'var(--t2)',
         maxWidth: '600px',
         margin: '0 auto 2rem',
         lineHeight: 1.6
@@ -90,14 +89,14 @@ export function HeroSection() {
           📍 Signaler un incident
         </button>
         <Link href="/carte" style={{
-          background: 'rgba(255,255,255,0.05)',
-          color: '#e8edf3',
+          background: 'var(--bg-card)',
+          color: 'var(--t1)',
           textDecoration: 'none',
           padding: '12px 28px',
           borderRadius: '8px',
           fontWeight: 500,
           fontSize: '15px',
-          border: '1px solid rgba(255,255,255,0.1)'
+          border: '1px solid var(--border)'
         }}>
           Voir la carte
         </Link>
@@ -147,8 +146,8 @@ export function HeroSection() {
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.07)',
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border)',
       borderRadius: '12px',
       padding: '1.5rem 1rem'
     }}>
@@ -161,7 +160,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
       </div>
       <div style={{
         fontSize: '12px',
-        color: '#7a8899',
+        color: 'var(--t2)',
         marginTop: '0.25rem'
       }}>
         {label}

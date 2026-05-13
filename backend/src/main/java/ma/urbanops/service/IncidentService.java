@@ -210,31 +210,8 @@ public class IncidentService {
             cb.equal(root.get("category"), category));
     }
 
-    public List<IncidentMapDTO> getAllForMap() {
-        return incidentRepository.findAll().stream()
-                .map(i -> IncidentMapDTO.builder()
-                        .id(i.getId())
-                        .referenceCode(i.getReferenceCode())
-                        .title(i.getTitle())
-                        .severity(i.getSeverity())
-                        .status(i.getStatus())
-                        .latitude(i.getLatitude())
-                        .longitude(i.getLongitude())
-                        .category(i.getCategory().getName())
-                        .build())
-                .toList();
-    }
-
-    /**
-     * Interface-based projection method — returns only the fields needed for map display.
-     * Spring Data JPA generates an optimal SELECT query loading only 7 columns instead of 20+.
-     * This is a JPA best practice for performance with large datasets.
-     *
-     * @return List of MapIncidentProjection (interface-based projection)
-     */
-    @Transactional(readOnly = true)
-    public List<MapIncidentProjection> getAllForMapProjection() {
-        return incidentRepository.findAllForMapProjection();
+    public List<Incident> getAllForMap() {
+        return incidentRepository.findAllForMap();
     }
 
     public String generateReferenceCode(Long id) {

@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+import { useTheme } from 'next-themes'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 
 export type MapPoint = {
@@ -27,6 +29,27 @@ export function IncidentsLeafletMap({
   zoom?: number
 }) {
   const valid = points.filter((p) => isValidCoord(p.lat, p.lng))
+  
+  // To prevent Next SSR hydration mismatch with theme
+  const [mounted, setMounted] = React.useState(false)
+  const { theme } = useTheme()
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div style={{ height, width: '100%', borderRadius: '12px', background: 'var(--bg-card)' }} />
+  }
+
+  const isLight = theme === 'light'
+  const tileUrl = isLight 
+    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+  
+  const attribution = isLight
+    ? 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    : '&copy; OpenStreetMap &copy; CARTO'
 
   return (
     <MapContainer
@@ -36,9 +59,14 @@ export function IncidentsLeafletMap({
       scrollWheelZoom
     >
       <TileLayer
-        attribution='&copy; OpenStreetMap &copy; CARTO'
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        attribution={attribution}
+        url={tileUrl}
       />
+      {isLight && (
+        <TileLayer
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+        />
+      )}
       {valid.map((p) => (
         <CircleMarker
           key={String(p.id)}

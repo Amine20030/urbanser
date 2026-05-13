@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react'
 import { categoryAPI, sectorAPI, incidentAPI } from '@/lib/api'
+import { Toast } from './Toast'
 
 interface SignalerModalProps {
   isOpen: boolean
@@ -12,6 +13,7 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [toast, setToast] = useState<{message: string, type: 'success'|'error'} | null>(null)
 
   const [categories, setCategories] = useState<any[]>([])
   const [sectors, setSectors] = useState<any[]>([])
@@ -50,16 +52,16 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
 
   const handleSectorChange = (id: string) => {
     setSectorId(id)
-    const sector = sectors.find(s => s.id.toString() === id)
-    if (sector) {
-      setLatitude(sector.centerLat.toString())
-      setLongitude(sector.centerLng.toString())
+    const sector = sectors.find(s => s.id === Number(id))
+    if (sector?.centerLat && sector?.centerLng) {
+      setLatitude(String(sector.centerLat))
+      setLongitude(String(sector.centerLng))
     }
   }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!title || !description || !categoryId || !sectorId || !latitude || !longitude) {
+    if (!title || !description || !categoryId || !sectorId) {
       setError("Veuillez remplir tous les champs obligatoires")
       return
     }
@@ -69,13 +71,16 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
 
     try {
       const formData = new FormData()
+      const lat = parseFloat(latitude) || sectors.find(s=>s.id===Number(sectorId))?.centerLat || 31.6295
+      const lng = parseFloat(longitude) || sectors.find(s=>s.id===Number(sectorId))?.centerLng || -7.9811
+
       formData.append('data', new Blob([JSON.stringify({
         title,
         description,
         categoryId: parseInt(categoryId),
         sectorId: parseInt(sectorId),
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude)
+        latitude: lat,
+        longitude: lng
       })], { type: 'application/json' }))
       
       if (photo) {
@@ -85,9 +90,13 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
       const res = await incidentAPI.create(formData)
       setAiResult(res.data)
       setStep(3)
+      window.dispatchEvent(new CustomEvent('incident-created'))
+      setToast({ message: "Incident signalé avec succès !", type: 'success' })
     } catch (err: any) {
       console.error(err)
-      setError(err.response?.data?.message || "Erreur lors de la création de l'incident")
+      const msg = err.response?.data?.message || "Erreur lors de la création de l'incident"
+      setError(msg)
+      setToast({ message: msg, type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -110,6 +119,7 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
       backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999,
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       <div style={{
         background: '#131920',
         border: '1px solid rgba(255,255,255,0.07)',

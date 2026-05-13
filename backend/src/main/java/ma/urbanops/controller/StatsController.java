@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +42,7 @@ public class StatsController {
 
     @GetMapping("/incidents/hourly")
     @Operation(summary = "Get hourly incident statistics")
-    public ResponseEntity<List<StatsResponse.HourlyCount>> getHourlyStats() {
+    public ResponseEntity<List<Map<String,Object>>> getHourlyStats() {
         return ResponseEntity.ok(statsService.getHourlyStats());
     }
 

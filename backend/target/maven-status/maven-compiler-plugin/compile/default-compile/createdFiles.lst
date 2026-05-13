@@ -19,7 +19,6 @@ ma\urbanops\dto\request\RegisterRequest$RegisterRequestBuilder.class
 ma\urbanops\security\UserDetailsServiceImpl.class
 ma\urbanops\service\SectorService.class
 ma\urbanops\dto\response\StatsResponse$SectorCount$SectorCountBuilder.class
-ma\urbanops\dto\response\AIAnalysisResponse.class
 ma\urbanops\dto\response\MapIncidentProjection.class
 ma\urbanops\service\FileStorageService.class
 ma\urbanops\entity\Category.class
@@ -77,7 +76,6 @@ ma\urbanops\dto\request\LoginRequest$LoginRequestBuilder.class
 ma\urbanops\dto\response\AIAnalysisResult$AIAnalysisResultBuilder.class
 ma\urbanops\config\SecurityConfig.class
 ma\urbanops\config\AsyncConfig.class
-ma\urbanops\dto\response\AIAnalysisResponse$AIAnalysisResponseBuilder.class
 ma\urbanops\dto\response\StatsResponse.class
 ma\urbanops\config\DataSeeder.class
 ma\urbanops\dto\response\StatsResponse$SectorCount.class

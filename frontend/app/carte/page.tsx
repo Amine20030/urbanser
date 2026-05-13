@@ -8,12 +8,17 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { getSeverityColor } from '@/lib/utils'
 import api from '@/lib/api'
-import type { MapPoint } from '@/components/map/IncidentsLeafletMap'
 
-const LeafletMap = dynamic(
-  () => import('@/components/map/IncidentsLeafletMap').then((m) => m.IncidentsLeafletMap),
-  { ssr: false, loading: () => <div className="h-full w-full flex items-center justify-center text-[var(--t3)]">Chargement…</div> }
-)
+const MapView = dynamic(() => import('@/components/shared/MapView'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ height: 480, background: '#f1f5f9', borderRadius: 12,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: '#64748b', fontSize: 14 }}>
+      Chargement de la carte de Marrakech...
+    </div>
+  )
+})
 
 type MapIncident = {
   id: number
@@ -102,7 +107,7 @@ export default function CartePage() {
             {loading ? (
               <div className="h-full flex items-center justify-center text-[var(--t3)]">Chargement de la carte…</div>
             ) : (
-              <LeafletMap points={points} height="100%" zoom={12} />
+              <MapView height="100%" showAllStatuses={true} />
             )}
           </div>
         </div>

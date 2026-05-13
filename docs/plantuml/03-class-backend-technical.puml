@@ -1,0 +1,84 @@
+@startuml UrbanOps - Couches techniques backend
+
+title Diagramme de classes - Architecture technique (Spring)
+
+skinparam packageStyle rectangle
+skinparam linetype polyline
+
+package "ma.urbanops.controller" #LightBlue {
+  class AuthController
+  class IncidentController
+  class UserController
+  class CategoryController
+  class SectorController
+  class StatsController
+  class AlertController
+}
+
+package "ma.urbanops.service" #LightGreen {
+  class IncidentService
+  class UserService
+  class CategoryService
+  class SectorService
+  class StatsService
+  class AlertService
+  class AIAnalysisService
+  class FileStorageService
+  class EmailService
+  class ScheduledTaskService
+}
+
+package "ma.urbanops.repository" #Wheat {
+  interface IncidentRepository
+  interface UserRepository
+  interface CategoryRepository
+  interface SectorRepository
+  interface AlertRepository
+}
+
+package "ma.urbanops.security" #Pink {
+  class JwtAuthenticationFilter
+  class JwtTokenProvider
+  class UserDetailsServiceImpl
+}
+
+AuthController --> UserService
+AuthController --> JwtTokenProvider
+
+IncidentController --> IncidentService
+IncidentController --> UserService
+
+UserController --> UserService
+CategoryController --> CategoryService
+SectorController --> SectorService
+StatsController --> StatsService
+AlertController --> AlertService
+
+IncidentService --> IncidentRepository
+IncidentService --> CategoryRepository
+IncidentService --> SectorRepository
+IncidentService --> FileStorageService
+IncidentService --> AIAnalysisService
+IncidentService --> AlertService
+
+UserService --> UserRepository
+CategoryService --> CategoryRepository
+SectorService --> SectorRepository
+StatsService --> IncidentRepository
+StatsService --> UserRepository
+StatsService --> AlertRepository
+
+AlertService --> AlertRepository
+AlertService --> EmailService
+
+JwtAuthenticationFilter ..> JwtTokenProvider
+JwtAuthenticationFilter ..> UserDetailsServiceImpl
+UserDetailsServiceImpl --> UserRepository
+
+note bottom of IncidentService
+  createIncident : validation categorie/secteur,
+  upload, analyse IA, sauvegarde,
+  alerte si HIGH/MEDIUM
+end note
+
+@enduml
