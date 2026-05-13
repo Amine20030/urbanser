@@ -7,9 +7,8 @@ import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import ma.urbanops.dto.request.IncidentRequest;
 import ma.urbanops.dto.request.UpdateStatusRequest;
-import ma.urbanops.dto.response.IncidentMapDTO;
 import ma.urbanops.dto.response.IncidentResponse;
-import ma.urbanops.dto.response.MapIncidentProjection;
+import ma.urbanops.dto.response.UserResponse;
 import ma.urbanops.entity.Incident;
 import ma.urbanops.entity.User;
 import ma.urbanops.enums.IncidentStatus;
@@ -173,13 +172,24 @@ public class IncidentController {
                         .centerLat(i.getSector().getCenterLat())
                         .centerLng(i.getSector().getCenterLng())
                         .build() : null)
-                .severity(i.getSeverity())
-                .status(i.getStatus())
+                .severity(i.getSeverity() != null ? i.getSeverity().name() : null)
+                .status(i.getStatus() != null ? i.getStatus().name() : null)
+                .reportedBy(i.getReportedBy() != null ? UserResponse.builder()
+                        .id(i.getReportedBy().getId())
+                        .firstName(i.getReportedBy().getFirstName())
+                        .lastName(i.getReportedBy().getLastName())
+                        .email(i.getReportedBy().getEmail())
+                        .phone(i.getReportedBy().getPhone())
+                        .role(i.getReportedBy().getRole())
+                        .sector(i.getReportedBy().getSector())
+                        .receiveAlerts(i.getReportedBy().getReceiveAlerts())
+                        .createdAt(i.getReportedBy().getCreatedAt())
+                        .build() : null)
                 .photoUrl(i.getPhotoUrl())
                 .latitude(i.getLatitude())
                 .longitude(i.getLongitude())
-                .aiAnalysisResult(i.getAiAnalysisResult())
                 .authorityNotified(i.getAuthorityNotified())
+                .aiAnalysisResult(i.getAiAnalysisResult())
                 .alertSent(i.getAlertSent())
                 .createdAt(i.getCreatedAt())
                 .updatedAt(i.getUpdatedAt())

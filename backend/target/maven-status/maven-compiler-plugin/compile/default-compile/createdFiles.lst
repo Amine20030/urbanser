@@ -31,7 +31,6 @@ ma\urbanops\repository\SectorRepository.class
 ma\urbanops\controller\AlertController.class
 ma\urbanops\controller\AuthController.class
 ma\urbanops\dto\request\IncidentRequest.class
-ma\urbanops\dto\response\IncidentMapDTO$IncidentMapDTOBuilder.class
 ma\urbanops\config\WebConfig.class
 ma\urbanops\repository\AlertRepository.class
 ma\urbanops\repository\UserRepository.class
@@ -61,7 +60,6 @@ ma\urbanops\exception\AIAnalysisException.class
 ma\urbanops\service\AIAnalysisService.class
 ma\urbanops\config\CorsConfig.class
 ma\urbanops\dto\response\StatsResponse$CategoryCount$CategoryCountBuilder.class
-ma\urbanops\dto\response\IncidentMapDTO.class
 ma\urbanops\entity\Sector$SectorBuilder.class
 ma\urbanops\controller\IncidentController.class
 ma\urbanops\controller\CategoryController.class
@@ -69,7 +67,6 @@ ma\urbanops\dto\response\UserResponse$UserResponseBuilder.class
 ma\urbanops\entity\Incident$IncidentBuilder.class
 ma\urbanops\dto\response\StatsResponse$CategoryCount.class
 ma\urbanops\entity\Alert.class
-ma\urbanops\controller\SectorController.class
 ma\urbanops\exception\UnauthorizedException.class
 ma\urbanops\exception\ResourceNotFoundException.class
 ma\urbanops\dto\request\LoginRequest$LoginRequestBuilder.class

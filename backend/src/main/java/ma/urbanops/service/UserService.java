@@ -1,7 +1,6 @@
 package ma.urbanops.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import ma.urbanops.dto.request.RegisterRequest;
 import ma.urbanops.dto.response.UserResponse;
 import ma.urbanops.entity.User;
@@ -13,67 +12,99 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 
-@Service @Slf4j @RequiredArgsConstructor @Transactional
+@Service
+@RequiredArgsConstructor
+@Transactional
 public class UserService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public User register(RegisterRequest req) {
-        if (userRepository.existsByEmail(req.getEmail()))
-            throw new IllegalArgumentException("Email already exists: " + req.getEmail());
-        User u = User.builder()
-            .firstName(req.getFirstName()).lastName(req.getLastName())
-            .email(req.getEmail()).password(passwordEncoder.encode(req.getPassword()))
-            .phone(req.getPhone()).sector(req.getSector())
-            .role(Role.CITIZEN).isActive(true)
-            .receiveAlerts(req.getReceiveAlerts() != null ? req.getReceiveAlerts() : true)
-            .build();
-        return userRepository.save(u);
+    public User register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .sector(request.getSector())
+                .receiveAlerts(request.getReceiveAlerts() != null ? request.getReceiveAlerts() : true)
+                .role(Role.CITIZEN)
+                .build();
+        return userRepository.save(user);
     }
 
-    @Transactional(readOnly=true)
+    @Transactional(readOnly = true)
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException("User","email",email));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
     }
 
-    @Transactional(readOnly=true)
-    public Page<User> findAll(Pageable pageable) { return userRepository.findAll(pageable); }
-
-    @Transactional(readOnly=true)
+    @Transactional(readOnly = true)
     public User findById(Long id) {
         return userRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User","id",id));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
     }
 
-    public User updateProfile(Long id, RegisterRequest req) {
-        User u = findById(id);
-        if(req.getFirstName()!=null) u.setFirstName(req.getFirstName());
-        if(req.getLastName()!=null)  u.setLastName(req.getLastName());
-        if(req.getPhone()!=null)     u.setPhone(req.getPhone());
-        if(req.getSector()!=null)    u.setSector(req.getSector());
-        return userRepository.save(u);
+    @Transactional(readOnly = true)
+    public Page<User> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable);
+    }
+
+    public User updateProfile(Long userId, RegisterRequest request) {
+        User user = findById(userId);
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhone(request.getPhone());
+        user.setSector(request.getSector());
+        if (request.getReceiveAlerts() != null) {
+            user.setReceiveAlerts(request.getReceiveAlerts());
+        }
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        return userRepository.save(user);
     }
 
     public void deactivateUser(Long id) {
-        User u = findById(id); u.setIsActive(false); userRepository.save(u);
+        User user = findById(id);
+        user.setIsActive(false);
+        userRepository.save(user);
     }
 
-    public long countCitizens() { return userRepository.countByRole(Role.CITIZEN); }
-    public long countAll()      { return userRepository.count(); }
+    @Transactional(readOnly = true)
+    public long countCitizens() {
+        return userRepository.countByRole(Role.CITIZEN);
+    }
+
+    @Transactional(readOnly = true)
     public long countActiveThisWeek() {
-        return userRepository.countByCreatedAtAfter(LocalDateTime.now().minusWeeks(1));
+        Long n = userRepository.countByCreatedAtAfter(LocalDateTime.now().minusDays(7));
+        return n != null ? n : 0L;
+    }
+
+    @Transactional(readOnly = true)
+    public long countAll() {
+        return userRepository.count();
     }
 
     public UserResponse toResponse(User u) {
         return UserResponse.builder()
-            .id(u.getId()).firstName(u.getFirstName()).lastName(u.getLastName())
-            .email(u.getEmail()).phone(u.getPhone()).role(u.getRole())
-            .sector(u.getSector())
-            .receiveAlerts(u.getReceiveAlerts())
-            .createdAt(u.getCreatedAt())
-            .build();
+                .id(u.getId())
+                .firstName(u.getFirstName())
+                .lastName(u.getLastName())
+                .email(u.getEmail())
+                .phone(u.getPhone())
+                .role(u.getRole())
+                .sector(u.getSector())
+                .receiveAlerts(u.getReceiveAlerts())
+                .createdAt(u.getCreatedAt())
+                .build();
     }
 }

@@ -4,7 +4,6 @@ C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\contro
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\FileStorageService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\CategoryService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\response\AlertResponse.java
-C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\controller\SectorController.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config\OpenApiConfig.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\entity\User.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\exception\ResourceNotFoundException.java
@@ -39,7 +38,6 @@ C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\contro
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\enums\Role.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\request\IncidentRequest.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config\WebConfig.java
-C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\response\IncidentMapDTO.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\IncidentService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\StatsService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\security\UserDetailsImpl.java

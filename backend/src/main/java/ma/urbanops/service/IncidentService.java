@@ -5,8 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import ma.urbanops.dto.request.IncidentRequest;
 import ma.urbanops.dto.request.UpdateStatusRequest;
 
-import ma.urbanops.dto.response.IncidentMapDTO;
-import ma.urbanops.dto.response.MapIncidentProjection;
 import ma.urbanops.entity.Category;
 import ma.urbanops.entity.Incident;
 import ma.urbanops.entity.Sector;

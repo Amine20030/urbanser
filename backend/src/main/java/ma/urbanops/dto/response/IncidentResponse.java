@@ -1,12 +1,6 @@
 package ma.urbanops.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import ma.urbanops.enums.IncidentStatus;
-import ma.urbanops.enums.Severity;
-
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Data
@@ -21,14 +15,14 @@ public class IncidentResponse {
     private String description;
     private CategoryResponse category;
     private SectorResponse sector;
-    private Severity severity;
-    private IncidentStatus status;
+    private String severity;
+    private String status;
     private UserResponse reportedBy;
     private String photoUrl;
     private Double latitude;
     private Double longitude;
-    private String aiAnalysisResult;
     private String authorityNotified;
+    private String aiAnalysisResult;
     private Boolean alertSent;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
