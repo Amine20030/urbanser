@@ -1,6 +1,10 @@
 package ma.urbanops.service;
 
+import ma.urbanops.dto.request.IncidentRequest;
+import ma.urbanops.dto.response.ContentModerationResult;
+import ma.urbanops.entity.Category;
 import ma.urbanops.entity.Incident;
+import ma.urbanops.entity.Sector;
 import ma.urbanops.entity.User;
 import ma.urbanops.enums.IncidentStatus;
 import ma.urbanops.enums.Severity;
@@ -28,6 +32,7 @@ class IncidentServiceTest {
     @Mock private FileStorageService fileStorageService;
     @Mock private AIAnalysisService aiAnalysisService;
     @Mock private AlertService alertService;
+    @Mock private IncidentContentModerationLogService moderationLogService;
 
     @InjectMocks private IncidentService incidentService;
 
@@ -151,6 +156,45 @@ class IncidentServiceTest {
         incidentService.deleteIncident(1L);
         
         verify(incidentRepository, times(1)).delete(testIncident);
+    }
+
+    @Test
+    void createIncident_whenModerationRejects_shouldNotPersistIncidentOrPhoto() {
+        Category category = Category.builder().id(1L).name("Voirie").build();
+        Sector sector = Sector.builder().id(1L).name("Gueliz").build();
+        IncidentRequest request = IncidentRequest.builder()
+                .title("azerty qwerty")
+                .description("asdf asdf asdf random test")
+                .categoryId(category.getId())
+                .sectorId(sector.getId())
+                .latitude(31.63)
+                .longitude(-8.0)
+                .build();
+
+        when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
+        when(sectorRepository.findById(sector.getId())).thenReturn(Optional.of(sector));
+        when(aiAnalysisService.moderateIncidentContent(
+                request.getTitle(), request.getDescription(), category.getName(), sector.getName()))
+                .thenReturn(ContentModerationResult.builder()
+                        .accepted(false)
+                        .reason("Contenu aleatoire")
+                        .confidence(0.9)
+                        .fallbackUsed(false)
+                        .build());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> incidentService.createIncident(request, null, testUser));
+
+        assertTrue(ex.getMessage().contains("Signalement refuse"));
+        verify(moderationLogService).log(null, request.getTitle(), request.getDescription(),
+                category, sector, testUser, ContentModerationResult.builder()
+                        .accepted(false)
+                        .reason("Contenu aleatoire")
+                        .confidence(0.9)
+                        .fallbackUsed(false)
+                        .build());
+        verify(incidentRepository, never()).save(any(Incident.class));
+        verify(fileStorageService, never()).storeFile(any());
     }
 
     @Test

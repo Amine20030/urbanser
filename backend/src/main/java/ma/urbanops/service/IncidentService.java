@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ma.urbanops.dto.request.IncidentRequest;
 import ma.urbanops.dto.request.UpdateStatusRequest;
+import ma.urbanops.dto.response.ContentModerationResult;
 
 import ma.urbanops.entity.Category;
 import ma.urbanops.entity.Incident;
@@ -38,6 +39,7 @@ public class IncidentService {
     private final FileStorageService fileStorageService;
     private final AIAnalysisService aiAnalysisService;
     private final AlertService alertService;
+    private final IncidentContentModerationLogService moderationLogService;
 
     public Page<Incident> getAllIncidents(Long categoryId, Long sectorId, Severity severity, 
                                           IncidentStatus status, String keyword, Pageable pageable) {
@@ -92,6 +94,18 @@ public class IncidentService {
         
         Sector sector = sectorRepository.findById(request.getSectorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sector", "id", request.getSectorId()));
+
+        ContentModerationResult moderation = aiAnalysisService.moderateIncidentContent(
+                request.getTitle(),
+                request.getDescription(),
+                category.getName(),
+                sector.getName());
+        if (!Boolean.TRUE.equals(moderation.getAccepted())) {
+            log.warn("Incident content rejected: reason={} confidence={} fallback={}",
+                    moderation.getReason(), moderation.getConfidence(), moderation.getFallbackUsed());
+            moderationLogService.log(null, request.getTitle(), request.getDescription(), category, sector, reporter, moderation);
+            throw new IllegalArgumentException("Signalement refuse: " + moderation.getReason());
+        }
         
         // Save photo if provided
         String photoUrl = null;
@@ -143,6 +157,8 @@ public class IncidentService {
         
         // Save incident first to get ID for reference code
         Incident savedIncident = incidentRepository.save(incident);
+        moderationLogService.log(savedIncident.getId(), request.getTitle(), request.getDescription(),
+                category, sector, reporter, moderation);
         
         // Update reference code after save
         savedIncident.setReferenceCode(savedIncident.generateReferenceCode());

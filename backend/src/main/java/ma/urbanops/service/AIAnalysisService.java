@@ -3,6 +3,7 @@ package ma.urbanops.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import ma.urbanops.dto.response.AIAnalysisResult;
+import ma.urbanops.dto.response.ContentModerationResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -60,6 +61,31 @@ public class AIAnalysisService {
     }
 
     // ── GEMINI CALL ───────────────────────────────────────────
+    public ContentModerationResult moderateIncidentContent(String title, String description,
+                                                           String categoryName, String sectorName) {
+        if (apiKey == null || apiKey.isBlank() || apiKey.equals("YOUR_GEMINI_API_KEY")) {
+            log.warn("Gemini API key not configured, using local moderation fallback");
+            return fallbackModeration(title, description);
+        }
+        try {
+            ContentModerationResult aiResult = callGeminiModeration(title, description, categoryName, sectorName);
+            ContentModerationResult strictResult = strictLocalModeration(title, description);
+            if (Boolean.TRUE.equals(aiResult.getAccepted()) && !Boolean.TRUE.equals(strictResult.getAccepted())) {
+                return ContentModerationResult.builder()
+                    .accepted(false)
+                    .reason("Contenu refuse par controle strict: " + strictResult.getReason())
+                    .confidence(strictResult.getConfidence())
+                    .fallbackUsed(aiResult.getFallbackUsed())
+                    .rawResponse(aiResult.getRawResponse())
+                    .build();
+            }
+            return aiResult;
+        } catch (Exception e) {
+            log.warn("Gemini moderation failed ({}), using local fallback", e.getMessage());
+            return fallbackModeration(title, description);
+        }
+    }
+
     private AIAnalysisResult callGemini(String description, String categoryHint) {
         String prompt = buildPrompt(description, categoryHint);
 
@@ -91,6 +117,37 @@ public class AIAnalysisService {
     }
 
     // ── PROMPT ────────────────────────────────────────────────
+    private ContentModerationResult callGeminiModeration(String title, String description,
+                                                         String categoryName, String sectorName) {
+        String prompt = buildModerationPrompt(title, description, categoryName, sectorName);
+
+        Map<String, Object> part = Map.of("text", prompt);
+        Map<String, Object> content = Map.of("parts", List.of(part));
+        Map<String, Object> genConfig = Map.of(
+            "temperature", 0.0,
+            "maxOutputTokens", 200,
+            "responseMimeType", "application/json"
+        );
+        Map<String, Object> body = Map.of(
+            "contents", List.of(content),
+            "generationConfig", genConfig
+        );
+
+        String url = endpoint + "?key=" + apiKey;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+            url, HttpMethod.POST,
+            new HttpEntity<>(body, headers),
+            Map.class
+        );
+
+        String text = extractText(response.getBody());
+        return parseModerationResponse(text);
+    }
+
     private String buildPrompt(String description, String categoryHint) {
         return """
             Tu es un système expert d'analyse d'incidents urbains pour Marrakech, Maroc.
@@ -114,6 +171,32 @@ public class AIAnalysisService {
     }
 
     // ── PARSE ─────────────────────────────────────────────────
+    private String buildModerationPrompt(String title, String description,
+                                         String categoryName, String sectorName) {
+        return """
+            Tu es le moderateur IA d'UrbanOps Marrakech.
+            Decide si ce signalement peut etre publie comme incident urbain reel.
+            Reponds UNIQUEMENT en JSON valide, sans texte avant ou apres.
+
+            TITRE: "%s"
+            DESCRIPTION: "%s"
+            CATEGORIE CHOISIE: %s
+            SECTEUR: %s
+
+            ACCEPTER si le contenu decrit probablement un probleme urbain reel:
+            voirie, eau, electricite, eclairage, dechets, securite, transport, espaces verts,
+            meme si le francais/arabe/darija/anglais est imparfait.
+
+            REFUSER si le contenu est aleatoire, vide de sens, test/spam, publicite,
+            insulte sans incident, blague, contenu hors sujet, ou ne decrit pas un incident urbain.
+            REFUSER aussi les phrases grammaticalement incoherentes ou composees seulement de mots generiques.
+            Le mot "incident" seul ne suffit jamais: le texte doit nommer un probleme urbain concret.
+
+            Reponds avec exactement ce JSON:
+            {"accepted":true,"reason":"...","confidence":0.0}
+            """.formatted(title, description, categoryName, sectorName);
+    }
+
     @SuppressWarnings("unchecked")
     private String extractText(Map<String, Object> body) {
         try {
@@ -150,6 +233,30 @@ public class AIAnalysisService {
     }
 
     // ── FALLBACK — keyword rules ───────────────────────────────
+    private ContentModerationResult parseModerationResponse(String json) {
+        try {
+            String clean = json.replaceAll("```json", "").replaceAll("```", "").trim();
+            Map<String, Object> map = objectMapper.readValue(clean, Map.class);
+
+            return ContentModerationResult.builder()
+                .accepted(getBoolean(map, "accepted", false))
+                .reason(getString(map, "reason", "Moderation automatique"))
+                .confidence(getDouble(map, "confidence", 0.8))
+                .fallbackUsed(false)
+                .rawResponse(json)
+                .build();
+        } catch (Exception e) {
+            log.warn("Failed to parse Gemini moderation JSON: {}", e.getMessage());
+            return ContentModerationResult.builder()
+                .accepted(false)
+                .reason("Reponse IA de moderation illisible")
+                .confidence(0.0)
+                .fallbackUsed(true)
+                .rawResponse(json)
+                .build();
+        }
+    }
+
     public AIAnalysisResult fallback(String description, String categoryHint) {
         String desc = description == null ? "" : description.toLowerCase();
 
@@ -185,6 +292,49 @@ public class AIAnalysisService {
     }
 
     // ── HELPERS ───────────────────────────────────────────────
+    public ContentModerationResult fallbackModeration(String title, String description) {
+        return strictLocalModeration(title, description);
+    }
+
+    private ContentModerationResult strictLocalModeration(String title, String description) {
+        String text = ((title == null ? "" : title) + " " + (description == null ? "" : description)).trim();
+        String normalized = normalizeText(text);
+
+        if (normalized.length() < 20) {
+            return rejectedFallback("Le signalement est trop court pour decrire un incident.");
+        }
+        if (normalized.matches(".*(.)\\1{7,}.*")) {
+            return rejectedFallback("Le contenu semble aleatoire ou repetitif.");
+        }
+        if (containsAny(normalized, "asdf", "qwerty", "azerty", "lorem ipsum", "test test", "hello world")) {
+            return rejectedFallback("Le contenu ressemble a un test ou a du texte aleatoire.");
+        }
+
+        long letters = normalized.chars().filter(Character::isLetter).count();
+        double letterRatio = normalized.isBlank() ? 0.0 : (double) letters / normalized.length();
+        if (letterRatio < 0.45) {
+            return rejectedFallback("Le contenu ne contient pas assez de texte comprehensible.");
+        }
+
+        boolean hasUrbanSignal = containsAny(normalized,
+            "route", "rue", "avenue", "trottoir", "nid de poule", "voirie", "trafic", "accident",
+            "street", "road", "water", "leak", "flood", "eau", "fuite", "inondation", "egout", "electricite", "cable", "lampadaire", "eclairage",
+            "dechet", "ordure", "poubelle", "securite", "agression", "bruit", "feu", "incendie",
+            "jardin", "arbre", "transport", "bus", "taxi");
+
+        if (!hasUrbanSignal) {
+            return rejectedFallback("Le contenu ne decrit pas clairement un probleme urbain concret.");
+        }
+
+        return ContentModerationResult.builder()
+            .accepted(true)
+            .reason("Contenu accepte par verification locale.")
+            .confidence(0.65)
+            .fallbackUsed(true)
+            .rawResponse("fallback")
+            .build();
+    }
+
     private String normalizeSeverity(String s) {
         if (s == null) return "MEDIUM";
         return switch (s.toUpperCase().trim()) {
@@ -215,5 +365,28 @@ public class AIAnalysisService {
     private Double getDouble(Map<String, Object> m, String key, Double def) {
         try { return ((Number) m.get(key)).doubleValue(); }
         catch (Exception e) { return def; }
+    }
+
+    private Boolean getBoolean(Map<String, Object> m, String key, Boolean def) {
+        Object v = m.get(key);
+        if (v instanceof Boolean b) return b;
+        if (v instanceof String s) return Boolean.parseBoolean(s);
+        return def;
+    }
+
+    private ContentModerationResult rejectedFallback(String reason) {
+        return ContentModerationResult.builder()
+            .accepted(false)
+            .reason(reason)
+            .confidence(0.6)
+            .fallbackUsed(true)
+            .rawResponse("fallback")
+            .build();
+    }
+
+    private String normalizeText(String text) {
+        return java.text.Normalizer
+            .normalize(text.toLowerCase(), java.text.Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "");
     }
 }

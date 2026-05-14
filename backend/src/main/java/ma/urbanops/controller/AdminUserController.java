@@ -8,7 +8,6 @@ import ma.urbanops.dto.response.UserResponse;
 import ma.urbanops.entity.User;
 import ma.urbanops.enums.Role;
 import ma.urbanops.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -16,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -31,7 +29,7 @@ public class AdminUserController {
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<User> users = userService.findAll();
+        List<User> users = userService.findAllUsers();
         List<UserResponse> resp = users.stream().map(this::toResponse).toList();
         return ResponseEntity.ok(resp);
     }
@@ -55,6 +53,8 @@ public class AdminUserController {
         u.setPassword(passwordEncoder.encode(req.getPassword()));
         u.setRole(req.getRole() != null ? req.getRole() : Role.CITIZEN);
         u.setPhone(req.getPhone());
+        u.setSector(req.getSector());
+        u.setReceiveAlerts(req.getReceiveAlerts() != null ? req.getReceiveAlerts() : true);
         u.setIsActive(true);
         User created = userService.save(u);
         return ResponseEntity.status(201).body(toResponse(created));
@@ -67,6 +67,7 @@ public class AdminUserController {
         if (req.getLastName() != null) u.setLastName(req.getLastName());
         if (req.getRole() != null) u.setRole(req.getRole());
         if (req.getPhone() != null) u.setPhone(req.getPhone());
+        if (req.getSector() != null) u.setSector(req.getSector());
         User updated = userService.save(u);
         return ResponseEntity.ok(toResponse(updated));
     }
@@ -100,6 +101,17 @@ public class AdminUserController {
     }
 
     private UserResponse toResponse(User u) {
-        return new UserResponse(u.getId(), u.getFirstName(), u.getLastName(), u.getEmail(), u.getRole(), u.getPhone(), u.getIsActive(), u.getCreatedAt());
+        return UserResponse.builder()
+                .id(u.getId())
+                .firstName(u.getFirstName())
+                .lastName(u.getLastName())
+                .email(u.getEmail())
+                .phone(u.getPhone())
+                .role(u.getRole())
+                .sector(u.getSector())
+                .receiveAlerts(u.getReceiveAlerts())
+                .active(u.getIsActive())
+                .createdAt(u.getCreatedAt())
+                .build();
     }
 }
