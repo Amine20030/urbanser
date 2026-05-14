@@ -34,3 +34,39 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# =========================
+# Backend / Spring Boot
+# =========================
+
+backend/target/
+backend/logs/
+backend/uploads/
+backend/.mvn/
+
+*.class
+*.jar
+*.war
+
+# Maven
+.mvn/
+dependency-reduced-pom.xml
+
+# PostgreSQL / DB
+*.sql
+*.db
+
+# IntelliJ / VSCode
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+
+# Application secrets
+application.properties
+backend/src/main/resources/application.properties
+
+# Temporary
+*.tmp
+*.temp
