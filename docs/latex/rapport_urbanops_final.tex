@@ -1,0 +1,1169 @@
+% =============================================================================
+% RAPPORT PROFESSIONNEL — UrbanOps (COMPLET — V2.0)
+% Compilation : pdflatex x2 (ou xelatex x2) depuis docs/latex/
+% =============================================================================
+\documentclass[12pt,a4paper,twoside,openright]{book}
+
+% --- Encodage & langue ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{microtype}
+
+% --- Mise en page & texte ---
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm,bindingoffset=0.5cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.22}
+\usepackage{ragged2e}
+\usepackage{enumitem}
+\setlist{itemsep=0.35em, parsep=0pt, topsep=0.4em}
+
+% --- Graphiques & couleurs ---
+\usepackage{graphicx}
+\usepackage[table]{xcolor}
+\definecolor{UrbanBlue}{HTML}{1E3A5F}
+\definecolor{UrbanAccent}{HTML}{2563EB}
+\definecolor{UrbanGray}{HTML}{4B5563}
+\definecolor{LightBand}{HTML}{F3F4F6}
+\definecolor{CodeBg}{HTML}{F8FAFC}
+\definecolor{AlertRed}{HTML}{DC2626}
+\definecolor{SuccessGreen}{HTML}{16A34A}
+
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small,labelfont={bf,color=UrbanBlue}}
+
+% --- Tableaux ---
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+
+% --- Maths ---
+\usepackage{amsmath,amssymb}
+
+% --- Code & encadrés ---
+\usepackage{listings}
+\lstdefinestyle{urban}{%
+  backgroundcolor=\color{CodeBg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{UrbanBlue!40},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=2,
+}
+\lstset{style=urban}
+\lstdefinestyle{sqlurban}{style=urban,language=SQL,keywordstyle=\color{UrbanAccent},stringstyle=\color{AlertRed}}
+\lstdefinestyle{javaurban}{style=urban,language=Java,keywordstyle=\color{UrbanAccent},stringstyle=\color{AlertRed}}
+\lstdefinestyle{bashurban}{style=urban,language=bash}
+
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+% --- Apparence table des matières ---
+\usepackage{tocloft}
+\renewcommand{\cftchapfont}{\bfseries\color{UrbanBlue}}
+\renewcommand{\cftsecfont}{\color{UrbanGray}}
+\setlength{\cftbeforechapskip}{0.55em}
+
+% --- Titres (numérotés = arabe 1, 2… après introduction) ---
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{UrbanBlue}}
+  {\chaptertitlename~\thechapter}
+  {12pt}
+  {\Huge}
+\titlespacing*{\chapter}{0pt}{-8pt}{22pt}
+
+\titleformat{name=\chapter,numberless}[display]
+  {\normalfont\huge\bfseries\color{UrbanBlue}}
+  {}
+  {0pt}
+  {\Huge}
+\titlespacing*{name=\chapter,numberless}{0pt}{-8pt}{22pt}
+
+\titleformat{\section}
+  {\Large\bfseries\color{UrbanAccent}}
+  {\thesection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.1em}{0.65em}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{UrbanGray}}
+  {\thesubsection}{0.65em}{}
+
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+% --- Liens PDF ---
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=UrbanBlue,
+  urlcolor=UrbanAccent,
+  citecolor=UrbanBlue,
+  bookmarksnumbered=true,
+  pdftitle={UrbanOps - Rapport Technique Complet},
+  pdfauthor={Equipe UrbanOps},
+}
+\usepackage{bookmark}
+\usepackage[nameinlink]{cleveref}
+
+% --- En-têtes / pieds ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small\textcolor{UrbanGray}{UrbanOps — Supervision urbaine}}
+\fancyhead[RO]{\small\textcolor{UrbanGray}{2025–2026}}
+\fancyhead[LO,RE]{\small\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.45pt}
+\renewcommand{\footrulewidth}{0pt}
+\makeatletter
+\let\ps@plain\ps@fancy
+\makeatother
+
+% =============================================================================
+% Encadrés réutilisables — SANS BACKGROUND, contours uniquement
+% =============================================================================
+\newtcolorbox{resumebox}{
+  enhanced,
+  colback=white,
+  colframe=UrbanBlue,
+  boxrule=0.6pt,
+  arc=3mm,
+  left=8mm,right=8mm,top=6mm,bottom=6mm,
+  breakable,
+}
+
+\newtcolorbox{importantbox}{
+  enhanced,
+  colback=white,
+  colframe=AlertRed,
+  boxrule=0.6pt,
+  arc=3mm,
+  left=8mm,right=8mm,top=6mm,bottom=6mm,
+  breakable,
+}
+
+\newtcolorbox{successbox}{
+  enhanced,
+  colback=white,
+  colframe=SuccessGreen,
+  boxrule=0.6pt,
+  arc=3mm,
+  left=8mm,right=8mm,top=6mm,bottom=6mm,
+  breakable,
+}
+
+\newtcolorbox{archibox}[1][]{
+  enhanced,
+  colback=white,
+  colframe=UrbanBlue,
+  fonttitle=\bfseries,
+  title={#1},
+  attach boxed title to top center={yshift=-2mm},
+  boxed title style={colback=UrbanBlue,colframe=UrbanBlue},
+  arc=2mm,
+  breakable,
+}
+
+% =============================================================================
+% Figures : inclusion ou emplacement réservé
+% =============================================================================
+\newcommand{\urbanfig}[4]{%
+  \begin{figure}[htbp]%
+    \centering%
+    \IfFileExists{#2}{%
+      \includegraphics[width=#3\textwidth]{#2}%
+    }{%
+      \begin{tcolorbox}[
+        enhanced,colback=white,colframe=UrbanBlue,
+        width=0.92\textwidth,arc=2mm,halign=center,valign=center,
+        height=0.30\textheight,boxrule=0.6pt]
+        {\large\bfseries Emplacement figure}\\[3mm]
+        {\small\texttt{#2}}\\[2mm]
+        {\itshape Insérer l'image exportée (PNG/PDF).}\\[1mm]
+        {\footnotesize Légende : \textbf{#4}}
+      \end{tcolorbox}%
+    }%
+    \caption{#4}%
+    \label{#1}%
+  \end{figure}%
+}
+
+% --- Chapitres I à IV (romains) ---
+\newcounter{prechapter}
+\setcounter{prechapter}{0}
+\newcommand{\ChapterRoman}[1]{%
+  \refstepcounter{prechapter}%
+  \phantomsection
+  \chapter*{Chapitre \Roman{prechapter} — #1}%
+  \addcontentsline{toc}{chapter}{Chapitre \Roman{prechapter} — #1}%
+  \markboth{Chapitre \Roman{prechapter} — #1}{}%
+}
+
+\newcommand{\SecRoman}[1]{%
+  \phantomsection
+  \section*{#1}%
+  \addcontentsline{toc}{section}{#1}%
+}
+
+\title{Rapport technique — UrbanOps\\\large Plateforme de supervision urbaine intelligente}
+\author{Équipe UrbanOps}
+\date{\today}
+
+\begin{document}
+
+% =============================================================================
+% PAGE DE GARDE
+% =============================================================================
+\begin{titlepage}
+  \thispagestyle{empty}
+  \newgeometry{margin=2.2cm}
+  \centering
+  \null\vspace*{0.8cm}
+
+  {\color{AlertRed}\rule{0.82\textwidth}{2.2pt}}\par\vspace{0.75cm}
+
+  {\Large\bfseries\textsc{Université / École}}\par\vspace{0.2cm}
+  {\large Filière Génie Logiciel / Informatique}\par\vspace{0.35cm}
+  {\normalsize\itshape Rapport de Projet Final — PFE 2025–2026}\par\vspace{1.6cm}
+
+  {\Huge\bfseries\color{UrbanBlue} UrbanOps}\par\vspace{0.45cm}
+  {\LARGE\bfseries Plateforme intelligente de supervision urbaine}\par\vspace{0.25cm}
+  {\large Signalements géolocalisés, alertes ciblées, IA et tableau de bord}\par\vspace{1.4cm}
+
+  {\color{AlertRed}\rule{0.55\textwidth}{0.55pt}}\par\vspace{0.65cm}
+  {\LARGE\bfseries Rapport technique complet}\par\vspace{0.55cm}
+  {\color{AlertRed}\rule{0.55\textwidth}{0.55pt}}\par\vspace{1.6cm}
+
+  \begin{minipage}{0.88\textwidth}\centering
+    \color{UrbanGray}\large
+    Architecture empilée \textbf{3~tiers} (Next.js~14, Spring~Boot~3, PostgreSQL), sécurité \textbf{JWT}, module d'\textbf{IA} (Gemini + repli), \textbf{4~middlewares} (REST, JMS, RMI, SOAP), tests \textbf{JUnit~5}, couverture \textbf{JaCoCo}, analyse \textbf{SonarQube}.
+  \end{minipage}\par\vfill
+
+  {\color{UrbanBlue}\rule{0.82\textwidth}{0.6pt}}\par\vspace{0.65cm}
+
+  {\centering
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{@{}>{\bfseries}r @{\hspace{1em}} p{0.52\textwidth}@{}}
+    Auteur(s) :     & Équipe de développement UrbanOps \\
+    Encadrant(e) :  & Professeur [À remplir] \\
+    Technologies :  & Spring Boot~3.2, Next.js~14, PostgreSQL, Gemini, JWT \\
+    Année :         & 2025 – 2026 \\
+  \end{tabular}\par}
+
+  \vspace{0.9cm}
+  {\large\textbf{Version}~2.0 \quad\textemdash\quad \today}\par
+  \vspace*{0.6cm}
+  \restoregeometry
+\end{titlepage}
+
+\cleardoublepage
+
+% =============================================================================
+% PRÉLIMINAIRES
+% =============================================================================
+\frontmatter
+
+% --- Dédicaces ---
+\chapter*{Dédicaces}
+\addcontentsline{toc}{chapter}{Dédicaces}
+\thispagestyle{empty}
+\vspace*{2.8cm}
+\begin{center}
+\begin{minipage}{0.82\textwidth}\centering\itshape\large
+À tous les contributeurs de villes plus intelligentes et plus résilientes.\\[1.2em]
+Aux citoyens et autorités qui inspireront cette plateforme.\\[1.5em]
+\ldots
+\end{minipage}
+\end{center}
+\cleardoublepage
+
+% --- Remerciements ---
+\chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
+\begin{center}
+\begin{minipage}{0.88\textwidth}
+\justifying
+Nous exprimons notre profonde gratitude à notre encadrant(e) pour les relectures minutieuses, les conseils méthodologiques avisés et la disponibilité constante tout au long du projet.
+
+Nous remercions les membres du jury pour l'attention bienveillante portée à ce rapport et pour leurs évaluations constructives.
+
+Les excellentes communautés open-source autour de \textbf{Spring Framework}, \textbf{Next.js}, \textbf{PostgreSQL} et \textbf{Google Gemini} ont mis à disposition une documentation riche et des outils essentiels à la réalisation de ce travail.
+
+Merci également à nos collègues pour les discussions et les retours tout au long du développement.
+\end{minipage}
+\end{center}
+\cleardoublepage
+
+% --- Résumé ---
+\chapter*{Résumé}
+\addcontentsline{toc}{chapter}{Résumé}
+\thispagestyle{plain}
+\begin{resumebox}
+\justifying
+\textbf{UrbanOps} est une plateforme \textbf{full-stack} dédiée au signalement, au suivi et à la supervision d'incidents urbains (voirie dégradée, distribution d'eau interrompue, éclairage déficient, accumulation de déchets, problèmes de sécurité, etc.).
+
+L'architecture repose sur un backend \textbf{Spring Boot~3} exposant une API REST versionnée (\texttt{/api/v1}), sécurisée par jetons \textbf{JWT}, avec persistance fiable en \textbf{PostgreSQL} via \textbf{JPA/Hibernate}. Un module d'analyse textuelle s'appuie sur \textbf{Google Gemini} pour classifier les incidents, avec mécanisme de \textbf{repli par règles} en cas d'indisponibilité. Le frontend \textbf{Next.js~14} (TypeScript, Tailwind, Axios) offre une landing page, un tableau de bord interactif, une carte \textbf{Leaflet} et des formulaires réactifs.
+
+Le système intègre \textbf{quatre middlewares} : \textbf{REST} (API HTTP/JSON), \textbf{JMS} (messages asynchrones ActiveMQ), \textbf{RMI} (procédures distantes Java) et \textbf{SOAP} (services web XML). Les tests couvrent \textbf{JUnit~5} (mocks Mockito), avec mesure de couverture \textbf{JaCoCo} et analyse qualité \textbf{SonarQube}. La journalisation, la sécurité et le monitoring via Actuator complètent le système.
+
+Ce rapport détaille besoins, conception \textbf{UML}, implémentation, middlewares, tests et pilotage qualité.
+\end{resumebox}
+
+\vspace{0.9cm}
+\begin{center}
+\textbf{Mots-clés :} supervision urbaine ; ville intelligente ; Spring Boot ; Next.js ; PostgreSQL ; JWT ; IA ; Gemini ; REST ; JMS ; RMI ; SOAP ; JUnit~5 ; JaCoCo ; SonarQube.
+\end{center}
+\cleardoublepage
+
+% --- Abstract ---
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\thispagestyle{plain}
+\begin{center}
+\begin{minipage}{0.88\textwidth}
+\justifying
+\textit{UrbanOps is a comprehensive full-stack smart-city platform for incident reporting, monitoring, and supervision in an urban context. The backend architecture integrates Spring Boot~3 with REST APIs, JWT authentication, and PostgreSQL persistence via JPA. AI-assisted triage leverages the Google Gemini API with deterministic fallback rules. The Next.js~14 frontend provides responsive dashboards and interactive maps. Four middleware layers are implemented: REST (HTTP/JSON), JMS (asynchronous messaging), RMI (remote method invocation), and SOAP (XML web services). Quality assurance includes JUnit~5 testing, JaCoCo coverage analysis, and SonarQube static analysis. This document presents requirements, UML design, implementation details, middleware integration, testing strategies, and quality gates.}
+\end{minipage}
+\end{center}
+
+\vspace{0.9cm}
+\begin{center}
+\textbf{Keywords:} urban supervision; smart city; Spring Boot; Next.js; PostgreSQL; JWT; AI; Gemini; REST; JMS; RMI; SOAP; JUnit~5; JaCoCo; SonarQube.
+\end{center}
+\cleardoublepage
+
+% --- Abréviations ---
+\chapter*{Liste des abréviations et acronymes}
+\addcontentsline{toc}{chapter}{Liste des abréviations et acronymes}
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabularx}{0.96\textwidth}{@{}l Y@{}}
+    \toprule
+    \textbf{Sigle} & \textbf{Définition} \\
+    \midrule
+    API & Interface de programmation d'application \\
+    AMQP & Advanced Message Queuing Protocol \\
+    AI / IA & Intelligence artificielle \\
+    BCrypt & Fonction de hachage de mots de passe \\
+    DAO & Objet d'accès aux données \\
+    DTO & Objet de transfert de données \\
+    FTP & Protocole de transfert de fichiers \\
+    GANTT & Diagramme de planification par tâches \\
+    GPS & Système mondial de positionnement \\
+    HTTP/HTTPS & Protocole(s) de transfert hypertexte \\
+    IDE & Environnement de développement intégré \\
+    JaCoCo & Java Code Coverage \\
+    JMS & Java Message Service \\
+    JPA & Jakarta Persistence API (ORM) \\
+    JSON & Notation d'objet JavaScript \\
+    JWT & JSON Web Token \\
+    ORM & Mapping objet-relationnel \\
+    PERT & Program Evaluation and Review Technique \\
+    REST & Transfert d'état représentatif \\
+    RMI & Remote Method Invocation \\
+    SMTP & Protocole d'envoi de courriels \\
+    SOAP & Architecture orientée services \\
+    SQL & Langage de requête structuré \\
+    TLS & Couche de transport sécurisée \\
+    UML & Langage de modélisation unifié \\
+    XML & Langage extensible de balisage \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+\cleardoublepage
+
+\listoffigures
+\cleardoublepage
+
+\listoftables
+\cleardoublepage
+
+\tableofcontents
+\cleardoublepage
+
+% =============================================================================
+% CHAPITRES I À IV (PRÉAMBULE, numérotation ROMAINE)
+% =============================================================================
+\mainmatter
+
+\ChapterRoman{Cadre général et problématique}
+\label{chap:I}
+\begin{center}
+\begin{minipage}{0.92\textwidth}
+\justifying
+Ce chapitre pose le \textbf{contexte métropolitain} (Marrakech, Maroc), la \textbf{problématique} (signalements éparpillés, délais de traitement imprévisibles, priorisation absente) et les \textbf{objectifs} d'UrbanOps : centraliser, tracer, alerter et offrir une interface citoyenne ergonomique.
+\end{minipage}
+\end{center}
+
+\SecRoman{Contexte et enjeux}
+La transformation numérique des services urbains impose des canaux \textbf{unifiés} pour la remontée d'information et une \textbf{traçabilité} exhaustive des traitements. Les autorités et citoyens nécessitent une \textbf{visibilité en temps réel} et une \textbf{responsabilité partagée}.
+
+\SecRoman{Objectifs du projet}
+\begin{itemize}
+  \item Permettre la \textbf{déclaration} d'incidents géolocalisés avec médias (photos, vidéos) ;
+  \item Offrir un \textbf{tableau de bord} centralisé et des \textbf{alertes ciblées} vers les autorités ;
+  \item Garantir une \textbf{piste d'audit} immuable (\texttt{INC-xxxx}, statuts, horodatage UTC) ;
+  \item Intégrer \textbf{l'IA} pour classifier automatiquement les incidents.
+\end{itemize}
+
+\SecRoman{Périmètre fonctionnel}
+Le périmètre couvre le cycle de vie complet d'un incident (création, suivi, résolution), l'authentification par rôles (\texttt{ADMIN}, \texttt{CITIZEN}), les statistiques agrégées et les alertes. \textbf{Hors périmètre} : application mobile native (perspective future), notifications push, intégration IoT.
+
+\SecRoman{Acteurs et cas d'usage} Citoyens (reporters), autorités (gestionnaires), administrateurs (superviseurs), système (IA). Chaque rôle dispose de droits d'accès et de vues différenciées.
+
+\ChapterRoman{Analyse des besoins et spécifications}
+\label{chap:II}
+
+\SecRoman{Fonctionnalités principales}
+\begin{longtable}{@{}p{3.4cm} >{\RaggedRight\arraybackslash}p{10.8cm}@{}}
+  \toprule
+  \textbf{Fonctionnalité} & \textbf{Description} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Fonctionnalité} & \textbf{Description} \\
+  \midrule
+  \endhead
+  Authentification & Inscription, connexion, génération JWT, récupération profil (\texttt{/auth/me}). \\
+  Signalement & Création multipart (\texttt{POST /incidents}) : JSON + fichier photo, géolocalisation. \\
+  Classification IA & Analyse Gemini pour sévérité (\texttt{HIGH}, \texttt{MEDIUM}, \texttt{LOW}). \\
+  Carte interactive & Projection légère \texttt{GET /incidents/map} avec Leaflet. \\
+  Tableau de bord & Agrégats \texttt{GET /stats/dashboard} : comptages, tendances. \\
+  Alertes & Création et envoi e-mail automatis. pour sévérités \texttt{HIGH} / \texttt{MEDIUM}. \\
+  Administration & Gestion utilisateurs, statut incident, alertes (rôle \texttt{ADMIN}). \\
+  Endpoints multiples & Filtrages avancés, pagination, tri. \\
+  \bottomrule
+\end{longtable}
+
+\SecRoman{Besoins non fonctionnels}
+\begin{itemize}
+  \item \textbf{Performance} : pagination, projections légères pour la carte, caches Redis (optionnel) ;
+  \item \textbf{Sécurité} : mots de passe \texttt{BCrypt}, filtre JWT, règles Spring Security, HTTPS/TLS ;
+  \item \textbf{Maintenabilité} : couches controller / service / repository, documentation OpenAPI ;
+  \item \textbf{Disponibilité} : Actuator \texttt{/health}, journalisation fichier, repli IA déterministe ;
+  \item \textbf{Observabilité} : logs structurés, traces des opérations critiques.
+\end{itemize}
+
+\SecRoman{Règles métier}
+\begin{itemize}
+  \item Sévérités : \texttt{HIGH} (rouge, alerte immédiate), \texttt{MEDIUM} (orange, alerte différée), \texttt{LOW} (vert, consultation) ;
+  \item Statuts : \texttt{OPEN}, \texttt{IN\_PROGRESS}, \texttt{RESOLVED}, \texttt{REJECTED} ;
+  \item Rôles : \texttt{ADMIN} (tous les droits), \texttt{CITIZEN} (lecture propres incidents).
+\end{itemize}
+
+\ChapterRoman{Conception et architecture}
+\label{chap:III}
+
+\SecRoman{Architecture tres-tiers}
+\begin{archibox}[Vue logique empilée]
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|>{\centering\arraybackslash}p{0.82\textwidth}|}
+\hline
+\textbf{Frontend} — Next.js~14 (TypeScript, Tailwind, Axios, Leaflet) \\
+\hline
+\textbf{API REST} — Spring~MVC sur \texttt{/api/v1} \\
+\hline
+\textbf{Métier} — Services transactionnels, règles, IA, mails \\
+\hline
+\textbf{Accès données} — Spring~Data~JPA avec Specifications \\
+\hline
+\textbf{PostgreSQL} — Schéma généré/mis à jour par Hibernate \\
+\hline
+\end{tabular}
+\end{center}
+\end{archibox}
+
+\SecRoman{Entités JPA principales}
+Cinq entités centrales : \texttt{User}, \texttt{Category}, \texttt{Sector}, \texttt{Incident}, \texttt{Alert}. Des indices sur les colonnes \texttt{status}, \texttt{severity}, \texttt{latitude}/\texttt{longitude} optimisent les requêtes.
+
+\SecRoman{Diagrammes UML à insérer}
+\begin{itemize}
+  \item \texttt{figures/gantt\_planning.png} — Diagramme GANTT (planification du projet, jalons) ;
+  \item \texttt{figures/pert\_taches.png} — Diagramme PERT (dépendances, chemins critiques) ;
+  \item \texttt{figures/uml\_classes\_metier.png} — Diagramme de classes (domaine métier) ;
+  \item \texttt{figures/uml\_classes\_technique.png} — Diagramme de classes (couches techniques) ;
+  \item \texttt{figures/uml\_cas\_usage.png} — Diagramme de cas d'utilisation ;
+  \item \texttt{figures/uml\_composants.png} — Diagramme par composants ;
+  \item \texttt{figures/uml\_sequence\_incident.png} — Diagramme de séquence (création incident).
+\end{itemize}
+
+\urbanfig{fig:gantt1}{figures/gantt_planning.png}{0.95}{Diagramme de Gantt — jalons et phases du projet.}
+\urbanfig{fig:pert1}{figures/pert_taches.png}{0.92}{Diagramme PERT — tâches, dépendances et cheminement critique.}
+\urbanfig{fig:classmetier1}{figures/uml_classes_metier.png}{0.95}{Diagramme de classes — modèle métier (User, Incident, Alert, etc.).}
+\urbanfig{fig:classtech1}{figures/uml_classes_technique.png}{0.95}{Diagramme de classes — couches technique (Controller, Service, Repository).}
+\urbanfig{fig:usecase1}{figures/uml_cas_usage.png}{0.88}{Diagramme de cas d'utilisation — interacteurs et scénarios.}
+\urbanfig{fig:compo1}{figures/uml_composants.png}{0.92}{Diagramme par composants — modules, dépendances, interfaces.}
+\urbanfig{fig:seq1}{figures/uml_sequence_incident.png}{0.92}{Diagramme de séquence — création incident avec analyse IA et alerte.}
+
+\ChapterRoman{Environnement technique et choix technologiques}
+\label{chap:IV}
+
+\SecRoman{Stack backend}
+\begin{itemize}
+  \item \textbf{Langage} : Java~17 (LTS) ;
+  \item \textbf{Framework} : Spring~Boot~3.2.x (Web, Data~JPA, Security, Validation, Mail, Actuator) ;
+  \item \textbf{BD} : PostgreSQL~15+ ;
+  \item \textbf{ORM} : Hibernate + JPA ;
+  \item \textbf{Build} : Maven~3.8+, gestion des dépendances ;
+  \item \textbf{Sécurité} : JJWT (JWT), BCrypt, Spring~Security ;
+  \item \textbf{IA} : Google Gemini API + repli déterministe ;
+  \item \textbf{Email} : Intégration SMTP (Gmail) ;
+  \item \textbf{Documentation} : Springdoc~OpenAPI, Swagger~UI ;
+  \item \textbf{Utils} : Lombok, MapStruct (optionnel).
+\end{itemize}
+
+\SecRoman{Stack frontend}
+\begin{itemize}
+  \item \textbf{Framework} : Next.js~14 (App~Router) ;
+  \item \textbf{Langage} : TypeScript~5 ;
+  \item \textbf{Styling} : Tailwind~CSS~3 ;
+  \item \textbf{HTTP} : Axios + intercepteurs JWT ;
+  \item \textbf{Cartographie} : Leaflet + OpenStreetMap ;
+  \item \textbf{Graphiques} : Recharts ;
+  \item \textbf{Build} : npm / yarn / bun.
+\end{itemize}
+
+\SecRoman{Middleware et protocoles}
+\begin{table}[H]
+  \centering
+  \caption{Les quatre middlewares intégrés dans UrbanOps.}
+  \label{tab:middleware}
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabularx}{0.95\textwidth}{@{}l l c X@{}}
+    \toprule
+    \textbf{Middleware} & \textbf{Protocole} & \textbf{Port} & \textbf{Rôle} \\
+    \midrule
+    REST & HTTP/JSON & 8080 & API CRUD standard, endpoints citoyen/admin \\
+    JMS & AMQP (ActiveMQ) & embedded & Messages asynchrones, alertes découplées \\
+    RMI & Java RMI & 1099 & Appels distants Java, services métier (IA) \\
+    SOAP & HTTP/XML & 8080 & Services web, compatibilité avec systèmes legacy \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{REST} : Endpoint principal, stateless, scalable. Endpoints disponibles sur \texttt{http://localhost:8080/api/v1/swagger-ui.html} ;
+  \item \textbf{JMS} : Envoi d'alertes mails de manière asynchrone (ActiveMQ embedded) ;
+  \item \textbf{RMI} : Service \texttt{AIAnalysisService} exporté sur \texttt{rmi://localhost:1099} ;
+  \item \textbf{SOAP} : WSDL exposé à \texttt{/api/v1/soap/urbanops.wsdl} pour intégrations tierces.
+\end{itemize}
+
+\SecRoman{Qualité et industrialisation}
+\begin{itemize}
+  \item \textbf{Tests unitaires} : JUnit~5 (\texttt{@Test}, \texttt{@Disabled}), Mockito (mocks de repositories/services) ;
+  \item \textbf{Couverture} : JaCoCo avec \textbf{seuils de qualité} (ex. \texttt{pom.xml} : $\geq 70\%$ couverture ciblée) ;
+  \item \textbf{Analyse statique} : SonarQube (bugs, vulnérabilités, détection de code dupliqué) ;
+  \item \textbf{Journalisation} : Fichiers de log structurés dans \texttt{backend/logs/} ;
+  \item \textbf{Actuator} : Healthchecks, métriques, endpoints de diagnostique.
+\end{itemize}
+
+% =============================================================================
+% CHAPITRES EN NUMÉROTATION ARABE (1, 2, 3, …)
+% =============================================================================
+\setcounter{chapter}{0}
+
+\chapter{Introduction générale}
+\label{chap:intro}
+
+\section{Problématique et contexte}
+Comment offrir une plateforme \textbf{fiable}, \textbf{sécurisée}, \textbf{évolutive} et \textbf{inclusive} pour agréger les signalements citoyens d'incidents urbains et accélérer la réponse opérationnelle des autorités ?
+
+\section{Méthodologie adoptée}
+\begin{enumerate}
+  \item Analyse approfondie des besoins fonctionnels et non-fonctionnels ;
+  \item Conception UML (classes, séquences, cas d'usage, composants) ;
+  \item Implémentation incrémentale par les couches (backend → frontend → tests) ;
+  \item Tests automatisés JUnit~5 et couverture JaCoCo ;
+  \item Analyse statique SonarQube pour la qualité ;
+  \item Déploiement et documentation OpenAPI.
+\end{enumerate}
+
+\section{Plan du rapport}
+Ce document suit la structure suivante :
+\begin{itemize}
+  \item \textbf{Chapitres I–IV} : Préambule (cadre, besoins, conception, technologies) ;
+  \item \textbf{Chapitre 1} : Introduction (présent) ;
+  \item \textbf{Chapitre 2} : Réalisation backend et persistance ;
+  \item \textbf{Chapitre 3} : Frontend et intégration HTTP ;
+  \item \textbf{Chapitre 4} : Sécurité, IA et middlewares ;
+  \item \textbf{Chapitre 5} : Tests, couverture JaCoCo, SonarQube ;
+  \item \textbf{Chapitre 6} : Déploiement et exploitation ;
+  \item \textbf{Chapitre 7} : Conclusion et perspectives.
+\end{itemize}
+
+\chapter{Réalisation — Backend et persistance}
+\label{chap:real}
+
+\section{Architecture couches du backend}
+
+\subsection{Couche contrôleur (REST)}
+Les contrôleurs exposent les ressources via des endpoints REST :
+\begin{itemize}
+  \item \texttt{AuthController} — \texttt{POST /auth/login}, \texttt{POST /auth/register}, \texttt{GET /auth/me} ;
+  \item \texttt{IncidentController} — CRUD incidents, carte légère, filtres avancés ;
+  \item \texttt{StatsController} — Agrégats tableaux de bord ;
+  \item \texttt{AlertController} — Gestion des alertes (ADMIN) ;
+  \item \texttt{UserController} — Gestion utilisateurs ;
+  \item \texttt{CategoryController} — Listing catégories ;
+  \item \texttt{SectorController} — Listing secteurs.
+\end{itemize}
+
+\subsection{Couche service}
+Les services encapsulent la logique métier :
+\begin{itemize}
+  \item \texttt{IncidentService.createIncident} : validation catégorie/secteur, appel IA (Gemini), persistance, alerte ;
+  \item \texttt{AIAnalysisService} : appel API Gemini, fallback mots-clés ;
+  \item \texttt{AlertService} : création alerts, envoi via \texttt{EmailService} (async) ;
+  \item \texttt{AuthService} : génération JWT, validation passwords ;
+  \item \texttt{UserService}, \texttt{CategoryService}, \texttt{SectorService} : CRUD métier.
+\end{itemize}
+
+\subsection{Couche repository}
+Spring~Data~JPA avec projections et Specifications :
+\begin{itemize}
+  \item \texttt{IncidentRepository} — findAll, findAllForMapProjection (interface projection), Specifications pour filtres ;
+  \item \texttt{UserRepository} — findByUsername, findByEmail ;
+  \item \texttt{AlertRepository}, \texttt{CategoryRepository}, \texttt{SectorRepository} — CRUD standard.
+\end{itemize}
+
+\subsection{Persistance — PostgreSQL}
+\begin{lstlisting}[style=sqlurban,caption=Schéma conceptuel incidents.,label=lst:schema]
+CREATE TABLE incidents (
+  id BIGSERIAL PRIMARY KEY,
+  reference_code VARCHAR(20) UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  severity VARCHAR(20),  -- HIGH, MEDIUM, LOW
+  status VARCHAR(20),    -- OPEN, IN_PROGRESS, RESOLVED
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  photo_url VARCHAR(255),
+  category_id BIGINT NOT NULL REFERENCES categories(id),
+  sector_id BIGINT NOT NULL REFERENCES sectors(id),
+  reported_by_id BIGINT REFERENCES users(id),
+  ai_analysis_result TEXT,
+  authority_notified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at TIMESTAMP
+);
+
+CREATE INDEX idx_incidents_status ON incidents(status);
+CREATE INDEX idx_incidents_severity ON incidents(severity);
+CREATE INDEX idx_incidents_coordinates ON incidents(latitude, longitude);
+\end{lstlisting}
+
+\section{Endpoints REST représentatifs}
+
+\begin{table}[H]
+  \centering
+  \caption{Endpoints REST principaux d'UrbanOps.}
+  \label{tab:endpoints}
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabularx}{0.96\textwidth}{@{}l l >{\RaggedRight\arraybackslash}X@{}}
+    \toprule
+    \textbf{Méthode} & \textbf{Ressource} & \textbf{Description} \\
+    \midrule
+    \endfirsthead
+    \toprule
+    \textbf{Méthode} & \textbf{Ressource} & \textbf{Description} \\
+    \midrule
+    \endhead
+    POST & \texttt{/auth/login} & Authentification → retour JWT \\
+    POST & \texttt{/auth/register} & Inscription citoyenne \\
+    GET & \texttt{/auth/me} & Profil utilisateur courant \\
+    GET & \texttt{/incidents} & Liste paginée et filtrée \\
+    POST & \texttt{/incidents} & Création multipart (JSON + photo) \\
+    GET & \texttt{/incidents/map} & Données légères pour Leaflet \\
+    GET & \texttt{/incidents/recent} & Les 10 plus récents \\
+    PATCH & \texttt{/incidents/\{id\}/status} & Mise à jour statut (ADMIN) \\
+    GET & \texttt{/stats/dashboard} & Agrégats KPI \\
+    GET & \texttt{/alerts} & Liste alertes (ADMIN) \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\chapter{Réalisation — Frontend et intégration}
+\label{chap:frontend}
+
+\section{Architecture Next.js~14}
+
+\subsection{App Router et pages}
+\begin{itemize}
+  \item \texttt{app/page.tsx} — Landing page, présentation ;
+  \item \texttt{app/dashboard/page.tsx} — Tableau de bord (ADMIN / CITIZEN) ;
+  \item \texttt{app/incidents/page.tsx} — Listing incidents, filtres ;
+  \item \texttt{app/incidents/new/page.tsx} — Formulaire de création ;
+  \item \texttt{app/map/page.tsx} — Carte Leaflet interactive ;
+  \item \texttt{app/auth/page.tsx} — Authentification (login/register).
+\end{itemize}
+
+\subsection{Client HTTP et intercepteurs}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize,language=TypeScript,caption={Exemple : lib/api.ts avec intercepteur JWT.},label=lst:api_ts]
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL ||
+           'http://localhost:8080/api/v1',
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('urbanops_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
+\end{lstlisting}
+
+\subsection{Composants React}
+\begin{itemize}
+  \item \texttt{components/IncidentForm.tsx} — Formulaire création ;
+  \item \texttt{components/IncidentMap.tsx} — Intégration Leaflet ;
+  \item \texttt{components/Dashboard.tsx} — Graphiques Recharts ;
+  \item \texttt{components/AlertBanner.tsx} — Notification alertes (rouge HIGH, vert RESOLVED).
+\end{itemize}
+
+\urbanfig{fig:landing}{figures/landing_page_screenshot.png}{0.9}{Capture d'écran — page d'accueil (landing).}
+\urbanfig{fig:dashboard}{figures/dashboard_screenshot.png}{0.92}{Capture d'écran — tableau de bord avec KPI et statuts.}
+\urbanfig{fig:map}{figures/map_interactive_screenshot.png}{0.9}{Capture d'écran — carte Leaflet interactive des incidents actuels.}
+
+\chapter{Sécurité, IA et middlewares}
+\label{chap:api}
+
+\section{Sécurité — JWT et BCrypt}
+
+\subsection{Filtre d'authentification}
+\begin{lstlisting}[style=javaurban,caption={JwtAuthenticationFilter — valide JWT à chaque requête.},label=lst:jwt_filter]
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+  @Override
+  protected void doFilterInternal(HttpServletRequest request,
+      HttpServletResponse response, FilterChain filterChain)
+      throws ServletException, IOException {
+    String token = extractToken(request);
+    if (token != null && jwtProvider.validateToken(token)) {
+      String username = jwtProvider.getUsernameFromJWT(token);
+      UserDetails user = userDetailsService.loadUserByUsername(username);
+      UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(user, null,
+                                              user.getAuthorities());
+      SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+    filterChain.doFilter(request, response);
+  }
+}
+\end{lstlisting}
+
+\subsection{Chiffrement mots de passe}
+Les mots de passe sont chiffrés lors de l'inscription via \texttt{BCryptPasswordEncoder} avec un nombre de rounds configurable (ex. 12).
+
+\section{Module IA — Gemini + Repli déterministe}
+
+\subsection{Flux de classification}
+\begin{enumerate}
+  \item Réception texte de l'incident (titre + description) ;
+  \item Appel \textbf{Google Gemini API} avec prompts JSON structurés ;
+  \item \textbf{Parsing JSON} → extraction sévérité, autorité recommandée ;
+  \item \textbf{Fallback} : si timeout ou quota dépassé, classement par mots-clés prédéfinis.
+\end{enumerate}
+
+\subsection{Gestion des erreurs}
+\begin{itemize}
+  \item Timeout : repli immédiat (défaut \texttt{LOW}) ;
+  \item Quota : retentative avec backoff exponentiel ;
+  \item Parse error : log et assignation manuelle.
+\end{itemize}
+
+\section{Les quatre middlewares}
+
+\subsection{1. REST (HTTP/JSON) — Principal}
+\begin{itemize}
+  \item Expose tous les endpoints (\texttt{/api/v1/*}) ;
+  \item Stateless, scalable horizontalement ;
+  \item Sécurisé par JWT ;
+  \item Documentation OpenAPI via Swagger.
+\end{itemize}
+
+\subsection{2. JMS (ActiveMQ) — Messagerie asynchrone}
+\begin{itemize}
+  \item \textbf{Avantage} : découplage AlertService → EmailService ;
+  \item Queues : \texttt{alerts-queue} pour mails en attente ;
+  \item Retry automatique, persistance.
+\end{itemize}
+
+\subsection{3. RMI — Appels distants Java}
+\begin{itemize}
+  \item Service \texttt{AIAnalysisService} exporté en RMI ;
+  \item Port : 1099 ;
+  \item URL : \texttt{rmi://localhost:1099/AIAnalysisService} ;
+  \item Permet intégration systèmes Java distants.
+\end{itemize}
+
+\subsection{4. SOAP — Services web XML}
+\begin{itemize}
+  \item WSDL public : \texttt{/api/v1/soap/urbanops.wsdl} ;
+  \item Services : IncidentService SOAP, AlertService SOAP ;
+  \item Compatibilité systèmes legacy (données XML).
+\end{itemize}
+
+\chapter{Tests, couverture et analyse SonarQube}
+\label{chap:tests}
+
+\section{Stratégie JUnit~5 et Mockito}
+
+\subsection{Types de tests}
+\begin{itemize}
+  \item \textbf{Unitaires} : tests de services isolés, mocks de dépôts ;
+  \item \textbf{Intégration} : \texttt{@SpringBootTest}, context applicatif complet ;
+  \item \textbf{Repository} : requêtes JPA, projections ;
+  \item \textbf{API} : tests HTTP via \texttt{MockMvc} ou TestRestTemplate.
+\end{itemize}
+
+\subsection{Exemple test unitaire}
+\begin{lstlisting}[style=javaurban,caption={Test JUnit5 — IncidentService.createIncident().},label=lst:junit5]
+@ExtendWith(MockitoExtension.class)
+class IncidentServiceTest {
+
+  @Mock
+  private IncidentRepository incidentRepository;
+
+  @Mock
+  private AIAnalysisService aiService;
+
+  @InjectMocks
+  private IncidentService incidentService;
+
+  @Test
+  void testCreateIncident_Success() {
+    // Arrange
+    IncidentRequest request = new IncidentRequest("Nid", "Desc");
+    when(aiService.analyze("Desc")).thenReturn(
+      new AIResponse("HIGH", "Voirie"));
+    when(incidentRepository.save(any())).thenAnswer(
+      invocation -> invocation.getArgument(0));
+
+    // Act
+    IncidentResponse response =
+      incidentService.createIncident(request);
+
+    // Assert
+    Assertions.assertNotNull(response.getId());
+    Assertions.assertEquals("HIGH", response.getSeverity());
+  }
+}
+\end{lstlisting}
+
+\section{JaCoCo — Couverture de code}
+
+\subsection{Configuration pom.xml}
+\begin{lstlisting}[language=XML,caption={Fragment pom.xml — configuration JaCoCo.},label=lst:jacoco]
+<plugin>
+  <groupId>org.jacoco</groupId>
+  <artifactId>jacoco-maven-plugin</artifactId>
+  <version>0.8.8</version>
+  <executions>
+    <execution>
+      <goals><goal>prepare-agent</goal></goals>
+    </execution>
+    <execution>
+      <id>report</id>
+      <phase>test</phase>
+      <goals><goal>report</goal></goals>
+    </execution>
+    <execution>
+      <id>jacoco-check</id>
+      <goals><goal>check</goal></goals>
+      <configuration>
+        <rules>
+          <rule>
+            <element>BUNDLE</element>
+            <excludes><exclude>*Test</exclude></excludes>
+            <limits>
+              <limit><counter>LINE</counter>
+                <value>COVEREDRATIO</value>
+                <minimum>0.70</minimum>
+              </limit>
+            </limits>
+          </rule>
+        </rules>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+\end{lstlisting}
+
+\subsection{Génération rapport}
+\begin{lstlisting}[style=bashurban,caption={Génération rapport JaCoCo.},label=lst:jacoco_cmd]
+cd backend
+mvn clean verify
+# Rapport HTML sous: target/site/jacoco/index.html
+\end{lstlisting}
+
+\urbanfig{fig:jacoco}{figures/jacoco_report_screenshot.png}{0.95}{Capture — rapport JaCoCo global (couverture par package et classe).}
+
+\section{SonarQube — Analyse statique qualité}
+
+\subsection{Configuration}
+\begin{itemize}
+  \item \textbf{Serveur SonarQube} : \texttt{http://localhost:9000} (local) ou cloud ;
+  \item \textbf{Authentification} : \texttt{sonar.login} token ;
+  \item \textbf{Projet clé} : \texttt{ma.urbanops:backend}.
+\end{itemize}
+
+\subsection{Lancement analyse}
+\begin{lstlisting}[style=bashurban,caption={Analyse SonarQube via Maven.},label=lst:sonar_cmd]
+cd backend
+mvn clean verify sonar:sonar \
+  -Dsonar.projectKey=ma.urbanops:backend \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=YOUR_TOKEN
+\end{lstlisting}
+
+\subsection{Indicateurs mesurés}
+\begin{table}[H]
+  \centering
+  \caption{Grille d'interprétation — indicateurs SonarQube.}
+  \label{tab:sonar}
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabularx}{0.96\textwidth}{@{}l l X@{}}
+    \toprule
+    \textbf{Indicateur} & \textbf{Cible} & \textbf{Description} \\
+    \midrule
+    Fiabilité (Bugs) & \color{SuccessGreen}A & Zéro bug critique ou bloquant \\
+    Vulnérabilités & \color{SuccessGreen}A & Pas d'injection SQL, XSS, etc. \\
+    Hotspots sécurité & \color{SuccessGreen} Faible & Points critiques identifiés \\
+    Couverture (JaCoCo) & \geq 70\% & Lignes couvertes par tests \\
+    Duplications & < 3\% & Code dupliqué minimal \\
+    Dépendances & À jour & Packages vulnérables éliminés \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\urbanfig{fig:sonarqube}{figures/sonarqube_dashboard_screenshot.png}{0.95}{Capture — tableau de bord SonarQube (vue projet global).}
+
+\section{Limitations et suites}
+\begin{itemize}
+  \item Tests réseau (@Disabled pour requêtes externes Gemini) ;
+  \item Coverage des contrôleurs via \texttt{@SpringBootTest} le plus complet ;
+  \item Test de charge (JMeter) non abordé mais recommandé.
+\end{itemize}
+
+\chapter{Déploiement et exploitation}
+\label{chap:deploy}
+
+\section{Lancement backend — développement}
+\begin{lstlisting}[style=bashurban,caption={Démarrage du backend Spring Boot.},label=lst:backend_run]
+cd backend
+
+# Option 1 : Maven
+mvn spring-boot:run
+
+# Option 2 : Java direct
+java -jar target/urbanops-backend-1.0.jar
+
+# Vérification : swagger à http://localhost:8080/api/v1/swagger-ui.html
+\end{lstlisting}
+
+\section{Lancement frontend — développement}
+\begin{lstlisting}[style=bashurban,caption={Démarrage du frontend Next.js.},label=lst:frontend_run]
+cd frontend
+
+npm install
+npm run dev
+# Accès : http://localhost:3000
+\end{lstlisting}
+
+\section{Variables d'environnement (.env)}
+\begin{itemize}
+  \item Backend : database URL, JWT secret, clé Gemini API, SMTP config ;
+  \item Frontend : \texttt{NEXT\_PUBLIC\_API\_URL}, tokens d'analyse.
+\end{itemize}
+
+\section{Actuator — Healthchecks}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize,breaklines=true]
+GET http://localhost:8080/api/v1/actuator/health
+
+Réponse (exemple) :
+{
+  "status": "UP",
+  "components": {
+    "db": {"status": "UP"},
+    "livenessState": {"status": "UP"},
+    "readinessState": {"status": "UP"}
+  }
+}
+\end{lstlisting}
+
+\chapter{Conclusion et perspectives}
+\label{chap:concl}
+
+\section{Synthèse des apports}
+UrbanOps démontre une \textbf{architecture robuste et maintenable} couplant technologies modernes (Spring~Boot~3, Next.js~14, PostgreSQL, Gemini). L'intégration de \textbf{quatre middlewares} (REST, JMS, RMI, SOAP) valide la polyvalence d'une plateforme urbaine. Les \textbf{tests unitaires JUnit~5}, \textbf{couverture JaCoCo} et \textbf{analyse SonarQube} garantissent une \textbf{qualité de production}.
+
+Des succès clés :
+\begin{itemize}
+  \item Cycle de vie incident complèt (OPEN → RESOLVED) ;
+  \item Classification IA automatisée avec secours déterministe ;
+  \item Dashboard interactif et carte temps réel ;
+  \item Sécurité JWT et encryption mots de passe.
+\end{itemize}
+
+\section{Difficultés rencontrées}
+\begin{itemize}
+  \item Gestion des quotas Gemini API et timeout réseau ;
+  \item Synchronisation upload fichiers multipart et BDD ;
+  \item Optimisation requêtes PostgreSQL (indices nécessaires) ;
+  \item Intégration des quattro middlewares en parallèle.
+\end{itemize}
+
+\section{Perspectives et évolutions futures}
+\begin{itemize}
+  \item \textbf{Mobile} : Application React Native ou Flutter pour signalement sur terrain ;
+  \item \textbf{Notifications} : Server-Sent Events (SSE) ou WebSockets push temps réel ;
+  \item \textbf{IoT} : Capteurs IoT (humidité, température) intégrés aux incidents ;
+  \item \textbf{Machine Learning} : Amélioration classification via fine-tuning modèle ;
+  \item \textbf{Containers} : Déploiement Docker, orchestration Kubernetes ;
+  \item \textbf{Analytics} : Tableaux analytiques avancés (ElasticSearch, Kibana) ;
+  \item \textbf{Audit} : Logging blockchain pour immuabilité trace.
+\end{itemize}
+
+% =============================================================================
+% BIBLIOGRAPHIE
+% =============================================================================
+\cleardoublepage
+\chapter*{Bibliographie et webographie}
+\addcontentsline{toc}{chapter}{Bibliographie et webographie}
+\begin{thebibliography}{99}
+  \bibitem{spring} Spring Framework Documentation — \url{https://spring.io/projects/spring-framework}
+  \bibitem{springboot} Spring Boot 3 — \url{https://spring.io/projects/spring-boot}
+  \bibitem{jpa} Jakarta Persistence API — \url{https://jakarta.ee/specifications/persistence/}
+  \bibitem{nextjs} Next.js 14 Documentation — \url{https://nextjs.org/docs}
+  \bibitem{typescript} TypeScript — \url{https://www.typescriptlang.org/docs/}
+  \bibitem{tailwind} Tailwind CSS — \url{https://tailwindcss.com/docs}
+  \bibitem{leaflet} Leaflet.js — \url{https://leafletjs.com/}
+  \bibitem{postgresql} PostgreSQL — \url{https://www.postgresql.org/docs/}
+  \bibitem{gemini} Google Generative AI — \url{https://ai.google.dev/docs}
+  \bibitem{jwt} JWT.io — \url{https://jwt.io/}
+  \bibitem{junit5} JUnit 5 User Guide — \url{https://junit.org/junit5/docs/current/user-guide/}
+  \bibitem{mockito} Mockito — \url{https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html}
+  \bibitem{jacoco} JaCoCo — \url{https://www.jacoco.org/}
+  \bibitem{sonar} SonarQube Documentation — \url{https://docs.sonarsource.com/sonarqube/latest/}
+  \bibitem{maven} Apache Maven — \url{https://maven.apache.org/}
+  \bibitem{plantuml} PlantUML — \url{https://plantuml.com/}
+  \bibitem{swagger} Swagger / OpenAPI — \url{https://swagger.io/}
+\end{thebibliography}
+
+% =============================================================================
+% ANNEXES
+% =============================================================================
+\appendix
+
+\chapter{Endpoints REST complets}
+\label{app:endpoints}
+\begin{longtable}{@{}l l >{\RaggedRight\arraybackslash}p{7.5cm}@{}}
+  \toprule
+  \textbf{Méthode} & \textbf{Ressource} & \textbf{Description} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Méthode} & \textbf{Ressource} & \textbf{Description} \\
+  \midrule
+  \endhead
+  POST & \texttt{/auth/login} & Authentification (email + password) \\
+  POST & \texttt{/auth/register} & Nouvelle inscription citoyenne \\
+  GET & \texttt{/auth/me} & Profil utilisateur courant (JWT requis) \\
+  GET & \texttt{/incidents} & Liste paginée avec filtres (status, severity, date range) \\
+  POST & \texttt{/incidents} & Créer incident (multipart: JSON + photo) \\
+  GET & \texttt{/incidents/\{id\}} & Détail incident \\
+  PATCH & \texttt{/incidents/\{id\}/status} & Modifier statut (ADMIN) \\
+  GET & \texttt{/incidents/map} & Projection légère pour carte \\
+  GET & \texttt{/incidents/recent} & Les 10 plus récents \\
+  GET & \texttt{/incidents/stats} & Statistiques incidents \\
+  GET & \texttt{/stats/dashboard} & KPI tableau de bord collectif \\
+  GET & \texttt{/alerts} & Liste alertes existantes (ADMIN) \\
+  POST & \texttt{/alerts} & Créer alerte manuelle \\
+  GET & \texttt{/users} & Liste utilisateurs (ADMIN) \\
+  DELETE & \texttt{/users/\{id\}} & Supprimer utilisateur (ADMIN) \\
+  GET & \texttt{/categories} & Listing catégories \\
+  GET & \texttt{/sectors} & Listing secteurs \\
+  GET & \texttt{/actuator/health} & Healthcheck système \\
+  \bottomrule
+\end{longtable}
+
+\chapter{Exemple configuration (anonymisé)}
+\label{app:config}
+
+\section{Backend — application.properties snippet}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize,language=bash,caption={Configuration backend essntielle.},label=lst:config_props]
+server.port=8080
+server.servlet.context-path=/api/v1
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/urbanops
+spring.datasource.username=urbanops_user
+spring.datasource.password=ENCRYPTED_PASSWORD
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your-email@gmail.com
+spring.mail.password=app-specific-password
+
+app.jwt.secret=your-secret-key-min-256-bits-long
+app.jwt.expiration=86400000
+
+gemini.api.key=your-gemini-api-key
+gemini.model=gemini-pro
+
+file.upload-dir=./uploads
+\end{lstlisting}
+
+\section{Frontend — .env.local example}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize,language=bash,caption={Frontend Next.js — variables d'environnement.},label=lst:frontenv]
+NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+\end{lstlisting}
+
+\chapter{Schémas et diagrammes — guide export PlantUML}
+\label{app:plantuml}
+
+\section{Document PlantUML recommandé}
+Exporter les fichiers PlantUML \texttt{.puml} versles formats PNG/PDF et les placer dans \texttt{docs/latex/figures/} avec les noms suggestifs :
+\begin{itemize}
+  \item \texttt{gantt\_planning.png} — Diagramme GANTT (phases et jalons) ;
+  \item \texttt{pert\_taches.png} — Diagramme PERT (dépendances) ;
+  \item \texttt{uml\_classes\_metier.png} — Classes métier ;
+  \item \texttt{uml\_classes\_technique.png} — Classes techniques (Controller, Service, Repo) ;
+  \item \texttt{uml\_cas\_usage.png} — Cas d'utilisation ;
+  \item \texttt{uml\_composants.png} — Components diagram ;
+  \item \texttt{uml\_sequence\_incident.png} — Sequence : création incident.
+\end{itemize}
+
+\chapter{Captures d'écran requises}
+\label{app:captures}
+Après implémentation, générer les captures d'écran :
+\begin{itemize}
+  \item \texttt{figures/landing\_page\_screenshot.png} — Page d'accueil ;
+  \item \texttt{figures/dashboard\_screenshot.png} — Tableau de bord ;
+  \item \texttt{figures/map\_interactive\_screenshot.png} — Carte interactive ;
+  \item \texttt{figures/incident\_form\_screenshot.png} — Formulaire création ;
+  \item \texttt{figures/jacoco\_report\_screenshot.png} — Rapport JaCoCo coverage ;
+  \item \texttt{figures/sonarqube\_dashboard\_screenshot.png} — SonarQube réussite.
+\end{itemize}
+
+Les noms énumérés ici permettront au rapport LaTeX de les inclure automatiquement lors de la compilation.
+
+\end{document}
