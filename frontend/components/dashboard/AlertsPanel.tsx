@@ -79,7 +79,21 @@ export function AlertsPanel() {
                   <p className="text-[10px] text-t3">{new Date(alert.sentAt).toLocaleString()}</p>
                 </div>
               </div>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label="Marquer lu">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                aria-label="Acquitter"
+                onClick={() => {
+                  const id = Number(alert.id)
+                  if (!Number.isNaN(id)) {
+                    alertAPI.acknowledge(id).then(() => {
+                      alertAPI.getRecent().then((res) => setData(res.data))
+                    })
+                  }
+                }}
+              >
                 <Check className="h-3.5 w-3.5 text-t3" />
               </Button>
             </div>

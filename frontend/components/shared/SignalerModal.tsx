@@ -1,127 +1,140 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { categoryAPI, sectorAPI, incidentAPI } from '@/lib/api'
-import { Toast } from './Toast'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
+import { Check, UploadCloud, X, Loader2, AlertCircle } from 'lucide-react'
+import { getCategoryDisplayIcon } from '@/lib/categoryIcons'
 
 interface SignalerModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
+type Category = { id: number; name: string; icon?: string }
+type Sector = { id: number; name: string; centerLat?: number; centerLng?: number }
+
+const DEFAULT_LAT = 31.6295
+const DEFAULT_LNG = -7.9811
+
 export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
-  const [step, setStep] = useState(1)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const router = useRouter()
+  const [loadingMeta, setLoadingMeta] = useState(true)
+  const [metaError, setMetaError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
-  const [categories, setCategories] = useState<{ id: number; name: string; icon?: string }[]>([])
-  const [sectors, setSectors] = useState<
-    { id: number; name: string; centerLat?: number; centerLng?: number }[]
-  >([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [sectors, setSectors] = useState<Sector[]>([])
 
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [sectorId, setSectorId] = useState('')
-  const [latitude, setLatitude] = useState('')
-  const [longitude, setLongitude] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
-
   const [aiResult, setAiResult] = useState<{
     referenceCode?: string
     severity?: string
-    category?: { name?: string }
     authorityNotified?: string
     aiAnalysisResult?: string
   } | null>(null)
 
-  useEffect(() => {
-    if (!isOpen) return
-    setStep(1)
-    setTitle('')
-    setDescription('')
+  const resetForm = useCallback(() => {
     setCategoryId('')
     setSectorId('')
-    setLatitude('')
-    setLongitude('')
+    setTitle('')
+    setDescription('')
     setPhoto(null)
-    setError(null)
+    setSubmitError(null)
+    setSuccess(false)
     setAiResult(null)
+  }, [])
 
-    const fetchData = async () => {
-      try {
-        const [catRes, secRes] = await Promise.all([categoryAPI.getAll(), sectorAPI.getAll()])
-        const catData = catRes.data
-        const secData = secRes.data
-        const cats = Array.isArray(catData) ? catData : catData?.content ?? []
-        const secs = Array.isArray(secData) ? secData : secData?.content ?? []
-        setCategories(cats)
-        setSectors(secs)
-      } catch (err) {
-        console.error('Failed to load categories/sectors:', err)
+  const loadMeta = useCallback(async () => {
+    setLoadingMeta(true)
+    setMetaError(null)
+    try {
+      const [catRes, secRes] = await Promise.all([categoryAPI.getAll(), sectorAPI.getAll()])
+      const cats = (Array.isArray(catRes.data) ? catRes.data : []).filter(
+        (c: Category) =>
+          !/trafic|assainissement|collecte des|éclairage public/i.test(c.name)
+      )
+      const secs = Array.isArray(secRes.data) ? secRes.data : []
+      setCategories(cats)
+      setSectors(secs)
+      if (cats.length === 0) {
+        setMetaError('Aucune catégorie disponible. Redémarrez le backend.')
+      } else if (secs.length === 0) {
+        setMetaError('Aucun secteur disponible. Vérifiez que le backend est démarré.')
       }
+    } catch {
+      setMetaError(
+        'Impossible de charger catégories et secteurs. Vérifiez que le backend tourne sur le port 8080.'
+      )
+      setCategories([])
+      setSectors([])
+    } finally {
+      setLoadingMeta(false)
     }
-    void fetchData()
-  }, [isOpen])
+  }, [])
 
-  const handleSectorChange = (value: string) => {
-    setSectorId(value)
-    const sec = sectors.find((s) => String(s.id) === value)
-    if (sec?.centerLat != null && sec?.centerLng != null) {
-      setLatitude(String(sec.centerLat))
-      setLongitude(String(sec.centerLng))
-    }
+  useEffect(() => {
+    if (!isOpen) return
+    resetForm()
+    loadMeta()
+  }, [isOpen, resetForm, loadMeta])
+
+  const handleClose = () => {
+    resetForm()
+    onClose()
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!title?.trim() || !description?.trim()) {
-      setError('Veuillez remplir tous les champs obligatoires')
+  const handleSubmit = async () => {
+    setSubmitError(null)
+
+    if (!categoryId) {
+      setSubmitError('Choisissez une catégorie.')
+      return
+    }
+    if (!sectorId) {
+      setSubmitError('Choisissez un secteur.')
+      return
+    }
+    const titleTrim = title.trim()
+    const descTrim = description.trim()
+    if (titleTrim.length < 5) {
+      setSubmitError('Le titre doit contenir au moins 5 caractères.')
+      return
+    }
+    if (descTrim.length < 10) {
+      setSubmitError('La description doit contenir au moins 10 caractères.')
       return
     }
 
-    const catId = parseInt(categoryId, 10)
+    const token =
+      typeof window !== 'undefined' ? localStorage.getItem('urbanops_token') : null
+    if (!token) {
+      setSubmitError('Vous devez être connecté pour envoyer un signalement.')
+      return
+    }
+
     const secId = parseInt(sectorId, 10)
-    const lat = parseFloat(latitude)
-    const lng = parseFloat(longitude)
+    const catId = parseInt(categoryId, 10)
+    const sec = sectors.find((s) => s.id === secId)
+    const lat = sec?.centerLat ?? DEFAULT_LAT
+    const lng = sec?.centerLng ?? DEFAULT_LNG
 
-    if (Number.isNaN(catId) || catId <= 0) {
-      setError('Veuillez sélectionner une catégorie')
-      return
-    }
-    if (Number.isNaN(secId) || secId <= 0) {
-      setError('Veuillez sélectionner un secteur')
-      return
-    }
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      setError('Coordonnées invalides')
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
+    setSubmitting(true)
     try {
       const formData = new FormData()
-
       formData.append(
         'data',
         new Blob(
           [
             JSON.stringify({
-              title: title.trim(),
-              description: description.trim(),
+              title: titleTrim,
+              description: descTrim,
               categoryId: catId,
               sectorId: secId,
               latitude: lat,
@@ -131,216 +144,270 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
           { type: 'application/json' }
         )
       )
-
-      if (photo) {
-        formData.append('photo', photo)
-      }
+      if (photo) formData.append('photo', photo)
 
       const res = await incidentAPI.create(formData)
       setAiResult(res.data)
-      setStep(3)
+      setSuccess(true)
       window.dispatchEvent(new CustomEvent('incident-created'))
-      setToast({ message: 'Incident signalé avec succès !', type: 'success' })
     } catch (err: unknown) {
-      console.error(err)
-      const ax = err as { response?: { data?: { message?: string } } }
-      const msg = ax.response?.data?.message || "Erreur lors de la création de l'incident"
-      setError(msg)
-      setToast({ message: msg, type: 'error' })
+      const ax = err as { response?: { data?: { message?: string }; status?: number } }
+      if (ax.response?.status === 401) {
+        setSubmitError('Session expirée. Reconnectez-vous.')
+      } else {
+        setSubmitError(ax.response?.data?.message || 'Erreur lors de l’envoi du signalement.')
+      }
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
-  const getSeverityStyle = (severity: string) => {
-    switch (severity) {
-      case 'HIGH':
-      case 'CRITICAL':
-        return { bg: '#ef4444', text: 'Critique / Élevé' }
-      case 'MEDIUM':
-        return { bg: '#f59e0b', text: 'Moyen' }
-      case 'LOW':
-        return { bg: '#22c55e', text: 'Faible' }
-      default:
-        return { bg: '#3b82f6', text: severity }
-    }
-  }
-
-  const fieldClass =
-    'w-full rounded-lg border border-input bg-bg-base/80 px-3 py-2.5 text-sm text-t1 shadow-sm placeholder:text-t3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-bg-hover/50'
+  if (!isOpen) return null
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose()
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="signaler-title"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose()
       }}
     >
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto border-border/80 bg-card/95 backdrop-blur-xl sm:max-w-xl">
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-        <DialogHeader>
-          <DialogTitle>{step === 3 ? 'Signalement envoyé' : 'Signaler un problème'}</DialogTitle>
-        </DialogHeader>
-
-        {error && (
-          <div className="rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-300">
-            {error}
+      <div
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-stone-200 px-6 py-4">
+          <div>
+            <h2 id="signaler-title" className="text-lg font-bold text-stone-900">
+              {success ? 'Signalement envoyé' : 'Nouveau signalement'}
+            </h2>
+            <p className="mt-0.5 text-sm text-stone-500">
+              {success
+                ? 'Votre incident a été enregistré.'
+                : 'Décrivez le problème et choisissez catégorie + secteur.'}
+            </p>
           </div>
-        )}
+          <button
+            type="button"
+            onClick={handleClose}
+            className="rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+            aria-label="Fermer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-        {step === 1 && (
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="uo-title">Titre *</Label>
-              <Input
-                id="uo-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="Ex : câble exposé"
-                className={fieldClass}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="uo-desc">Description *</Label>
-              <textarea
-                id="uo-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-                rows={3}
-                className={cn(fieldClass, 'min-h-[96px] resize-y')}
-                placeholder="Détails du problème…"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="uo-cat">Catégorie *</Label>
-                <select
-                  id="uo-cat"
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  required
-                  className={fieldClass}
-                >
-                  <option value="">-- Choisir une catégorie --</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.icon ? `${c.icon} ` : ''}
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {success && aiResult ? (
+            <div className="space-y-5 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <Check className="h-8 w-8" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="uo-sec">Secteur *</Label>
+              <p className="font-mono text-2xl font-bold text-orange-700">
+                {aiResult.referenceCode}
+              </p>
+              <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-left text-sm">
+                <p>
+                  <span className="font-semibold text-stone-600">Sévérité :</span>{' '}
+                  {aiResult.severity ?? '—'}
+                </p>
+                <p className="mt-2">
+                  <span className="font-semibold text-stone-600">Autorité :</span>{' '}
+                  {aiResult.authorityNotified ?? '—'}
+                </p>
+                {aiResult.aiAnalysisResult && (
+                  <p className="mt-2 italic text-stone-700">{aiResult.aiAnalysisResult}</p>
+                )}
+              </div>
+            </div>
+          ) : loadingMeta ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-stone-500">
+              <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+              <p className="text-sm">Chargement des catégories…</p>
+            </div>
+          ) : (
+            <form
+              className="space-y-6"
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleSubmit()
+              }}
+            >
+              {metaError && (
+                <div className="flex gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                  <div className="flex-1">
+                    <p>{metaError}</p>
+                    {metaError.includes('Connectez-vous') ? (
+                      <button
+                        type="button"
+                        className="mt-2 font-semibold text-orange-700 underline"
+                        onClick={() => {
+                          handleClose()
+                          router.push('/auth/signin')
+                        }}
+                      >
+                        Se connecter
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="mt-2 font-semibold text-orange-700 underline"
+                        onClick={() => loadMeta()}
+                      >
+                        Réessayer
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {submitError && (
+                <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  {submitError}
+                </div>
+              )}
+
+              <fieldset className="space-y-3" disabled={categories.length === 0}>
+                <legend className="text-sm font-bold text-stone-800">
+                  Catégorie <span className="text-red-500">*</span>
+                </legend>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {categories.map((cat) => {
+                    const selected = categoryId === String(cat.id)
+                    const Icon = getCategoryDisplayIcon(cat.name, cat.icon)
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setCategoryId(String(cat.id))}
+                        className={`flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all ${
+                          selected
+                            ? 'border-orange-600 bg-orange-50 ring-2 ring-orange-200'
+                            : 'border-stone-200 bg-white hover:border-stone-300'
+                        }`}
+                      >
+                        <span
+                          className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                            selected ? 'bg-orange-100 text-orange-700' : 'bg-stone-100 text-stone-600'
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                        </span>
+                        <span className="text-center text-xs font-semibold leading-tight text-stone-800">
+                          {cat.name}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </fieldset>
+
+              <fieldset className="space-y-3" disabled={sectors.length === 0}>
+                <legend className="text-sm font-bold text-stone-800">
+                  Secteur <span className="text-red-500">*</span>
+                </legend>
                 <select
-                  id="uo-sec"
                   value={sectorId}
-                  onChange={(e) => handleSectorChange(e.target.value)}
-                  required
-                  className={fieldClass}
+                  onChange={(e) => setSectorId(e.target.value)}
+                  className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
                 >
-                  <option value="">-- Choisir un secteur --</option>
-                  {sectors.map((s) => (
-                    <option key={s.id} value={String(s.id)}>
-                      {s.name}
+                  <option value="">— Choisir un secteur —</option>
+                  {sectors.map((sec) => (
+                    <option key={sec.id} value={sec.id}>
+                      {sec.name}
                     </option>
                   ))}
                 </select>
-              </div>
-            </div>
+              </fieldset>
 
-            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="uo-lat">Latitude *</Label>
-                <Input
-                  id="uo-lat"
-                  type="number"
-                  step="any"
-                  value={latitude}
-                  onChange={(e) => setLatitude(e.target.value)}
-                  required
-                  className={fieldClass}
+                <label htmlFor="incident-title" className="text-sm font-bold text-stone-800">
+                  Titre <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="incident-title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={200}
+                  placeholder="Ex : Fuite d'eau avenue Mohammed VI"
+                  className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
                 />
+                <p className="text-xs text-stone-500">Minimum 5 caractères</p>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="uo-lng">Longitude *</Label>
-                <Input
-                  id="uo-lng"
-                  type="number"
-                  step="any"
-                  value={longitude}
-                  onChange={(e) => setLongitude(e.target.value)}
-                  required
-                  className={fieldClass}
+                <div className="flex items-center justify-between">
+                  <label htmlFor="incident-desc" className="text-sm font-bold text-stone-800">
+                    Description <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-xs text-stone-500">{description.length}/500</span>
+                </div>
+                <textarea
+                  id="incident-desc"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value.slice(0, 500))}
+                  rows={4}
+                  placeholder="Décrivez le problème : lieu précis, gravité, depuis quand…"
+                  className="w-full resize-y rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
                 />
+                <p className="text-xs text-stone-500">Minimum 10 caractères</p>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="uo-photo">Photo (optionnel)</Label>
-              <input
-                id="uo-photo"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setPhoto(e.target.files?.[0] || null)}
-                className="text-xs text-t2 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground"
-              />
-            </div>
+              <div className="space-y-2">
+                <span className="text-sm font-bold text-stone-800">Photo (optionnel)</span>
+                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 px-4 py-8 hover:border-orange-400 hover:bg-orange-50/50">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+                  />
+                  <UploadCloud className="mb-2 h-8 w-8 text-stone-400" />
+                  <span className="text-sm font-medium text-stone-600">
+                    {photo ? photo.name : 'Cliquez ou glissez une photo'}
+                  </span>
+                </label>
+              </div>
+            </form>
+          )}
+        </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Envoi en cours…' : 'Envoyer le signalement'}
-            </Button>
-          </form>
-        )}
-
-        {step === 3 && aiResult && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-muted/40 p-4 text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-t3">Référence</p>
-              <p className="mt-1 font-mono text-2xl font-bold text-t1">{aiResult.referenceCode}</p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-muted/30 p-4">
-              <h4 className="mb-3 text-sm font-semibold text-t1">Analyse IA</h4>
-              <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="text-xs text-t3">Sévérité</dt>
-                  <dd className="mt-1">
-                    <span
-                      className="inline-flex rounded-md px-2 py-0.5 text-xs font-bold text-white"
-                      style={{
-                        backgroundColor: getSeverityStyle(aiResult.severity ?? '').bg,
-                      }}
-                    >
-                      {getSeverityStyle(aiResult.severity ?? '').text}
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-t3">Catégorie détectée</dt>
-                  <dd className="mt-1 text-t1">{aiResult.category?.name ?? 'N/A'}</dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-xs text-t3">Autorité notifiée</dt>
-                  <dd className="mt-1 text-t1">{aiResult.authorityNotified}</dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-xs text-t3">Note de l&apos;IA</dt>
-                  <dd className="mt-1 italic text-t2">{aiResult.aiAnalysisResult}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <Button className="w-full" onClick={onClose}>
-              Fermer
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-end gap-3 border-t border-stone-200 bg-stone-50 px-6 py-4">
+          {success ? (
+            <button
+              type="button"
+              onClick={handleClose}
+              className="rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-700"
+            >
+              Terminer
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={submitting}
+                className="rounded-lg px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-200 disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting || loadingMeta || !!metaError}
+                className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {submitting ? 'Envoi en cours…' : 'Envoyer le signalement'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }

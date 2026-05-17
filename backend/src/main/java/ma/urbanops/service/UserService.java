@@ -104,7 +104,7 @@ public class UserService {
                 .role(u.getRole())
                 .sector(u.getSector())
                 .receiveAlerts(u.getReceiveAlerts())
-                .active(u.getIsActive())
+
                 .createdAt(u.getCreatedAt())
                 .build();
     }

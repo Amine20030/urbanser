@@ -1,7 +1,6 @@
 package ma.urbanops.exception;
 
 public class AIAnalysisException extends RuntimeException {
-
     public AIAnalysisException(String message) {
         super(message);
     }

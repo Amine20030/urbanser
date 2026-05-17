@@ -31,7 +31,23 @@ public class JwtTokenProvider {
 
     public String generateToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-        return generateTokenFromUsername(userPrincipal.getUsername());
+        
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        
+        String role = userPrincipal.getAuthorities().stream()
+                .findFirst()
+                .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .orElse("ROLE_CITIZEN");
+
+        return Jwts.builder()
+                .subject(userPrincipal.getUsername())
+                .claim("role", role)
+                .claim("firstName", userPrincipal.getFirstName())
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
     }
 
     public String generateTokenFromUsername(String username) {

@@ -1,0 +1,37 @@
+@startuml
+title Cas d'Utilisation Globaux - UrbanOps
+left to right direction
+skinparam actor {
+  BackgroundColor White
+  BorderColor #2E7D32
+}
+skinparam usecase {
+  BackgroundColor #FFEBEE
+  BorderColor #C62828
+}
+
+actor "Citoyen" as Citoyen
+actor "Administrateur" as Admin
+actor "IA (Gemini)" as IA
+
+rectangle "UrbanOps" {
+  usecase "Créer un compte" as UC1
+  usecase "Signaler un incident (GPS + Photo)" as UC2
+  usecase "Consulter la carte interactive" as UC3
+  
+  usecase "Classifier l'incident (Gravité)" as UC4
+  usecase "Approuver / Rejeter l'incident" as UC5
+  usecase "Consulter les statistiques (Dashboard)" as UC6
+}
+
+Citoyen --> UC1
+Citoyen --> UC2
+Citoyen --> UC3
+
+Admin --> UC5
+Admin --> UC6
+Admin --> UC3
+
+UC2 ..> UC4 : <<include>>
+IA --> UC4
+@enduml

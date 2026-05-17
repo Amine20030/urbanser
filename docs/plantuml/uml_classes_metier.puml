@@ -1,0 +1,54 @@
+@startuml
+title Diagramme de Classes Métier - UrbanOps
+skinparam class {
+  BackgroundColor White
+  BorderColor #C62828
+  ArrowColor #2E7D32
+}
+
+class User {
+  + id: Long
+  + email: String
+  + passwordHash: String
+  + role: RoleEnum
+  + createdAt: Date
+  + register()
+  + login()
+}
+
+class Incident {
+  + referenceCode: String
+  + title: String
+  + description: Text
+  + severity: SeverityEnum
+  + status: StatusEnum
+  + latitude: Double
+  + longitude: Double
+  + photoUrl: String
+  + aiAnalysisResult: Text
+}
+
+class Category {
+  + id: Long
+  + name: String
+}
+
+class Sector {
+  + id: Long
+  + name: String
+  + zipCode: String
+}
+
+class Alert {
+  + id: Long
+  + message: String
+  + sentAt: Date
+  + isSentToAuthority: Boolean
+}
+
+User "1" -- "0..*" Incident : déclare >
+Category "1" -- "0..*" Incident : classifie <
+Sector "1" -- "0..*" Incident : localise <
+Incident "1" -- "0..1" Alert : déclenche >
+
+@enduml

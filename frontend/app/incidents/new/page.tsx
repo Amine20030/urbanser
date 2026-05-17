@@ -34,8 +34,8 @@ export default function NewIncidentPage() {
       try {
         const [catRes, secRes] = await Promise.all([categoryAPI.getAll(), sectorAPI.getAll()])
         if (cancelled) return
-        setCategories(catRes.data ?? [])
-        setSectors(secRes.data ?? [])
+        setCategories(Array.isArray(catRes.data) ? catRes.data : [])
+        setSectors(Array.isArray(secRes.data) ? secRes.data : [])
       } catch {
         if (!cancelled) setError('Impossible de charger catégories et secteurs. Vérifiez que le backend est démarré.')
       } finally {

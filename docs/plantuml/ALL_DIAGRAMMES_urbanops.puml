@@ -1,0 +1,381 @@
+' =============================================================================
+' UrbanOps — TOUS les diagrammes dans un seul fichier
+' Compilation : PlantUML (PAS StarUML — voir README.md dans ce dossier)
+'
+' Ligne de commande (avec plantuml.jar ou executable plantuml) :
+'   plantuml ALL_DIAGRAMMES_urbanops.puml
+' Génère typiquement : un PNG/SVG par bloc @start...@end (noms selon outil)
+'
+' En ligne : https://www.planttext.com/ — copier UN bloc à la fois si besoin
+' =============================================================================
+
+@startgantt UrbanOps - Planning type projet
+printscale weekly zoom 1.2
+title Diagramme de Gantt - UrbanOps
+
+' Version compatible : integration demarre apres Backend (chemin le plus long apres conception)
+[Analyse du besoin] lasts 5 days
+[Conception BDD + API] lasts 7 days and starts at [Analyse du besoin]'s end
+[Backend Spring Boot] lasts 14 days and starts at [Conception BDD + API]'s end
+[Frontend Next.js] lasts 12 days and starts at [Conception BDD + API]'s end
+[Intégration API + JWT] lasts 5 days and starts at [Backend Spring Boot]'s end
+[Tests unitaires JUnit5 + JaCoCo] lasts 7 days and starts at [Intégration API + JWT]'s end
+[Documentation + Swagger] lasts 4 days and starts at [Tests unitaires JUnit5 + JaCoCo]'s end
+
+@endgantt
+
+@startuml UrbanOps - Domaine metier (JPA)
+
+title Diagramme de classes - Domaine metier (entites UrbanOps)
+
+skinparam classAttributeIconSize 0
+
+enum Role {
+  CITIZEN
+  ADMIN
+}
+
+enum IncidentStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum Severity {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+class User {
+  - Long id
+  - String email
+  - Role role
+  ..
+  autres attributs
+}
+
+class Category {
+  - Long id
+  - String name
+  - String authorityEmail
+}
+
+class Sector {
+  - Long id
+  - String name
+  - String city
+}
+
+class Incident {
+  - Long id
+  - String referenceCode
+  - Severity severity
+  - IncidentStatus status
+  - Double latitude
+  - Double longitude
+  --
+  + generateReferenceCode() : String
+}
+
+class Alert {
+  - Long id
+  - Severity severity
+  - Boolean acknowledged
+  --
+  + acknowledge() : void
+}
+
+User ||--o{ Incident : reportedBy\n0..1 vers *
+Category ||--o{ Incident : categorie\n1 vers *
+Sector ||--o{ Incident : secteur\n1 vers *
+Incident ||--o{ Alert : alertes\n1 vers 0..*
+
+User ..> Role
+Incident ..> IncidentStatus
+Incident ..> Severity
+Alert ..> Severity
+
+note right of Incident
+  Severite : AIAnalysisService
+  (Gemini + fallback)
+end note
+
+@enduml
+
+@startuml UrbanOps - Couches techniques backend
+
+title Diagramme de classes - Architecture technique (Spring)
+
+skinparam packageStyle rectangle
+skinparam linetype polyline
+
+package "ma.urbanops.controller" #LightBlue {
+  class AuthController
+  class IncidentController
+  class UserController
+  class CategoryController
+  class SectorController
+  class StatsController
+  class AlertController
+}
+
+package "ma.urbanops.service" #LightGreen {
+  class IncidentService
+  class UserService
+  class CategoryService
+  class SectorService
+  class StatsService
+  class AlertService
+  class AIAnalysisService
+  class FileStorageService
+  class EmailService
+  class ScheduledTaskService
+}
+
+package "ma.urbanops.repository" #Wheat {
+  interface IncidentRepository
+  interface UserRepository
+  interface CategoryRepository
+  interface SectorRepository
+  interface AlertRepository
+}
+
+package "ma.urbanops.security" #Pink {
+  class JwtAuthenticationFilter
+  class JwtTokenProvider
+  class UserDetailsServiceImpl
+}
+
+AuthController --> UserService
+AuthController --> JwtTokenProvider
+
+IncidentController --> IncidentService
+IncidentController --> UserService
+
+UserController --> UserService
+CategoryController --> CategoryService
+SectorController --> SectorService
+StatsController --> StatsService
+AlertController --> AlertService
+
+IncidentService --> IncidentRepository
+IncidentService --> CategoryRepository
+IncidentService --> SectorRepository
+IncidentService --> FileStorageService
+IncidentService --> AIAnalysisService
+IncidentService --> AlertService
+
+UserService --> UserRepository
+CategoryService --> CategoryRepository
+SectorService --> SectorRepository
+StatsService --> IncidentRepository
+StatsService --> UserRepository
+StatsService --> AlertRepository
+
+AlertService --> AlertRepository
+AlertService --> EmailService
+
+JwtAuthenticationFilter ..> JwtTokenProvider
+JwtAuthenticationFilter ..> UserDetailsServiceImpl
+UserDetailsServiceImpl --> UserRepository
+
+note bottom of IncidentService
+  createIncident : validation categorie/secteur,
+  upload, analyse IA, sauvegarde,
+  alerte si HIGH/MEDIUM
+end note
+
+@enduml
+
+@startuml UrbanOps - Cas d utilisation
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+title Diagramme de cas d utilisation - UrbanOps
+
+actor Citoyen as CIT
+actor Administrateur as ADM
+actor "API Gemini" as GEM
+actor "SMTP Email" as SMTP
+
+rectangle UrbanOps {
+  usecase "S inscrire" as UC1
+  usecase "Se connecter" as UC2
+  usecase "Consulter profil" as UC3
+  usecase "Declarer un incident\n(photo + GPS)" as UC4
+  usecase "Consulter mes incidents" as UC5
+  usecase "Lister / filtrer incidents" as UC6
+  usecase "Carte incidents" as UC7
+  usecase "Statistiques dashboard" as UC8
+  usecase "Categories et secteurs" as UC9
+  usecase "Modifier statut incident" as UC10
+  usecase "Supprimer incident" as UC11
+  usecase "Gerer utilisateurs" as UC12
+  usecase "Alertes (liste / accuse)" as UC13
+  usecase "Classification IA severite" as UC14
+  usecase "Envoi email autorite" as UC15
+}
+
+CIT --> UC1
+CIT --> UC2
+CIT --> UC3
+CIT --> UC4
+CIT --> UC5
+CIT --> UC6
+CIT --> UC7
+CIT --> UC8
+CIT --> UC9
+
+ADM --> UC2
+ADM --> UC3
+ADM --> UC6
+ADM --> UC7
+ADM --> UC8
+ADM --> UC9
+ADM --> UC10
+ADM --> UC11
+ADM --> UC12
+ADM --> UC13
+
+UC4 ..> UC14 : include
+UC4 ..> UC15 : include\nHIGH ou MEDIUM
+UC14 ..> GEM
+UC15 ..> SMTP
+
+@enduml
+
+@startuml UrbanOps - Reseau PERT (taches + durees)
+
+title Diagramme PERT simplifie - UrbanOps (chemin critique indicatif)
+skinparam handwritten false
+skinparam rectangle {
+  roundCorner 10
+  shadowing false
+}
+
+' Noeuds = taches (duree en jours entre parentheses)
+rectangle "T1\nAnalyse besoin\n(5 j)" as T1 #E8F4FD
+rectangle "T2\nConception\nBDD/API\n(7 j)" as T2 #E8F4FD
+rectangle "T3\nBackend\nSpring\n(14 j)" as T3 #FFF4E6
+rectangle "T4\nFrontend\nNext.js\n(12 j)" as T4 #FFF4E6
+rectangle "T5\nIntegration\nJWT + CORS\n(5 j)" as T5 #E6FFE6
+rectangle "T6\nTests JUnit5\nJaCoCo\n(7 j)" as T6 #F0E6FF
+rectangle "T7\nDoc Swagger\n(4 j)" as T7 #F5F5F5
+
+' Dependances (PERT : fin-debut)
+T1 -down-> T2 : FS
+T2 -down-> T3 : FS
+T2 -down-> T4 : FS
+T3 -down-> T5 : FS
+T4 -down-> T5 : FS
+T5 -down-> T6 : FS
+T6 -down-> T7 : FS
+
+note bottom of T5
+  T5 debute apres fin de T3 ET T4
+  (chemin critique ~ max(T3,T4)+T5+...)
+end note
+
+legend right
+  FS = Finish-to-Start
+  Durees indicatives (jours ouvrables)
+endlegend
+
+@enduml
+
+@startuml UrbanOps - Diagramme de composants
+
+title Diagramme par composants - UrbanOps
+
+skinparam componentStyle rectangle
+
+package "Client" {
+  [Navigateur] as BR
+  [Application Next.js 14\n(App Router + Axios)] as FE
+}
+
+package "Serveur applicatif" {
+  [API REST Spring Boot\ncontext-path /api/v1] as API
+  [Couche Securite\nJWT + Spring Security] as SEC
+  [Couche Metier\nServices transaccionnels] as SVC
+  [Couche Persistance\nSpring Data JPA] as REPO
+  [Stockage fichiers\nuploads/ UUID] as FS
+  [Taches planifiees\n@Scheduled] as SCH
+}
+
+database "PostgreSQL\nurbanops_db" as DB
+
+cloud "Google Gemini\nREST generateContent" as GEM
+cloud "SMTP\n(JavaMail)" as MAIL
+
+BR --> FE : HTTPS
+FE --> API : JSON / multipart\nAuthorization Bearer
+
+API --> SEC
+API --> SVC
+SVC --> REPO
+SVC --> FS
+SVC --> GEM : Analyse severite\n(IncidentService)
+SVC --> MAIL : Alertes\n(EmailService @Async)
+REPO --> DB : JDBC
+SCH --> REPO : Stats / incidents\nen retard
+
+note right of API
+  Controllers :
+  Auth, Incident, User,
+  Category, Sector, Stats, Alert
+end note
+
+@enduml
+
+@startuml UrbanOps - Sequence creation incident
+
+title Diagramme de sequence - Creation d incident (logique reelle)
+
+actor Citoyen as C
+participant "IncidentController" as IC
+participant "IncidentService" as IS
+participant "CategoryRepository" as CR
+participant "SectorRepository" as SR
+participant "FileStorageService" as FS
+participant "AIAnalysisService" as AI
+participant "IncidentRepository" as IR
+participant "AlertService" as AS
+participant "EmailService" as EM
+
+C -> IC : POST /incidents\nmultipart(data + photo)
+IC -> IS : createIncident(request, photo, reporter)
+
+IS -> CR : findById(categoryId)
+CR --> IS : Category
+
+IS -> SR : findById(sectorId)
+SR --> IS : Sector
+
+opt photo presente
+  IS -> FS : storeFile(photo)
+  FS --> IS : photoUrl
+end
+
+IS -> AI : analyze(description, categoryName)
+AI --> IS : AIAnalysisResult\n(severity HIGH/MEDIUM/LOW)
+
+IS -> IR : save(incident)
+IR --> IS : Incident (id)
+
+IS -> IR : save(referenceCode)
+IR --> IS : Incident persiste
+
+opt severity HIGH ou MEDIUM
+  IS -> AS : createAndSendAlert(incident)
+  AS -> EM : sendAlertEmail (async)
+  AS --> IS : Alert
+end
+
+IS --> IC : Incident
+IC --> C : 201 IncidentResponse
+
+@enduml

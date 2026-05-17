@@ -1,0 +1,53 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< ma.urbanops:urbanops-backend >--------------------
+[INFO] Building UrbanOps Backend 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ urbanops-backend ---
+[INFO] Deleting C:\Users\NOONE\CascadeProjects\urbanops\backend\target
+[INFO] 
+[INFO] --- jacoco:0.8.11:prepare-agent (prepare-agent) @ urbanops-backend ---
+[INFO] argLine set to -javaagent:C:\\Users\\NOONE\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.11\\org.jacoco.agent-0.8.11-runtime.jar=destfile=C:\\Users\\NOONE\\CascadeProjects\\urbanops\\backend\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ urbanops-backend ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ urbanops-backend ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 70 source files with javac [forked debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ urbanops-backend ---
+[INFO] skip non existing resourceDirectory C:\Users\NOONE\CascadeProjects\urbanops\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ urbanops-backend ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 4 source files with javac [forked debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ urbanops-backend ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.3.0:jar (default-jar) @ urbanops-backend ---
+[INFO] Building jar: C:\Users\NOONE\CascadeProjects\urbanops\backend\target\urbanops-backend-1.0.0.jar
+[INFO] 
+[INFO] --- spring-boot:3.2.5:repackage (repackage) @ urbanops-backend ---
+[INFO] Replacing main artifact C:\Users\NOONE\CascadeProjects\urbanops\backend\target\urbanops-backend-1.0.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\NOONE\CascadeProjects\urbanops\backend\target\urbanops-backend-1.0.0.jar.original
+[INFO] 
+[INFO] --- jacoco:0.8.11:report (report) @ urbanops-backend ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] 
+[INFO] --- jacoco:0.8.11:check (check) @ urbanops-backend ---
+[INFO] Skipping JaCoCo execution due to missing execution data file:C:\Users\NOONE\CascadeProjects\urbanops\backend\target\jacoco.exec
+[INFO] 
+[INFO] --- install:3.1.1:install (default-install) @ urbanops-backend ---
+[INFO] Installing C:\Users\NOONE\CascadeProjects\urbanops\backend\pom.xml to C:\Users\NOONE\.m2\repository\ma\urbanops\urbanops-backend\1.0.0\urbanops-backend-1.0.0.pom
+[INFO] Installing C:\Users\NOONE\CascadeProjects\urbanops\backend\target\urbanops-backend-1.0.0.jar to C:\Users\NOONE\.m2\repository\ma\urbanops\urbanops-backend\1.0.0\urbanops-backend-1.0.0.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.891 s
+[INFO] Finished at: 2026-05-16T02:07:30+01:00
+[INFO] ------------------------------------------------------------------------
