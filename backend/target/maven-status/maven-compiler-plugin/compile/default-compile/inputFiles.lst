@@ -7,7 +7,6 @@ C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\jms\Al
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\CategoryService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\response\AlertResponse.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\controller\SectorController.java
-C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config\OpenApiConfig.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\entity\User.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\exception\ResourceNotFoundException.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config\JmsConfig.java
@@ -29,7 +28,6 @@ C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\rmi\Rm
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\ScheduledTaskService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\request\UpdateStatusRequest.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\repository\SectorRepository.java
-C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\controller\CategoryController.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\controller\AdminUserController.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config\AsyncConfig.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config\CorsConfig.java
@@ -53,6 +51,7 @@ C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\IncidentService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\StatsService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\security\UserDetailsImpl.java
+C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\AlertMessage.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\UrbanOpsApplication.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\enums\IncidentStatus.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\exception\GlobalExceptionHandler.java

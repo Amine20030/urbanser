@@ -22,5 +22,6 @@ public class UserResponse {
     private Role role;
     private String sector;
     private Boolean receiveAlerts;
+    private Boolean isActive;
     private LocalDateTime createdAt;
 }

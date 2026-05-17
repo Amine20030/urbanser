@@ -1,0 +1,26 @@
+@startgantt
+title Diagramme de Gantt - Projet PFE UrbanOps
+
+<style>
+ganttDiagram {
+  task {
+    BackGroundColor White
+    LineColor #C62828
+  }
+}
+</style>
+
+[Phase 1 : Cadrage et Maquettes UI] lasts 10 days
+[Phase 2 : Architecture DB & Backend Spring] lasts 15 days
+[Phase 3 : Intégration React & Next.js] lasts 12 days
+
+[Phase 2 : Architecture DB & Backend Spring] starts at [Phase 1 : Cadrage et Maquettes UI]'s start
+[Phase 3 : Intégration React & Next.js] starts at [Phase 1 : Cadrage et Maquettes UI]'s end
+
+[Phase 4 : Middlewares (REST, JMS, RMI)] lasts 14 days
+[Phase 4 : Middlewares (REST, JMS, RMI)] starts at [Phase 2 : Architecture DB & Backend Spring]'s end
+
+[Phase 5 : Tests QA, JaCoCo, Sonar] lasts 7 days
+[Phase 5 : Tests QA, JaCoCo, Sonar] starts at [Phase 4 : Middlewares (REST, JMS, RMI)]'s end
+
+@endgantt

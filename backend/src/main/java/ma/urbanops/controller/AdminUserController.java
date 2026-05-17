@@ -31,8 +31,8 @@ public class AdminUserController {
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<User> users = userService.findAll();
-        List<UserResponse> resp = users.stream().map(this::toResponse).toList();
+        List<User> users = userService.findAllUsers();
+        List<UserResponse> resp = users.stream().map(userService::toResponse).toList();
         return ResponseEntity.ok(resp);
     }
 
@@ -40,7 +40,7 @@ public class AdminUserController {
     public ResponseEntity<List<UserResponse>> getByRole(@PathVariable String role) {
         Role r = Role.valueOf(role.toUpperCase());
         List<User> users = userService.findByRole(r);
-        return ResponseEntity.ok(users.stream().map(this::toResponse).toList());
+        return ResponseEntity.ok(users.stream().map(userService::toResponse).toList());
     }
 
     @PostMapping
@@ -57,7 +57,7 @@ public class AdminUserController {
         u.setPhone(req.getPhone());
         u.setIsActive(true);
         User created = userService.save(u);
-        return ResponseEntity.status(201).body(toResponse(created));
+        return ResponseEntity.status(201).body(userService.toResponse(created));
     }
 
     @PutMapping("/{id}")
@@ -68,7 +68,7 @@ public class AdminUserController {
         if (req.getRole() != null) u.setRole(req.getRole());
         if (req.getPhone() != null) u.setPhone(req.getPhone());
         User updated = userService.save(u);
-        return ResponseEntity.ok(toResponse(updated));
+        return ResponseEntity.ok(userService.toResponse(updated));
     }
 
     @PatchMapping("/{id}/password")
@@ -96,10 +96,6 @@ public class AdminUserController {
         User u = userService.findById(id);
         u.setIsActive(!u.getIsActive());
         User updated = userService.save(u);
-        return ResponseEntity.ok(toResponse(updated));
-    }
-
-    private UserResponse toResponse(User u) {
-        return new UserResponse(u.getId(), u.getFirstName(), u.getLastName(), u.getEmail(), u.getRole(), u.getPhone(), u.getIsActive(), u.getCreatedAt());
+        return ResponseEntity.ok(userService.toResponse(updated));
     }
 }

@@ -183,6 +183,7 @@ public class IncidentController {
                         .role(i.getReportedBy().getRole())
                         .sector(i.getReportedBy().getSector())
                         .receiveAlerts(i.getReportedBy().getReceiveAlerts())
+                        .isActive(i.getReportedBy().getIsActive())
                         .createdAt(i.getReportedBy().getCreatedAt())
                         .build() : null)
                 .photoUrl(i.getPhotoUrl())

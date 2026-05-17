@@ -1,163 +1,189 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
-import { IncidentTable } from '@/components/dashboard/IncidentTable'
-import { INCIDENTS, Category, Severity, Status } from '@/lib/mockData'
 import { SignalerModal } from '@/components/shared/SignalerModal'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { cn, getSeverityLabel, getStatusLabel } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+
+function relativeTime(dateStr: string): string {
+  if (!dateStr) return ''
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff/60000)
+  if (mins < 1) return 'à l\'instant'
+  if (mins < 60) return `il y a ${mins}min`
+  const hours = Math.floor(mins/60)
+  if (hours < 24) return `il y a ${hours}h`
+  const days = Math.floor(hours/24)
+  return `il y a ${days}j`
+}
+
+const sev = (s:string) => s==='HIGH'?'var(--urb-danger)':s==='MEDIUM'?'var(--urb-gold)':'var(--urb-success)'
+
+const StatusPill = ({ status }: { status: string }) => {
+  const isO = status === 'OPEN'
+  const isP = status === 'IN_PROGRESS'
+  return (
+    <span style={{
+      background: isO ? 'var(--urb-danger-lt)' : isP ? 'var(--urb-gold-lt)' : 'var(--urb-success-lt)',
+      color: isO ? 'var(--urb-danger)' : isP ? 'var(--urb-gold)' : 'var(--urb-success)',
+      padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 800, letterSpacing: '0.05em'
+    }}>
+      {isO ? '🔴 OUVERT' : isP ? '🟡 EN COURS' : '✅ RÉSOLU'}
+    </span>
+  )
+}
 
 export default function IncidentsPage() {
-  const [activeCategory, setActiveCategory] = useState<Category | null>(null)
-  const [activeSeverity, setActiveSeverity] = useState<Severity | null>(null)
-  const [activeStatus, setActiveStatus] = useState<Status | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [incidents, setIncidents] = useState<any[]>([])
+  const [activeFilter, setFilter] = useState('Tous')
+  const [viewMode, setViewMode] = useState<'grid'|'list'>('grid')
   const [modalOpen, setModalOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const categories: (Category | null)[] = [
-    null,
-    'Transport',
-    'Eau',
-    'Déchets',
-    'Éclairage',
-    'Électricité',
-    'Voirie',
-  ]
+  useEffect(() => {
+    const fetchRealData = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch('http://localhost:8080/api/v1/incidents?page=0&size=100&sortBy=createdAt&sortDir=desc')
+        if(res.ok) {
+          const body = await res.json()
+          setIncidents(body.content || body)
+        }
+      } catch (e) {} finally {
+        setLoading(false)
+      }
+    }
+    fetchRealData()
+  }, [])
 
-  const severities: (Severity | null)[] = [null, 'HIGH', 'MED', 'LOW']
-  const statuses: (Status | null)[] = [null, 'open', 'in_progress', 'resolved']
-
-  const totalCount = INCIDENTS.length
-  const openCount = INCIDENTS.filter((i) => i.status === 'open').length
-  const inProgressCount = INCIDENTS.filter((i) => i.status === 'in_progress').length
-  const resolvedCount = INCIDENTS.filter((i) => i.status === 'resolved').length
+  const filtered = incidents.filter(i => activeFilter === 'Tous' ? true : i.status === activeFilter)
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="pointer-events-none fixed inset-0 bg-mesh-light opacity-60 dark:bg-mesh-dark dark:opacity-100" aria-hidden />
+    <div style={{ minHeight: '100vh', background: 'var(--urb-bg)' }}>
       <Navbar />
 
-      <main className="relative mx-auto max-w-7xl px-4 pb-24 pt-24 sm:px-6 lg:px-8">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <h1 className="text-3xl font-bold tracking-tight text-t1">Incidents</h1>
-          <div className="mt-4 flex flex-wrap gap-3 text-sm text-t2">
-            <Badge variant="outline">Total {totalCount}</Badge>
-            <Badge variant="warning">Ouverts {openCount}</Badge>
-            <Badge variant="secondary">En cours {inProgressCount}</Badge>
-            <Badge variant="success">Résolus {resolvedCount}</Badge>
+      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '40px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
+          <div>
+            <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-0.02em', marginBottom: 8, color: 'var(--urb-text)' }}>
+              Explorateur d'incidents
+            </h1>
+            <p style={{ color: 'var(--urb-text-2)', fontSize: 15 }}>
+              Consultez publiquement les problèmes signalés par les citoyens à Marrakech.
+            </p>
           </div>
-        </motion.div>
+          <button onClick={() => setModalOpen(true)} style={{
+            background: 'var(--urb-primary)', color: 'white', border: 'none', borderRadius: 8,
+            padding: '12px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(194,65,12,0.4)', transition: 'transform 0.15s'
+          }}>
+            📷 Signaler
+          </button>
+        </div>
 
-        <div className="mb-6 space-y-4 rounded-xl border border-border/80 bg-card/60 p-4 shadow-sm backdrop-blur-md sm:p-5">
-          <FilterRow label="Catégorie">
-            {categories.map((cat) => (
-              <FilterPill
-                key={cat ?? 'all'}
-                label={cat ?? 'Tous'}
-                isActive={activeCategory === cat}
-                onClick={() => setActiveCategory(cat)}
-              />
-            ))}
-          </FilterRow>
-          <FilterRow label="Criticité">
-            {severities.map((sev) => (
-              <FilterPill
-                key={sev ?? 'all'}
-                label={sev ? getSeverityLabel(sev) : 'Tous'}
-                isActive={activeSeverity === sev}
-                onClick={() => setActiveSeverity(sev)}
-              />
-            ))}
-          </FilterRow>
-          <FilterRow label="Statut">
-            {statuses.map((stat) => (
-              <FilterPill
-                key={stat ?? 'all'}
-                label={stat ? getStatusLabel(stat) : 'Tous'}
-                isActive={activeStatus === stat}
-                onClick={() => setActiveStatus(stat)}
-              />
-            ))}
-          </FilterRow>
-          <div className="max-w-lg pt-2">
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par titre, description, secteur…"
-              className="h-10"
-            />
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          {['Tous','OPEN','IN_PROGRESS','RESOLVED'].map(s => (
+            <button key={s} onClick={() => setFilter(s)}
+              style={{
+                padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', border: '1px solid',
+                background: activeFilter===s ? 'var(--urb-primary)' : 'white',
+                color: activeFilter===s ? 'white' : 'var(--urb-text-2)',
+                borderColor: activeFilter===s ? 'var(--urb-primary)' : 'var(--urb-border)',
+                transition: 'all 0.15s'
+              }}
+            >
+              {s==='Tous'?'Tous':s==='OPEN'?'🔴 Ouverts':s==='IN_PROGRESS'?'🟡 En cours':'✅ Résolus'}
+            </button>
+          ))}
+          <div style={{ marginLeft: 'auto' }}>
+            <button onClick={() => setViewMode(v => v === 'grid' ? 'list' : 'grid')}
+              style={{
+                fontSize: 13, padding: '8px 16px', border: '1px solid var(--urb-border)',
+                borderRadius: 8, background: 'white', cursor: 'pointer', fontWeight: 600, color: 'var(--urb-text)'
+              }}>
+              {viewMode === 'grid' ? '☰ Vue Liste' : '⊞ Vue Grille'}
+            </button>
           </div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="overflow-hidden rounded-xl border border-border/80 bg-card/80 shadow-card backdrop-blur-md"
-        >
-          <IncidentTable
-            filters={{
-              category: activeCategory,
-              severity: activeSeverity,
-              status: activeStatus,
-              search: searchQuery,
-            }}
-          />
-        </motion.div>
+        {loading ? (
+          <div style={{ padding: 60, textAlign: 'center', color: 'var(--urb-text-3)', fontSize: 16 }}>Chargement des incidents...</div>
+        ) : (
+          viewMode === 'grid' ? (
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+               {filtered.map(inc => (
+                 <article key={inc.id} style={{
+                   background: 'var(--urb-surface)', border: '1px solid var(--urb-border)',
+                   borderRadius: 'var(--urb-radius-lg)', overflow: 'hidden',
+                   boxShadow: 'var(--urb-shadow)', transition: 'box-shadow 0.15s, transform 0.15s', cursor: 'pointer'
+                 }} onMouseEnter={e => {
+                    e.currentTarget.style.boxShadow = 'var(--urb-shadow-md)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                 }} onMouseLeave={e => {
+                    e.currentTarget.style.boxShadow = 'var(--urb-shadow)'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                 }}>
+                   <div style={{ height: 4, background: sev(inc.severity) }}/>
+                   <div style={{ padding: '20px' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                       <span style={{ fontSize: 12, color: 'var(--urb-text-3)', fontWeight: 600 }}>
+                         {inc.category?.icon} {inc.category?.name}
+                       </span>
+                       <span style={{ fontSize: 11, color: 'var(--urb-text-3)' }}>
+                         {relativeTime(inc.createdAt)}
+                       </span>
+                     </div>
+                     <h3 style={{
+                       fontSize: 15, fontWeight: 700, color: 'var(--urb-text)',
+                       marginBottom: 10, lineHeight: 1.4, height: 42,
+                       display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                     }}>
+                       {inc.title}
+                     </h3>
+                     <div style={{ fontSize: 12, color: 'var(--urb-text-2)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
+                       📍 <span style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{inc.sector?.name}</span>
+                     </div>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--urb-border)', paddingTop: 16 }}>
+                       <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--urb-primary)', fontWeight: 700 }}>
+                         #{inc.referenceCode}
+                       </span>
+                       <StatusPill status={inc.status}/>
+                     </div>
+                   </div>
+                 </article>
+               ))}
+             </div>
+          ) : (
+            <div style={{ background: 'var(--urb-surface)', border: '1px solid var(--urb-border)', borderRadius: 'var(--urb-radius-lg)', overflow: 'hidden' }}>
+              {filtered.map((inc, i) => (
+                <div key={inc.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px',
+                  borderBottom: i === filtered.length-1 ? 'none' : '1px solid var(--urb-border)',
+                  background: 'var(--urb-surface)', transition: 'background 0.1s', cursor: 'pointer'
+                }} onMouseEnter={e => e.currentTarget.style.background = 'var(--urb-bg)'}
+                   onMouseLeave={e => e.currentTarget.style.background = 'var(--urb-surface)'}>
+                  <div style={{ width: 4, height: 40, background: sev(inc.severity), borderRadius: 2 }}/>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--urb-text)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {inc.title}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--urb-text-3)', display: 'flex', gap: 12 }}>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--urb-primary)', fontWeight: 600 }}>{inc.referenceCode}</span>
+                      <span>{inc.category?.name}</span>
+                      <span>📍 {inc.sector?.name}</span>
+                    </div>
+                  </div>
+                  <div style={{ color: 'var(--urb-text-3)', fontSize: 12 }}>{relativeTime(inc.createdAt)}</div>
+                  <div><StatusPill status={inc.status}/></div>
+                </div>
+              ))}
+            </div>
+          )
+        )}
       </main>
 
-      <Button
-        size="lg"
-        className="fixed bottom-6 right-6 z-[90] gap-2 rounded-full px-6 shadow-glow"
-        onClick={() => setModalOpen(true)}
-      >
-        <Plus className="h-5 w-5" />
-        Signaler
-      </Button>
-
       <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
-
-      <Footer />
     </div>
-  )
-}
-
-function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-t3 sm:w-28">{label}</span>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </div>
-  )
-}
-
-function FilterPill({
-  label,
-  isActive,
-  onClick,
-}: {
-  label: string
-  isActive: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all',
-        isActive
-          ? 'border-transparent bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-md'
-          : 'border-border bg-muted/40 text-t2 hover:border-primary/30 hover:text-t1'
-      )}
-    >
-      {label}
-    </button>
   )
 }

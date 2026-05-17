@@ -1,139 +1,366 @@
 'use client'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import api from '@/lib/api'
+import { canAccessAdminDashboard, getCurrentRole, getStoredUser, getTokenPayload } from '@/lib/auth'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Search, Bell, Settings, User } from 'lucide-react'
-import { DashboardShell } from '@/components/layout/DashboardShell'
-import { KpiCards } from '@/components/dashboard/KpiCards'
-import { ServiceCards } from '@/components/dashboard/ServiceCards'
-import { ActivityChart } from '@/components/dashboard/ActivityChart'
-import { AlertsPanel } from '@/components/dashboard/AlertsPanel'
-import { IncidentTable } from '@/components/dashboard/IncidentTable'
-import { SignalerModal } from '@/components/shared/SignalerModal'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+type Tab = 'overview' | 'incidents' | 'users' | 'alerts' | 'map'
+
+function DashboardContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab') as Tab | null
+  const activeTab: Tab = (tabParam && ['overview', 'incidents', 'users', 'alerts', 'map'].includes(tabParam)) 
+                         ? tabParam 
+                         : 'overview'
+
+  const [stats, setStats] = useState<any>(null)
+  const [incidents, setIncidents] = useState<any[]>([])
+  const [users, setUsers] = useState<any[]>([])
+  const [alerts, setAlerts] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [confirmId, setConfirmId] = useState<number|null>(null)
+
+  const [user, setUser] = useState<any>(null)
+  const [authReady, setAuthReady] = useState(false)
+
+  const handleTabChange = (t: Tab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', t)
+    router.push(`/dashboard?${params.toString()}`)
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem('urbanops_token')
+    if (!token) {
+      router.push('/auth/signin')
+      return
+    }
+    if (!canAccessAdminDashboard()) {
+      router.push('/mes-signalements')
+      return
+    }
+    const p = getTokenPayload()
+    const rawUser = localStorage.getItem('urbanops_user')
+    if (rawUser) {
+      try {
+        setUser(JSON.parse(rawUser))
+      } catch {
+        setUser(null)
+      }
+    } else if (p) {
+      setUser({
+        firstName:
+          (typeof p.firstName === 'string' && p.firstName) ||
+          (typeof p.sub === 'string' ? p.sub.split('@')[0] : 'Admin'),
+      })
+    }
+    setAuthReady(true)
+  }, [router])
+
+  const fetchAll = useCallback(async () => {
+    if (!localStorage.getItem('urbanops_token') || !canAccessAdminDashboard()) return
+    setLoading(true)
+    try {
+      const [s, i, u, a] = await Promise.all([
+        api.get('/stats/dashboard'),
+        api.get('/incidents?page=0&size=50&sortBy=createdAt&sortDir=desc'),
+        api.get('/users?page=0&size=50'),
+        api.get('/alerts?page=0&size=50'),
+      ])
+      setStats(s.data)
+      const iList = i.data?.content ?? i.data ?? []
+      setIncidents(Array.isArray(iList) ? iList : [])
+      setUsers(u.data?.content ?? (Array.isArray(u.data) ? u.data : []))
+      setAlerts(a.data?.content ?? (Array.isArray(a.data) ? a.data : []))
+    } catch (e) {
+      console.error('Dashboard fetch failed:', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (authReady) fetchAll()
+  }, [authReady, fetchAll])
+
+  const changeIncidentStatus = async (id: number, status: string) => {
+    try {
+      await api.patch(`/incidents/${id}/status`, { status })
+      fetchAll()
+    } catch {}
+  }
+
+  const deactivateUser = async (id: number, email: string) => {
+    try {
+      await api.delete(`/users/${id}`)
+      fetchAll()
+    } catch {}
+  }
+
+  const acknowledgeAlert = async (id: number) => {
+    try {
+      await api.patch(`/alerts/${id}/acknowledge`)
+      fetchAll()
+    } catch {}
+  }
+
+  const resendAlert = async (id: number) => {
+    try { await api.post(`/alerts/${id}/resend`) } catch {}
+  }
+
+  const navItem = (id: Tab, icon: string, label: string) => {
+    const active = activeTab === id
+    return (
+      <button onClick={() => handleTabChange(id)} style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        width: '100%', padding: '10px 16px', background: active ? 'rgba(194,65,12,0.15)' : 'transparent',
+        border: 'none', borderLeft: active ? '2px solid var(--urb-primary)' : '2px solid transparent',
+        color: active ? 'var(--urb-primary-lt)' : 'rgba(255,255,255,0.6)',
+        fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+        transition: 'all 0.15s'
+      }} onMouseEnter={e => {if(!active) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}}
+         onMouseLeave={e => {if(!active) e.currentTarget.style.background = 'transparent'}}>
+        <span style={{fontSize:16}}>{icon}</span>
+        {label}
+        {id === 'alerts' && alerts.filter(a=>!a.acknowledged).length > 0 && (
+          <span style={{
+            marginLeft: 'auto', background: 'var(--urb-primary)', color: 'white',
+            borderRadius: 10, fontSize: 10, padding: '2px 6px', fontWeight: 700
+          }}>
+            {alerts.filter(a=>!a.acknowledged).length}
+          </span>
+        )}
+      </button>
+    )
+  }
+
+  const kpiCard = (label: string, val: number, icon: string, accentColor: string) => (
+    <div style={{
+      background: 'var(--urb-surface)', border: '1px solid var(--urb-border)',
+      borderLeft: `4px solid ${accentColor}`, borderRadius: 'var(--urb-radius)',
+      padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 8,
+      boxShadow: 'var(--urb-shadow)'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--urb-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {label}
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--urb-text)', marginTop: 4 }}>
+            {val}
+          </div>
+        </div>
+        <div style={{ background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, color: accentColor, width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  )
+
+  const sevColor = (s:string) => s==='HIGH'?'#dc2626':s==='MEDIUM'?'#d97706':'#059669'
+  
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--urb-bg)', display: 'flex' }}>
+      {/* SIDEBAR */}
+      <aside style={{
+        width: 220, height: '100vh', position: 'fixed', left: 0, top: 0,
+        background: '#1c1917', borderRight: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', flexDirection: 'column', padding: '20px 0', zIndex: 50
+      }}>
+        <div style={{ padding: '0 20px', marginBottom: 32 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--urb-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: 'white' }}>U</div>
+            <span style={{ fontWeight: 800, fontSize: 14, color: 'white', letterSpacing: '-0.01em' }}>UrbanOps</span>
+          </Link>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+          {navItem('overview', '📊', "Vue d'ensemble")}
+          {navItem('incidents', '⚠️', 'Incidents')}
+          {navItem('alerts', '🔔', 'Alertes')}
+          {navItem('users', '👥', 'Utilisateurs')}
+          
+          <div style={{ margin: '20px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 20 }}>
+            <button style={{
+              display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+              background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left'
+            }}>
+              <span style={{fontSize:16}}>⚙️</span> Paramètres
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--urb-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+              {user?.firstName?.charAt(0).toUpperCase() || 'A'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>{user?.firstName || 'Admin'}</span>
+              <span style={{ color: 'var(--urb-primary)', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em' }}>ADMINISTRATEUR</span>
+            </div>
+          </div>
+          <button onClick={() => { localStorage.removeItem('urbanops_token'); router.push('/') }} style={{
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white',
+            borderRadius: 6, padding: '6px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            transition: 'background 0.15s'
+          }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+            Déconnexion
+          </button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main style={{ marginLeft: 220, flex: 1, padding: '32px 40px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--urb-text)' }}>
+            {activeTab === 'overview' ? 'Vue d\'ensemble' :
+             activeTab === 'incidents' ? 'Incidents' :
+             activeTab === 'users' ? 'Utilisateurs' : 'Alertes'}
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 13, color: 'var(--urb-text-3)', fontWeight: 500 }}>
+              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </span>
+            <button onClick={fetchAll} style={{ background: 'white', border: '1px solid var(--urb-border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--urb-text-2)' }}>
+              Actualiser
+            </button>
+          </div>
+        </div>
+
+        {activeTab === 'overview' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {kpiCard('Total Incidents', stats?.totalIncidents??0, '📋', 'var(--urb-primary)')}
+            {kpiCard('Ouverts', stats?.openIncidents??0, '🔴', 'var(--urb-danger)')}
+            {kpiCard('En cours', stats?.inProgressIncidents??0, '🟡', 'var(--urb-gold)')}
+            {kpiCard('Résolus', stats?.resolvedIncidents??0, '✅', 'var(--urb-success)')}
+          </div>
+        )}
+
+        {activeTab === 'incidents' && (
+          <div style={{ background: 'var(--urb-surface)', border: '1px solid var(--urb-border)', borderRadius: 'var(--urb-radius)', overflow: 'hidden', boxShadow: 'var(--urb-shadow)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: 'var(--urb-bg)', borderBottom: '1px solid var(--urb-border)' }}>
+                  {['Réf.', 'Sévérité', 'Titre', 'Statut', 'Date', 'Actions'].map(h => (
+                    <th key={h} style={{ padding: '12px 20px', fontSize: 11, fontWeight: 600, color: 'var(--urb-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {incidents.map((inc) => (
+                  <tr key={inc.id} style={{ borderBottom: '1px solid var(--urb-border)', transition: 'background 0.1s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--urb-bg)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'var(--urb-surface)'}>
+                    <td style={{ padding: '16px 20px', fontFamily: 'monospace', color: 'var(--urb-primary)', fontWeight: 700, fontSize: 13 }}>
+                      {inc.referenceCode}
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: sevColor(inc.severity) }} title={inc.severity} />
+                    </td>
+                    <td style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--urb-text)', fontSize: 14 }}>
+                      {inc.title}
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <span style={{ 
+                        background: inc.status==='OPEN'?'var(--urb-danger-lt)':inc.status==='IN_PROGRESS'?'var(--urb-gold-lt)':'var(--urb-success-lt)',
+                        color: inc.status==='OPEN'?'var(--urb-danger)':inc.status==='IN_PROGRESS'?'var(--urb-gold)':'var(--urb-success)',
+                        padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700 
+                      }}>
+                        {inc.status==='OPEN'?'🔴 Ouvert':inc.status==='IN_PROGRESS'?'🟡 En cours':'✅ Résolu'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px 20px', color: 'var(--urb-text-3)', fontSize: 12 }}>
+                      {new Date(inc.createdAt).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      {inc.status !== 'RESOLVED' && (
+                        <button onClick={() => changeIncidentStatus(inc.id, 'RESOLVED')} style={{
+                          background: 'white', border: '1px solid var(--urb-border-dk)', borderRadius: 6,
+                          padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: 'var(--urb-text-2)'
+                        }}>
+                          Résoudre
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+          <div style={{ background: 'var(--urb-surface)', border: '1px solid var(--urb-border)', borderRadius: 'var(--urb-radius)', overflow: 'hidden', boxShadow: 'var(--urb-shadow)' }}>
+             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: 'var(--urb-bg)', borderBottom: '1px solid var(--urb-border)' }}>
+                  {['Utilisateur', 'Email', 'Rôle', 'Actions'].map(h => (
+                    <th key={h} style={{ padding: '12px 20px', fontSize: 11, fontWeight: 600, color: 'var(--urb-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => {
+                  const isDisabled = u.isActive === false
+                  const isAd = u.role?.includes('ADMIN')
+                  return (
+                  <tr key={u.id} style={{ 
+                    borderBottom: '1px solid var(--urb-border)', 
+                    opacity: isDisabled ? 0.5 : 1, transition: 'background 0.1s' 
+                  }} onMouseEnter={e => e.currentTarget.style.background = 'var(--urb-bg)'}
+                     onMouseLeave={e => e.currentTarget.style.background = 'var(--urb-surface)'}>
+                    <td style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: isAd ? 'var(--urb-primary-lt)' : 'var(--urb-accent-lt)', color: isAd ? 'var(--urb-primary-dk)' : 'var(--urb-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 14 }}>
+                        {u.firstName?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <span style={{ fontWeight: 600, color: 'var(--urb-text)', fontSize: 14 }}>{u.firstName} {u.lastName}</span>
+                    </td>
+                    <td style={{ padding: '16px 20px', color: 'var(--urb-text-2)', fontSize: 13, textDecoration: isDisabled ? 'line-through' : 'none' }}>
+                      {u.email}
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <span style={{ fontSize: 14 }} title={isAd ? 'Admin' : 'Citoyen'}>
+                        {isAd ? '🛡' : '👤'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      {!isDisabled && !isAd && (
+                        confirmId === u.id ? (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--urb-text-2)', alignSelf: 'center', marginRight: 8 }}>Confirmer?</span>
+                            <button onClick={() => { deactivateUser(u.id, u.email); setConfirmId(null) }} style={{ background: 'var(--urb-danger)', color: 'white', border: 'none', borderRadius: 4, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Oui</button>
+                            <button onClick={() => setConfirmId(null)} style={{ background: 'var(--urb-text-3)', color: 'white', border: 'none', borderRadius: 4, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Non</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmId(u.id)} style={{
+                            background: 'transparent', border: '1px solid var(--urb-danger)', color: 'var(--urb-danger)',
+                            borderRadius: 6, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer'
+                          }}>
+                            🚫 Désactiver
+                          </button>
+                        )
+                      )}
+                    </td>
+                  </tr>
+                )})}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+      </main>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [notifOpen, setNotifOpen] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [currentDate] = useState(() => {
-    const date = new Date()
-    return date.toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    })
-  })
-
   return (
-    <DashboardShell>
-      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/75 px-4 py-3 backdrop-blur-xl sm:px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-2 text-xs text-t2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-            <span>Live · {currentDate}</span>
-          </div>
-
-          <div className="relative w-full max-w-md flex-1 lg:mx-6">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-t3" />
-            <Input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher un incident, un secteur…"
-              className="h-10 border-border/80 bg-card/80 pl-10 backdrop-blur-md"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2">
-            <div className="relative">
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon"
-                className="relative border-border/80 bg-card/80 backdrop-blur-md"
-                onClick={() => setNotifOpen((o) => !o)}
-                aria-label="Notifications"
-                aria-expanded={notifOpen}
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  2
-                </span>
-              </Button>
-              {notifOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl border border-border bg-card/95 py-2 text-sm shadow-xl backdrop-blur-xl"
-                >
-                  <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-t3">Notifications</p>
-                  <ul className="max-h-48 overflow-y-auto">
-                    <li className="border-t border-border px-3 py-2 text-t2">
-                      Rapport quotidien UrbanOps (tâche planifiée côté serveur).
-                    </li>
-                    <li className="border-t border-border px-3 py-2 text-t2">
-                      Vérifiez les incidents à forte criticité sur la carte.
-                    </li>
-                  </ul>
-                </motion.div>
-              )}
-            </div>
-            <Button className="hidden sm:inline-flex" onClick={() => setModalOpen(true)}>
-              Signaler
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              className="border-border/80 bg-card/80 backdrop-blur-md"
-              onClick={() => router.push('/parametres')}
-              aria-label="Paramètres"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-            <div className="ml-1 flex items-center gap-2 border-l border-border pl-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-md">
-                <User className="h-4 w-4" />
-              </div>
-              <span className="hidden text-sm font-medium text-t1 sm:inline">Opérateur</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.35 }}
-        className="space-y-6 p-4 sm:p-6"
-      >
-        <KpiCards />
-        <ServiceCards />
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <ActivityChart />
-          <AlertsPanel />
-        </div>
-
-        <Card className="border-border/80">
-          <CardHeader>
-            <CardTitle>Tous les incidents</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <IncidentTable filters={{ search: searchQuery }} />
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
-    </DashboardShell>
+    <Suspense fallback={<div style={{padding:40, textAlign:'center'}}>Chargement du tableau de bord...</div>}>
+      <DashboardContent />
+    </Suspense>
   )
 }

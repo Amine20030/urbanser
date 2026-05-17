@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getDashboardPath } from '@/lib/auth'
 
 type StoredUser = {
   firstName?: string
@@ -71,7 +72,7 @@ export default function ParametresPage() {
               <Button variant="destructive" onClick={logout}>
                 Se déconnecter sur cet appareil
               </Button>
-              <Button variant="secondary" onClick={() => router.push('/dashboard')}>
+              <Button variant="secondary" onClick={() => router.push(getDashboardPath())}>
                 Retour au tableau de bord
               </Button>
             </div>

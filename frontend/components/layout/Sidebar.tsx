@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard,
@@ -11,40 +12,91 @@ import {
   Settings,
   Users,
   LogOut,
+  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { canAccessAdminDashboard, getCurrentRole } from '@/lib/auth'
 
-const navItems = [
-  { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-  { href: '/carte', label: 'Carte', icon: Map },
-  { href: '/incidents', label: 'Incidents', icon: FileText },
-  { href: '/alertes', label: 'Alertes', icon: AlertTriangle },
-  { href: '/utilisateurs', label: 'Utilisateurs', icon: Users },
-  { href: '/parametres', label: 'Paramètres', icon: Settings },
-]
+type NavItem = {
+  href: string
+  label: string
+  icon: typeof LayoutDashboard
+}
+
+function buildNavItems(): NavItem[] {
+  const staff = canAccessAdminDashboard()
+  const items: NavItem[] = [
+    {
+      href: staff ? '/dashboard' : '/mes-signalements',
+      label: 'Tableau de bord',
+      icon: staff ? LayoutDashboard : ClipboardList,
+    },
+  ]
+
+  items.push(
+    { href: '/carte', label: 'Carte', icon: Map },
+    { href: '/incidents', label: 'Incidents', icon: FileText },
+  )
+
+  if (staff) {
+    items.push(
+      { href: '/alertes', label: 'Alertes', icon: AlertTriangle },
+      { href: '/utilisateurs', label: 'Utilisateurs', icon: Users },
+    )
+  }
+
+  items.push({ href: '/parametres', label: 'Paramètres', icon: Settings })
+  return items
+}
 
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const [navItems, setNavItems] = useState<NavItem[]>(buildNavItems)
+
+  useEffect(() => {
+    const refresh = () => setNavItems(buildNavItems())
+    refresh()
+    window.addEventListener('urbanops-auth-changed', refresh)
+    window.addEventListener('storage', refresh)
+    return () => {
+      window.removeEventListener('urbanops-auth-changed', refresh)
+      window.removeEventListener('storage', refresh)
+    }
+  }, [])
 
   function logout() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('urbanops_token')
       localStorage.removeItem('urbanops_user')
+      window.dispatchEvent(new Event('urbanops-auth-changed'))
     }
     router.push('/')
   }
 
+  const role = getCurrentRole()
+
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[220px] flex-col border-r border-border bg-sidebar/90 backdrop-blur-xl shadow-card lg:w-60">
-      <div className="flex h-16 items-center border-b border-border px-4">
+      <motion.div
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex h-16 items-center border-b border-border px-4"
+      >
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-cyan-600 text-base shadow-md">
             🏙
           </span>
-          <span className="text-sm font-bold tracking-tight text-t1">UrbanOps</span>
+          <div className="min-w-0">
+            <span className="block text-sm font-bold tracking-tight text-t1">UrbanOps</span>
+            {role && (
+              <span className="block truncate text-[10px] font-medium uppercase tracking-wide text-t3">
+                {role === 'ADMIN' ? 'Administrateur' : role === 'MANAGER' ? 'Gestionnaire' : 'Citoyen'}
+              </span>
+            )}
+          </div>
         </Link>
-      </div>
+      </motion.div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map((item, i) => {
@@ -84,7 +136,12 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-border p-3">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="border-t border-border p-3"
+      >
         <button
           type="button"
           onClick={logout}
@@ -95,7 +152,7 @@ export function Sidebar() {
           </span>
           Déconnexion
         </button>
-      </div>
+      </motion.div>
     </aside>
   )
 }
