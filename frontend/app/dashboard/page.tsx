@@ -1,35 +1,86 @@
 'use client'
-import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import api from '@/lib/api'
-import { canAccessAdminDashboard, getCurrentRole, getStoredUser, getTokenPayload } from '@/lib/auth'
 
-type Tab = 'overview' | 'incidents' | 'users' | 'alerts' | 'map'
+import { Suspense, useCallback, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { Loader2, RefreshCw } from 'lucide-react'
+import { DashboardShell } from '@/components/layout/DashboardShell'
+import { KpiCards } from '@/components/dashboard/KpiCards'
+import { ActivityChart } from '@/components/dashboard/ActivityChart'
+import { ServiceCards } from '@/components/dashboard/ServiceCards'
+import { IncidentTable } from '@/components/dashboard/IncidentTable'
+import { AlertsPanel } from '@/components/dashboard/AlertsPanel'
+import api, { alertAPI, authAPI } from '@/lib/api'
+import { canAccessAdminDashboard, getStoredUser, getTokenPayload } from '@/lib/auth'
+import { getSeverityColor } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+const MapView = dynamic(() => import('@/components/shared/MapView'), {
+  ssr: false,
+  loading: () => (
+    <motion.div className="flex h-[min(70vh,640px)] items-center justify-center rounded-xl border border-border bg-card text-sm text-t3">
+      Chargement de la carte…
+    </motion.div>
+  ),
+})
+
+type Tab = 'overview' | 'incidents' | 'alerts' | 'users' | 'map' | 'settings'
+
+type AlertRow = {
+  id: number
+  incidentId?: number
+  incidentReference?: string
+  severity: string
+  title: string
+  message?: string
+  sentTo?: string
+  sentAt?: string
+  acknowledged?: boolean
+}
+
+type UserRow = {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  role: string
+  isActive?: boolean
+}
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'overview', label: "Vue d'ensemble" },
+  { id: 'incidents', label: 'Incidents' },
+  { id: 'alerts', label: 'Alertes' },
+  { id: 'users', label: 'Utilisateurs' },
+  { id: 'map', label: 'Carte' },
+  { id: 'settings', label: 'Paramètres' },
+]
 
 function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab') as Tab | null
-  const activeTab: Tab = (tabParam && ['overview', 'incidents', 'users', 'alerts', 'map'].includes(tabParam)) 
-                         ? tabParam 
-                         : 'overview'
+  const activeTab: Tab =
+    tabParam && TABS.some((t) => t.id === tabParam) ? tabParam : 'overview'
 
-  const [stats, setStats] = useState<any>(null)
-  const [incidents, setIncidents] = useState<any[]>([])
-  const [users, setUsers] = useState<any[]>([])
-  const [alerts, setAlerts] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [confirmId, setConfirmId] = useState<number|null>(null)
-
-  const [user, setUser] = useState<any>(null)
   const [authReady, setAuthReady] = useState(false)
-
-  const handleTabChange = (t: Tab) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('tab', t)
-    router.push(`/dashboard?${params.toString()}`)
-  }
+  const [loading, setLoading] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [incidents, setIncidents] = useState<any[]>([])
+  const [users, setUsers] = useState<UserRow[]>([])
+  const [alerts, setAlerts] = useState<AlertRow[]>([])
+  const [profile, setProfile] = useState<{
+    firstName?: string
+    lastName?: string
+    email?: string
+    role?: string
+    phone?: string
+    sector?: string
+  } | null>(null)
+  const [confirmUserId, setConfirmUserId] = useState<number | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('urbanops_token')
@@ -41,325 +92,403 @@ function DashboardContent() {
       router.push('/mes-signalements')
       return
     }
-    const p = getTokenPayload()
-    const rawUser = localStorage.getItem('urbanops_user')
-    if (rawUser) {
-      try {
-        setUser(JSON.parse(rawUser))
-      } catch {
-        setUser(null)
-      }
-    } else if (p) {
-      setUser({
-        firstName:
-          (typeof p.firstName === 'string' && p.firstName) ||
-          (typeof p.sub === 'string' ? p.sub.split('@')[0] : 'Admin'),
-      })
-    }
+    const stored = getStoredUser()
+    const payload = getTokenPayload()
+    if (stored) setProfile(stored)
+    else if (payload?.sub)
+      setProfile({ email: String(payload.sub), firstName: String(payload.firstName ?? 'Admin') })
     setAuthReady(true)
   }, [router])
 
-  const fetchAll = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!localStorage.getItem('urbanops_token') || !canAccessAdminDashboard()) return
     setLoading(true)
+    setFetchError(null)
     try {
-      const [s, i, u, a] = await Promise.all([
-        api.get('/stats/dashboard'),
+      const [i, u, a, me] = await Promise.all([
         api.get('/incidents?page=0&size=50&sortBy=createdAt&sortDir=desc'),
         api.get('/users?page=0&size=50'),
         api.get('/alerts?page=0&size=50'),
+        authAPI.getMe().catch(() => null),
       ])
-      setStats(s.data)
-      const iList = i.data?.content ?? i.data ?? []
+      const iList = i.data?.content ?? (Array.isArray(i.data) ? i.data : [])
       setIncidents(Array.isArray(iList) ? iList : [])
       setUsers(u.data?.content ?? (Array.isArray(u.data) ? u.data : []))
       setAlerts(a.data?.content ?? (Array.isArray(a.data) ? a.data : []))
-    } catch (e) {
-      console.error('Dashboard fetch failed:', e)
+      if (me?.data) {
+        setProfile(me.data)
+        localStorage.setItem('urbanops_user', JSON.stringify(me.data))
+      }
+    } catch (e: unknown) {
+      const ax = e as { response?: { status?: number; data?: { message?: string } } }
+      if (ax.response?.status === 401) {
+        router.push('/auth/signin')
+        return
+      }
+      setFetchError(ax.response?.data?.message || 'Impossible de charger les données du tableau de bord.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [router])
 
   useEffect(() => {
-    if (authReady) fetchAll()
-  }, [authReady, fetchAll])
+    if (authReady) fetchData()
+  }, [authReady, fetchData])
+
+  const setTab = (t: Tab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', t)
+    router.push(`/dashboard?${params.toString()}`)
+  }
 
   const changeIncidentStatus = async (id: number, status: string) => {
     try {
       await api.patch(`/incidents/${id}/status`, { status })
-      fetchAll()
-    } catch {}
+      await fetchData()
+    } catch {
+      setFetchError('Échec de la mise à jour du statut.')
+    }
   }
 
-  const deactivateUser = async (id: number, email: string) => {
+  const deactivateUser = async (id: number) => {
     try {
       await api.delete(`/users/${id}`)
-      fetchAll()
-    } catch {}
+      setConfirmUserId(null)
+      await fetchData()
+    } catch {
+      setFetchError('Impossible de désactiver cet utilisateur.')
+    }
   }
 
   const acknowledgeAlert = async (id: number) => {
     try {
-      await api.patch(`/alerts/${id}/acknowledge`)
-      fetchAll()
-    } catch {}
+      await alertAPI.acknowledge(id)
+      await fetchData()
+    } catch {
+      setFetchError('Impossible de valider l’alerte.')
+    }
   }
 
-  const resendAlert = async (id: number) => {
-    try { await api.post(`/alerts/${id}/resend`) } catch {}
+  const logout = () => {
+    localStorage.removeItem('urbanops_token')
+    localStorage.removeItem('urbanops_user')
+    router.push('/')
   }
 
-  const navItem = (id: Tab, icon: string, label: string) => {
-    const active = activeTab === id
-    return (
-      <button onClick={() => handleTabChange(id)} style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        width: '100%', padding: '10px 16px', background: active ? 'rgba(194,65,12,0.15)' : 'transparent',
-        border: 'none', borderLeft: active ? '2px solid var(--urb-primary)' : '2px solid transparent',
-        color: active ? 'var(--urb-primary-lt)' : 'rgba(255,255,255,0.6)',
-        fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-        transition: 'all 0.15s'
-      }} onMouseEnter={e => {if(!active) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}}
-         onMouseLeave={e => {if(!active) e.currentTarget.style.background = 'transparent'}}>
-        <span style={{fontSize:16}}>{icon}</span>
-        {label}
-        {id === 'alerts' && alerts.filter(a=>!a.acknowledged).length > 0 && (
-          <span style={{
-            marginLeft: 'auto', background: 'var(--urb-primary)', color: 'white',
-            borderRadius: 10, fontSize: 10, padding: '2px 6px', fontWeight: 700
-          }}>
-            {alerts.filter(a=>!a.acknowledged).length}
-          </span>
-        )}
-      </button>
-    )
-  }
+  const unackedAlerts = alerts.filter((a) => !a.acknowledged).length
+  const tabTitle = TABS.find((t) => t.id === activeTab)?.label ?? 'Tableau de bord'
 
-  const kpiCard = (label: string, val: number, icon: string, accentColor: string) => (
-    <div style={{
-      background: 'var(--urb-surface)', border: '1px solid var(--urb-border)',
-      borderLeft: `4px solid ${accentColor}`, borderRadius: 'var(--urb-radius)',
-      padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 8,
-      boxShadow: 'var(--urb-shadow)'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <div style={{ fontSize: 10, color: 'var(--urb-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {label}
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--urb-text)', marginTop: 4 }}>
-            {val}
-          </div>
-        </div>
-        <div style={{ background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, color: accentColor, width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-          {icon}
-        </div>
-      </div>
-    </div>
-  )
-
-  const sevColor = (s:string) => s==='HIGH'?'#dc2626':s==='MEDIUM'?'#d97706':'#059669'
-  
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--urb-bg)', display: 'flex' }}>
-      {/* SIDEBAR */}
-      <aside style={{
-        width: 220, height: '100vh', position: 'fixed', left: 0, top: 0,
-        background: '#1c1917', borderRight: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', flexDirection: 'column', padding: '20px 0', zIndex: 50
-      }}>
-        <div style={{ padding: '0 20px', marginBottom: 32 }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--urb-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: 'white' }}>U</div>
-            <span style={{ fontWeight: 800, fontSize: 14, color: 'white', letterSpacing: '-0.01em' }}>UrbanOps</span>
-          </Link>
+    <DashboardShell className="flex flex-col">
+      <header className="border-b border-border bg-card/40 px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <motion.div>
+            <h1 className="text-2xl font-bold tracking-tight text-t1">{tabTitle}</h1>
+            <p className="mt-0.5 text-sm text-t3">
+              Supervision urbaine — données en direct depuis l’API UrbanOps.
+            </p>
+          </motion.div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fetchData()}
+            disabled={loading}
+            className="shrink-0 gap-2"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Actualiser
+          </Button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-          {navItem('overview', '📊', "Vue d'ensemble")}
-          {navItem('incidents', '⚠️', 'Incidents')}
-          {navItem('alerts', '🔔', 'Alertes')}
-          {navItem('users', '👥', 'Utilisateurs')}
-          
-          <div style={{ margin: '20px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 20 }}>
-            <button style={{
-              display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-              background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)',
-              fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left'
-            }}>
-              <span style={{fontSize:16}}>⚙️</span> Paramètres
+        <nav className="mt-4 flex gap-1 overflow-x-auto pb-1">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activeTab === t.id
+                  ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
+                  : 'text-t2 hover:bg-muted hover:text-t1'
+              }`}
+            >
+              {t.label}
+              {t.id === 'alerts' && unackedAlerts > 0 && (
+                <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {unackedAlerts}
+                </span>
+              )}
             </button>
-          </div>
-        </div>
+          ))}
+        </nav>
+      </header>
 
-        <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--urb-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-              {user?.firstName?.charAt(0).toUpperCase() || 'A'}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>{user?.firstName || 'Admin'}</span>
-              <span style={{ color: 'var(--urb-primary)', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em' }}>ADMINISTRATEUR</span>
-            </div>
+      <main className="flex-1 p-4 sm:p-6">
+        {fetchError && (
+          <div className="mb-4 rounded-lg border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+            {fetchError}
           </div>
-          <button onClick={() => { localStorage.removeItem('urbanops_token'); router.push('/') }} style={{
-            background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white',
-            borderRadius: 6, padding: '6px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            transition: 'background 0.15s'
-          }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-            Déconnexion
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main style={{ marginLeft: 220, flex: 1, padding: '32px 40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--urb-text)' }}>
-            {activeTab === 'overview' ? 'Vue d\'ensemble' :
-             activeTab === 'incidents' ? 'Incidents' :
-             activeTab === 'users' ? 'Utilisateurs' : 'Alertes'}
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, color: 'var(--urb-text-3)', fontWeight: 500 }}>
-              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </span>
-            <button onClick={fetchAll} style={{ background: 'white', border: '1px solid var(--urb-border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--urb-text-2)' }}>
-              Actualiser
-            </button>
-          </div>
-        </div>
+        )}
 
         {activeTab === 'overview' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-            {kpiCard('Total Incidents', stats?.totalIncidents??0, '📋', 'var(--urb-primary)')}
-            {kpiCard('Ouverts', stats?.openIncidents??0, '🔴', 'var(--urb-danger)')}
-            {kpiCard('En cours', stats?.inProgressIncidents??0, '🟡', 'var(--urb-gold)')}
-            {kpiCard('Résolus', stats?.resolvedIncidents??0, '✅', 'var(--urb-success)')}
+          <div className="space-y-6">
+            <KpiCards />
+            <ServiceCards />
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <ActivityChart />
+              <AlertsPanel key={loading ? 'loading' : 'ready'} />
+            </div>
+            <Card className="border-border/80">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Derniers incidents</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setTab('incidents')}>
+                  Voir tout →
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {loading && incidents.length === 0 ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <IncidentTable
+                    incidents={incidents.slice(0, 8)}
+                    isAdmin
+                    changeStatus={changeIncidentStatus}
+                  />
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {activeTab === 'incidents' && (
-          <div style={{ background: 'var(--urb-surface)', border: '1px solid var(--urb-border)', borderRadius: 'var(--urb-radius)', overflow: 'hidden', boxShadow: 'var(--urb-shadow)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'var(--urb-bg)', borderBottom: '1px solid var(--urb-border)' }}>
-                  {['Réf.', 'Sévérité', 'Titre', 'Statut', 'Date', 'Actions'].map(h => (
-                    <th key={h} style={{ padding: '12px 20px', fontSize: 11, fontWeight: 600, color: 'var(--urb-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {incidents.map((inc) => (
-                  <tr key={inc.id} style={{ borderBottom: '1px solid var(--urb-border)', transition: 'background 0.1s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--urb-bg)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'var(--urb-surface)'}>
-                    <td style={{ padding: '16px 20px', fontFamily: 'monospace', color: 'var(--urb-primary)', fontWeight: 700, fontSize: 13 }}>
-                      {inc.referenceCode}
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: sevColor(inc.severity) }} title={inc.severity} />
-                    </td>
-                    <td style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--urb-text)', fontSize: 14 }}>
-                      {inc.title}
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <span style={{ 
-                        background: inc.status==='OPEN'?'var(--urb-danger-lt)':inc.status==='IN_PROGRESS'?'var(--urb-gold-lt)':'var(--urb-success-lt)',
-                        color: inc.status==='OPEN'?'var(--urb-danger)':inc.status==='IN_PROGRESS'?'var(--urb-gold)':'var(--urb-success)',
-                        padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700 
-                      }}>
-                        {inc.status==='OPEN'?'🔴 Ouvert':inc.status==='IN_PROGRESS'?'🟡 En cours':'✅ Résolu'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '16px 20px', color: 'var(--urb-text-3)', fontSize: 12 }}>
-                      {new Date(inc.createdAt).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      {inc.status !== 'RESOLVED' && (
-                        <button onClick={() => changeIncidentStatus(inc.id, 'RESOLVED')} style={{
-                          background: 'white', border: '1px solid var(--urb-border-dk)', borderRadius: 6,
-                          padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: 'var(--urb-text-2)'
-                        }}>
-                          Résoudre
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <Card className="border-border/80">
+            <CardHeader>
+              <CardTitle>Tous les incidents ({incidents.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading && incidents.length === 0 ? (
+                <motion.div className="flex justify-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </motion.div>
+              ) : (
+                <IncidentTable incidents={incidents} isAdmin changeStatus={changeIncidentStatus} />
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'alerts' && (
+          <div className="space-y-4">
+            {(['HIGH', 'MEDIUM', 'LOW'] as const).map((sev) => {
+              const group = alerts.filter((a) => a.severity === sev)
+              if (group.length === 0) return null
+              const labels = { HIGH: 'Haute criticité', MEDIUM: 'Moyenne', LOW: 'Faible' }
+              return (
+                <Card key={sev} className="overflow-hidden border-border/80">
+                  <div
+                    className="flex items-center justify-between px-4 py-3 text-sm font-bold text-white"
+                    style={{ backgroundColor: getSeverityColor(sev) }}
+                  >
+                    <span>{labels[sev]}</span>
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">{group.length}</span>
+                  </div>
+                  <CardContent className="divide-y divide-border p-0">
+                    {group.map((alert) => (
+                      <div
+                        key={alert.id}
+                        className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-primary">
+                              {alert.incidentReference ?? `#${alert.incidentId}`}
+                            </span>
+                            {alert.acknowledged && (
+                              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                Acquittée
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 font-semibold text-t1">{alert.title}</p>
+                          {alert.message && (
+                            <p className="mt-1 text-sm text-t2">{alert.message}</p>
+                          )}
+                          <p className="mt-2 text-xs text-t3">
+                            {alert.sentTo && <>→ {alert.sentTo} · </>}
+                            {alert.sentAt
+                              ? new Date(alert.sentAt).toLocaleString('fr-FR')
+                              : '—'}
+                          </p>
+                        </div>
+                        {!alert.acknowledged && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => acknowledgeAlert(alert.id)}
+                          >
+                            Acquitter
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
+            {!loading && alerts.length === 0 && (
+              <p className="py-16 text-center text-sm text-t3">Aucune alerte enregistrée.</p>
+            )}
           </div>
         )}
 
         {activeTab === 'users' && (
-          <div style={{ background: 'var(--urb-surface)', border: '1px solid var(--urb-border)', borderRadius: 'var(--urb-radius)', overflow: 'hidden', boxShadow: 'var(--urb-shadow)' }}>
-             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'var(--urb-bg)', borderBottom: '1px solid var(--urb-border)' }}>
-                  {['Utilisateur', 'Email', 'Rôle', 'Actions'].map(h => (
-                    <th key={h} style={{ padding: '12px 20px', fontSize: 11, fontWeight: 600, color: 'var(--urb-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => {
-                  const isDisabled = u.isActive === false
-                  const isAd = u.role?.includes('ADMIN')
-                  return (
-                  <tr key={u.id} style={{ 
-                    borderBottom: '1px solid var(--urb-border)', 
-                    opacity: isDisabled ? 0.5 : 1, transition: 'background 0.1s' 
-                  }} onMouseEnter={e => e.currentTarget.style.background = 'var(--urb-bg)'}
-                     onMouseLeave={e => e.currentTarget.style.background = 'var(--urb-surface)'}>
-                    <td style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: isAd ? 'var(--urb-primary-lt)' : 'var(--urb-accent-lt)', color: isAd ? 'var(--urb-primary-dk)' : 'var(--urb-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 14 }}>
-                        {u.firstName?.charAt(0).toUpperCase() || 'U'}
-                      </div>
-                      <span style={{ fontWeight: 600, color: 'var(--urb-text)', fontSize: 14 }}>{u.firstName} {u.lastName}</span>
-                    </td>
-                    <td style={{ padding: '16px 20px', color: 'var(--urb-text-2)', fontSize: 13, textDecoration: isDisabled ? 'line-through' : 'none' }}>
-                      {u.email}
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <span style={{ fontSize: 14 }} title={isAd ? 'Admin' : 'Citoyen'}>
-                        {isAd ? '🛡' : '👤'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      {!isDisabled && !isAd && (
-                        confirmId === u.id ? (
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--urb-text-2)', alignSelf: 'center', marginRight: 8 }}>Confirmer?</span>
-                            <button onClick={() => { deactivateUser(u.id, u.email); setConfirmId(null) }} style={{ background: 'var(--urb-danger)', color: 'white', border: 'none', borderRadius: 4, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Oui</button>
-                            <button onClick={() => setConfirmId(null)} style={{ background: 'var(--urb-text-3)', color: 'white', border: 'none', borderRadius: 4, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Non</button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setConfirmId(u.id)} style={{
-                            background: 'transparent', border: '1px solid var(--urb-danger)', color: 'var(--urb-danger)',
-                            borderRadius: 6, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer'
-                          }}>
-                            🚫 Désactiver
-                          </button>
-                        )
-                      )}
-                    </td>
+          <Card className="border-border/80">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Utilisateurs ({users.length})</CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/utilisateurs">Gestion avancée</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-t3">
+                    <th className="pb-3 pr-4">Nom</th>
+                    <th className="pb-3 pr-4">Email</th>
+                    <th className="pb-3 pr-4">Rôle</th>
+                    <th className="pb-3">Actions</th>
                   </tr>
-                )})}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {users.map((u) => {
+                    const isAdmin = u.role === 'ADMIN'
+                    const inactive = u.isActive === false
+                    return (
+                      <tr key={u.id} className={inactive ? 'opacity-50' : ''}>
+                        <td className="py-3 pr-4 font-medium text-t1">
+                          {u.firstName} {u.lastName}
+                        </td>
+                        <td className="py-3 pr-4 text-t2">{u.email}</td>
+                        <td className="py-3 pr-4 text-t2">{u.role}</td>
+                        <td className="py-3">
+                          {!inactive && !isAdmin && (
+                            confirmUserId === u.id ? (
+                              <span className="flex gap-2">
+                                <Button size="sm" variant="destructive" onClick={() => deactivateUser(u.id)}>
+                                  Confirmer
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => setConfirmUserId(null)}>
+                                  Annuler
+                                </Button>
+                              </span>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600"
+                                onClick={() => setConfirmUserId(u.id)}
+                              >
+                                Désactiver
+                              </Button>
+                            )
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              {!loading && users.length === 0 && (
+                <p className="py-12 text-center text-t3">Aucun utilisateur.</p>
+              )}
+            </CardContent>
+          </Card>
         )}
 
+        {activeTab === 'map' && (
+          <Card className="overflow-hidden border-border/80">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Carte des incidents</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/carte">Plein écran</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0 sm:p-4">
+              <div className="h-[min(70vh,640px)] w-full overflow-hidden rounded-xl border border-border">
+                <MapView />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'settings' && (
+          <Card className="mx-auto max-w-xl border-border/80">
+            <CardHeader>
+              <CardTitle>Paramètres du compte</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {profile ? (
+                <dl className="space-y-4 text-sm">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase text-t3">Nom</dt>
+                    <dd className="mt-1 text-t1">
+                      {profile.firstName} {profile.lastName}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase text-t3">Email</dt>
+                    <dd className="mt-1 font-mono text-t1">{profile.email}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase text-t3">Rôle</dt>
+                    <dd className="mt-1 text-t1">{profile.role}</dd>
+                  </div>
+                  {profile.phone && (
+                    <div>
+                      <dt className="text-xs font-semibold uppercase text-t3">Téléphone</dt>
+                      <dd className="mt-1 text-t1">{profile.phone}</dd>
+                    </div>
+                  )}
+                  {profile.sector && (
+                    <div>
+                      <dt className="text-xs font-semibold uppercase text-t3">Secteur</dt>
+                      <dd className="mt-1 text-t1">{profile.sector}</dd>
+                    </div>
+                  )}
+                </dl>
+              ) : (
+                <p className="text-sm text-t3">Chargement du profil…</p>
+              )}
+              <div className="flex flex-wrap gap-3 border-t border-border pt-6">
+                <Button variant="destructive" onClick={logout}>
+                  Se déconnecter
+                </Button>
+                <Button variant="secondary" asChild>
+                  <Link href="/parametres">Page paramètres</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
-    </div>
+    </DashboardShell>
   )
 }
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div style={{padding:40, textAlign:'center'}}>Chargement du tableau de bord...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center text-t3">
+          <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+          Chargement du tableau de bord…
+        </div>
+      }
+    >
       <DashboardContent />
     </Suspense>
   )

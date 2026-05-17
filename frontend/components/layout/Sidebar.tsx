@@ -52,10 +52,17 @@ function buildNavItems(): NavItem[] {
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const [navItems, setNavItems] = useState<NavItem[]>(buildNavItems)
+  // Use empty initial states to match server-side rendering
+  const [navItems, setNavItems] = useState<NavItem[]>([])
+  const [role, setRole] = useState<string>('')
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const refresh = () => setNavItems(buildNavItems())
+    setMounted(true)
+    const refresh = () => {
+      setNavItems(buildNavItems())
+      setRole(getCurrentRole())
+    }
     refresh()
     window.addEventListener('urbanops-auth-changed', refresh)
     window.addEventListener('storage', refresh)
@@ -73,8 +80,6 @@ export function Sidebar() {
     }
     router.push('/')
   }
-
-  const role = getCurrentRole()
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[220px] flex-col border-r border-border bg-sidebar/90 backdrop-blur-xl shadow-card lg:w-60">

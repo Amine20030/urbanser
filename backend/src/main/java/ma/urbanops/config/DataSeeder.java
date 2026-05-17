@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -36,7 +37,9 @@ public class DataSeeder implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         log.info("Starting data seeding...");
-        
+
+        removeLegacyDuplicateCategories();
+
         if (categoryRepository.count() == 0) {
             seedCategories();
         }
@@ -54,6 +57,22 @@ public class DataSeeder implements CommandLineRunner {
         }
         
         log.info("Data seeding completed successfully");
+    }
+
+    /** Removes old data.sql rows that duplicated categories with corrupted emoji icons. */
+    private void removeLegacyDuplicateCategories() {
+        List<String> legacyNames = List.of(
+                "Transport & Trafic",
+                "Eau & Assainissement",
+                "Collecte des Déchets",
+                "Éclairage Public"
+        );
+        for (String name : legacyNames) {
+            categoryRepository.findByName(name).ifPresent(c -> {
+                categoryRepository.delete(c);
+                log.info("Removed legacy duplicate category: {}", name);
+            });
+        }
     }
 
     private void seedCategories() {

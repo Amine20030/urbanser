@@ -28,6 +28,7 @@ C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\rmi\Rm
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\service\ScheduledTaskService.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\dto\request\UpdateStatusRequest.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\repository\SectorRepository.java
+C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\controller\CategoryController.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\controller\AdminUserController.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config\AsyncConfig.java
 C:\Users\NOONE\CascadeProjects\urbanops\backend\src\main\java\ma\urbanops\config\CorsConfig.java
