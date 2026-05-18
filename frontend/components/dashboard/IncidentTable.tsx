@@ -78,16 +78,16 @@ export function IncidentTable({ incidents, isAdmin = false, changeStatus }: Inci
                             Prendre
                           </Button>
                         )}
-                        {incident.status !== 'RESOLVED' ? (
-                          <Button size="sm" variant="secondary" onClick={() => changeStatus?.(incident.id, 'RESOLVED')}>
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Resolu
-                          </Button>
-                        ) : (
+                        {incident.status === 'RESOLVED' ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-bold text-emerald-700">
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Resolu
                           </span>
+                        ) : (
+                          <Button size="sm" variant="secondary" onClick={() => changeStatus?.(incident.id, 'RESOLVED')}>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Resolu
+                          </Button>
                         )}
                       </div>
                     </td>

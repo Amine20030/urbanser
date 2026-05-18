@@ -15,7 +15,7 @@ type NavUser = {
 }
 
 function getUser(): NavUser | null {
-  if (typeof window === 'undefined') return null
+  if (typeof globalThis === 'undefined' || !globalThis.localStorage) return null
   const token = localStorage.getItem('urbanops_token')
   if (!token) return null
   try {
@@ -52,11 +52,11 @@ export function Navbar() {
   useEffect(() => {
     setUser(getUser())
     const handler = () => setUser(getUser())
-    window.addEventListener('storage', handler)
-    window.addEventListener('urbanops-auth-changed', handler)
+    globalThis.addEventListener('storage', handler)
+    globalThis.addEventListener('urbanops-auth-changed', handler)
     return () => {
-      window.removeEventListener('storage', handler)
-      window.removeEventListener('urbanops-auth-changed', handler)
+      globalThis.removeEventListener('storage', handler)
+      globalThis.removeEventListener('urbanops-auth-changed', handler)
     }
   }, [])
 
@@ -64,7 +64,7 @@ export function Navbar() {
     localStorage.removeItem('urbanops_token')
     localStorage.removeItem('urbanops_user')
     setUser(null)
-    window.location.href = '/'
+    globalThis.location.href = '/'
   }
 
   const isAdmin = Boolean(user?.role?.includes('ADMIN'))

@@ -13,7 +13,7 @@ const MapView = dynamic(() => import('@/components/shared/MapView'), {
   ),
 })
 
-export function LiveMapSection({ onSignaler }: { onSignaler?: () => void }) {
+export function LiveMapSection({ onSignaler }: Readonly<{ onSignaler?: () => void }>) {
   return (
     <section className="bg-bg-base py-10">
       <div className="page-shell">

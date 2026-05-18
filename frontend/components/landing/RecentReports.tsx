@@ -36,7 +36,7 @@ function normalizeStatus(s: string) {
   return 'OPEN' as const
 }
 
-function SeverityBadge({ severity }: { severity: string }) {
+function SeverityBadge({ severity }: Readonly<{ severity: string }>) {
   const u = (severity || '').toUpperCase()
   const config =
     (
@@ -145,10 +145,11 @@ export function RecentReports() {
   )
 }
 
-function IncidentRow({ incident }: { incident: Incident }) {
+function IncidentRow({ incident }: Readonly<{ incident: Incident }>) {
   const u = (incident.severity || '').toUpperCase()
-  const borderLeftColor =
-    u === 'HIGH' || u === 'CRITICAL' ? '#ef4444' : u === 'MEDIUM' || u === 'MED' ? '#f59e0b' : '#22c55e'
+  let borderLeftColor = '#22c55e'
+  if (u === 'HIGH' || u === 'CRITICAL') borderLeftColor = '#ef4444'
+  else if (u === 'MEDIUM' || u === 'MED') borderLeftColor = '#f59e0b'
 
   const href =
     incident.referenceCode != null && String(incident.referenceCode).length > 0

@@ -7,8 +7,7 @@ import { motion } from 'framer-motion'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { alertAPI } from '@/lib/api'
 import { canAccessAdminDashboard } from '@/lib/auth'
-import { getSeverityColor } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { getSeverityColor, cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -89,13 +88,13 @@ export default function AlertesPage() {
   const medCount = bySeverity('MEDIUM').length
   const lowCount = bySeverity('LOW').length
 
-  const serviceCounts = alerts.reduce(
+  const serviceCounts = alerts.reduce<Record<string, number>>(
     (acc, a) => {
       const key = a.sentTo?.split('@')[1]?.split('.')[0] ?? a.sentTo ?? 'Autre'
       acc[key] = (acc[key] || 0) + 1
       return acc
     },
-    {} as Record<string, number>
+    {}
   )
   const maxService = Math.max(...Object.values(serviceCounts), 1)
 

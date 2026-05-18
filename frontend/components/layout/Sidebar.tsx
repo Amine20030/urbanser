@@ -58,19 +58,19 @@ export function Sidebar() {
       setRole(getCurrentRole())
     }
     refresh()
-    window.addEventListener('urbanops-auth-changed', refresh)
-    window.addEventListener('storage', refresh)
+    globalThis.addEventListener('urbanops-auth-changed', refresh)
+    globalThis.addEventListener('storage', refresh)
     return () => {
-      window.removeEventListener('urbanops-auth-changed', refresh)
-      window.removeEventListener('storage', refresh)
+      globalThis.removeEventListener('urbanops-auth-changed', refresh)
+      globalThis.removeEventListener('storage', refresh)
     }
   }, [])
 
   function logout() {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('urbanops_token')
-      localStorage.removeItem('urbanops_user')
-      window.dispatchEvent(new Event('urbanops-auth-changed'))
+    if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
+      globalThis.localStorage.removeItem('urbanops_token')
+      globalThis.localStorage.removeItem('urbanops_user')
+      globalThis.dispatchEvent(new Event('urbanops-auth-changed'))
     }
     router.push('/')
   }

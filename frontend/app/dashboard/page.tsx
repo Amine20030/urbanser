@@ -97,9 +97,9 @@ function DashboardContent() {
     if (stored) setProfile(stored)
     else if (payload?.sub)
       setProfile({
-        email: String(payload.sub),
+        email: (payload?.sub as string) || '',
         firstName:
-          typeof payload.firstName === 'string' ? payload.firstName : String(payload.sub ?? 'Admin'),
+          typeof payload.firstName === 'string' ? payload.firstName : (payload?.sub as string) || 'Admin',
       })
     setAuthReady(true)
   }, [router])

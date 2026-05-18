@@ -6,7 +6,7 @@ import { Camera, MapPinned } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SignalerModal } from '@/components/shared/SignalerModal'
 
-export function HeroSection({ onSignaler }: { onSignaler?: () => void }) {
+export function HeroSection({ onSignaler }: Readonly<{ onSignaler?: () => void }>) {
   const [modalOpen, setModalOpen] = useState(false)
   const openReporter = onSignaler ?? (() => setModalOpen(true))
 

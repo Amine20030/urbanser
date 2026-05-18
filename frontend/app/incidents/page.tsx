@@ -37,7 +37,7 @@ const filters = [
 
 export default function IncidentsPage() {
   const [incidents, setIncidents] = useState<any[]>([])
-  const [activeFilter, setFilter] = useState('Tous')
+  const [activeFilter, setActiveFilter] = useState('Tous')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [modalOpen, setModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -85,7 +85,7 @@ export default function IncidentsPage() {
             {filters.map(([value, label]) => (
               <button
                 key={value}
-                onClick={() => setFilter(value)}
+                onClick={() => setActiveFilter(value)}
                 className={cn(
                   'rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
                   activeFilter === value
@@ -108,29 +108,40 @@ export default function IncidentsPage() {
           </Button>
         </div>
 
-        {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {(['a', 'b', 'c', 'd', 'e', 'f'] as const).map((slot) => (
-              <Skeleton key={`incident-grid-skeleton-${slot}`} className="h-40 rounded-lg" />
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-card p-12 text-center text-sm text-t3">
-            Aucun incident trouve pour ce filtre.
-          </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((inc) => (
-              <IncidentCard key={inc.id} incident={inc} />
-            ))}
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
-            {filtered.map((inc, i) => (
-              <IncidentListRow key={inc.id} incident={inc} last={i === filtered.length - 1} />
-            ))}
-          </div>
-        )}
+        {(() => {
+          if (loading) {
+            return (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {(['a', 'b', 'c', 'd', 'e', 'f'] as const).map((slot) => (
+                  <Skeleton key={`incident-grid-skeleton-${slot}`} className="h-40 rounded-lg" />
+                ))}
+              </div>
+            )
+          }
+          if (filtered.length === 0) {
+            return (
+              <div className="rounded-lg border border-dashed border-border bg-card p-12 text-center text-sm text-t3">
+                Aucun incident trouve pour ce filtre.
+              </div>
+            )
+          }
+          if (viewMode === 'grid') {
+            return (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {filtered.map((inc) => (
+                  <IncidentCard key={inc.id} incident={inc} />
+                ))}
+              </div>
+            )
+          }
+          return (
+            <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+              {filtered.map((inc, i) => (
+                <IncidentListRow key={inc.id} incident={inc} last={i === filtered.length - 1} />
+              ))}
+            </div>
+          )
+        })()}
       </main>
 
       <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
@@ -138,7 +149,7 @@ export default function IncidentsPage() {
   )
 }
 
-function IncidentCard({ incident }: { incident: any }) {
+function IncidentCard({ incident }: Readonly<{ incident: any }>) {
   return (
     <Link
       href={`/incidents/${encodeURIComponent(incident.referenceCode || incident.id)}`}
@@ -169,7 +180,7 @@ function IncidentCard({ incident }: { incident: any }) {
   )
 }
 
-function IncidentListRow({ incident, last }: { incident: any; last: boolean }) {
+function IncidentListRow({ incident, last }: Readonly<{ incident: any; last: boolean }>) {
   return (
     <Link
       href={`/incidents/${encodeURIComponent(incident.referenceCode || incident.id)}`}
