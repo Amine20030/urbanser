@@ -4,16 +4,16 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:focus-ring disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-all duration-200 focus-visible:focus-ring disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
   {
     variants: {
       variant: {
         default:
-          'bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-md shadow-sky-500/25 hover:from-sky-400 hover:to-cyan-400 dark:from-sky-400 dark:to-cyan-400',
+          'bg-primary text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 hover:shadow-md',
         secondary:
-          'bg-muted text-foreground border border-border hover:bg-hover shadow-sm',
+          'border border-border bg-muted text-foreground shadow-sm hover:bg-hover',
         outline:
-          'border border-border bg-transparent text-t1 hover:bg-hover hover:border-border2',
+          'border border-border bg-card text-t1 shadow-sm hover:border-primary/30 hover:bg-hover',
         ghost: 'text-t2 hover:text-t1 hover:bg-hover',
         destructive: 'bg-destructive text-destructive-foreground hover:opacity-90 shadow-sm',
         link: 'text-primary underline-offset-4 hover:underline shadow-none',

@@ -180,7 +180,7 @@ function DashboardContent() {
 
   return (
     <DashboardShell className="flex flex-col">
-      <header className="border-b border-border bg-card/40 px-4 py-4 sm:px-6">
+      <header className="border-b border-border bg-card/75 px-4 py-4 shadow-sm backdrop-blur sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <motion.div>
             <h1 className="text-2xl font-bold tracking-tight text-t1">{tabTitle}</h1>
@@ -209,7 +209,7 @@ function DashboardContent() {
               onClick={() => setTab(t.id)}
               className={`shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 activeTab === t.id
-                  ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
+                  ? 'bg-primary/12 text-primary ring-1 ring-primary/30'
                   : 'text-t2 hover:bg-muted hover:text-t1'
               }`}
             >

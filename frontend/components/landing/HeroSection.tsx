@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import api from '@/lib/api'
+import ServiceStatus from './ServiceStatus'
 import { SignalerModal } from '@/components/shared/SignalerModal'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -45,13 +46,14 @@ export function HeroSection() {
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="mx-auto max-w-4xl"
       >
-        <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-t2 shadow-sm backdrop-blur-md">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-t2 shadow-sm backdrop-blur-md">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           </span>
-          Supervision urbaine — Marrakech
-        </p>
+          <span>Supervision urbaine — Marrakech</span>
+          <ServiceStatus />
+        </div>
 
         <h1
           className="text-balance font-black leading-[1.1] tracking-tight"

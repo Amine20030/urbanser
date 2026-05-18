@@ -22,7 +22,7 @@ export function DashboardShell({
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className={cn('relative min-h-screen pl-[220px] lg:pl-60', className)}
+        className={cn('relative min-h-screen pt-16 md:pl-[220px] md:pt-0 lg:pl-60', className)}
       >
         {children}
       </motion.div>

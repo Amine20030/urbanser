@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+
 import { statsApi } from '@/lib/api'
 import { HourlyActivity } from '@/lib/types'
 import { ChartSkeleton } from '@/components/shared/LoadingSkeleton'
@@ -20,19 +21,31 @@ export function ActivityChart() {
   const [data, setData] = useState<HourlyActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState('')
 
   useEffect(() => {
     setMounted(true)
-    statsApi
-      .getHourly()
-      .then((res: { data: HourlyActivity[] }) => {
-        setData(res.data)
-        setLoading(false)
-      })
-      .catch(() => {
-        setError('Impossible de charger les données')
-        setLoading(false)
-      })
+
+    const fetchData = () => {
+      statsApi
+        .getHourly()
+        .then((res: { data: HourlyActivity[] }) => {
+          setData([...res.data])
+          setLastUpdated(new Date().toLocaleTimeString('fr-FR'))
+          setError(null)
+          setLoading(false)
+        })
+        .catch(() => {
+          setError('Impossible de charger les données')
+          setLoading(false)
+        })
+    }
+
+    fetchData()
+
+    const interval = setInterval(fetchData, 10000)
+
+    return () => clearInterval(interval)
   }, [])
 
   if (!mounted || loading) {
@@ -48,106 +61,100 @@ export function ActivityChart() {
   }
 
   return (
-    <div className="p-4 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border)]">
-      <h3 className="text-[13px] font-medium text-[var(--t1)] mb-4">
-        Activité 24h / Évènements par service
-      </h3>
-      <div className="h-[250px]">
+    <div className="p-5 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border)] shadow-sm">
+      <div className="mb-5">
+        <h3 className="text-[15px] font-semibold text-[var(--t1)]">
+          Activité (aujourd’hui)
+        </h3>
+
+        <p className="text-[12px] text-[var(--t2)] mt-1">
+          Volume d’incidents par heure
+        </p>
+
+        <p className="text-[10px] text-[var(--t3)] mt-2">
+          Dernière mise à jour : {lastUpdated}
+        </p>
+      </div>
+
+      <div className="h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart
+            key={lastUpdated}
+            data={data}
+            margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
+          >
             <defs>
-              <linearGradient id="colorTransport" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorWater" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorWaste" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorLighting" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+              <linearGradient id="colorIncidents" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ea580c" stopOpacity={0.85} />
+                <stop offset="95%" stopColor="#fb923c" stopOpacity={0.1} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(234,88,12,0.12)"
+            />
+
             <XAxis
               dataKey="hour"
               stroke="var(--t3)"
-              tick={{ fill: 'var(--t3)', fontSize: 10 }}
+              tick={{ fill: 'var(--t3)', fontSize: 11 }}
               tickLine={false}
+              axisLine={false}
             />
+
             <YAxis
+              domain={[0, 12]}
+              allowDecimals={false}
               stroke="var(--t3)"
-              tick={{ fill: 'var(--t3)', fontSize: 10 }}
+              tick={{ fill: 'var(--t3)', fontSize: 11 }}
               tickLine={false}
+              axisLine={false}
             />
+
             <Tooltip
               contentStyle={{
                 backgroundColor: 'var(--bg-card)',
                 border: '1px solid var(--border)',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 fontSize: '12px',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
               }}
               labelStyle={{ color: 'var(--t1)' }}
-              itemStyle={{ color: 'var(--t2)' }}
+              itemStyle={{ color: '#ea580c' }}
             />
+
             <Area
               type="monotone"
-              dataKey="transport"
-              stackId="1"
-              stroke="#06b6d4"
-              fill="url(#colorTransport)"
-              strokeWidth={2}
-            />
-            <Area
-              type="monotone"
-              dataKey="water"
-              stackId="1"
-              stroke="#8b5cf6"
-              fill="url(#colorWater)"
-              strokeWidth={2}
-            />
-            <Area
-              type="monotone"
-              dataKey="waste"
-              stackId="1"
-              stroke="#22c55e"
-              fill="url(#colorWaste)"
-              strokeWidth={2}
-            />
-            <Area
-              type="monotone"
-              dataKey="lighting"
-              stackId="1"
-              stroke="#f59e0b"
-              fill="url(#colorLighting)"
-              strokeWidth={2}
+              dataKey="count"
+              stroke="#ea580c"
+              fill="url(#colorIncidents)"
+              strokeWidth={5}
+              dot={{
+                r: 6,
+                fill: '#ea580c',
+                stroke: '#ffffff',
+                strokeWidth: 2,
+              }}
+              activeDot={{
+                r: 8,
+                fill: '#fb923c',
+                stroke: '#ffffff',
+                strokeWidth: 2,
+              }}
+              isAnimationActive
+              animationDuration={1200}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      {/* Legend */}
-      <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-cyan-500" />
-          <span className="text-[10px] text-[var(--t2)]">Transport</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-purple-500" />
-          <span className="text-[10px] text-[var(--t2)]">Eau</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-[10px] text-[var(--t2)]">Déchets</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
-          <span className="text-[10px] text-[var(--t2)]">Éclairage</span>
-        </div>
+
+      <div className="flex items-center justify-center gap-2 mt-5">
+        <span className="w-3 h-3 rounded-full bg-orange-600" />
+
+        <span className="text-[11px] text-[var(--t2)]">
+          Nombre d’incidents
+        </span>
       </div>
     </div>
   )

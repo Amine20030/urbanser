@@ -32,9 +32,9 @@ const SEVERITY_LABELS: Record<string, string> = {
   LOW: 'FAIBLE CRITICITÉ',
 }
 const HEADER_GRADIENT: Record<string, string> = {
-  HIGH: 'bg-gradient-to-r from-red-600 to-rose-500',
-  MEDIUM: 'bg-gradient-to-r from-amber-500 to-orange-500',
-  LOW: 'bg-gradient-to-r from-emerald-600 to-teal-500',
+  HIGH: 'bg-red-700',
+  MEDIUM: 'bg-amber-600',
+  LOW: 'bg-emerald-700',
 }
 
 export default function AlertesPage() {
@@ -152,12 +152,12 @@ export default function AlertesPage() {
                         {group.length}
                       </Badge>
                     </div>
-                    <Card className="rounded-t-none border-t-0 shadow-md">
+                    <Card className="rounded-t-none border-t-0 shadow-card">
                       <CardContent className="space-y-2 p-4">
                         {group.map((alert) => (
                           <div
                             key={alert.id}
-                            className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-3 sm:flex-row sm:items-start sm:justify-between"
+                            className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-3 sm:flex-row sm:items-start sm:justify-between"
                           >
                             <div className="flex min-w-0 flex-1 items-start gap-3">
                               <motion.div
@@ -228,7 +228,7 @@ export default function AlertesPage() {
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${(count / maxService) * 100}%` }}
-                            className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500"
+                            className="h-full rounded-full bg-primary"
                           />
                         </div>
                       </div>

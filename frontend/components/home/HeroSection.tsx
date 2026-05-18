@@ -1,63 +1,76 @@
 'use client'
+
+import Link from 'next/link'
 import { useState } from 'react'
+import { Camera, MapPinned } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { SignalerModal } from '@/components/shared/SignalerModal'
+
 export function HeroSection({ onSignaler }: { onSignaler?: () => void }) {
+  const [modalOpen, setModalOpen] = useState(false)
+  const openReporter = onSignaler ?? (() => setModalOpen(true))
+
   return (
-    <section style={{
-      minHeight:'100vh', position:'relative',
-      backgroundImage:"url('/images/background.jpg')",
-      backgroundSize:'100% auto', backgroundPosition:'center top',
-      backgroundRepeat:'no-repeat', backgroundColor:'#1c1917',
-      display:'flex', alignItems:'center', justifyContent:'center'
-    }}>
-      <div style={{
-        position:'absolute', inset:0,
-        background:'rgba(28,25,23,0.58)', zIndex:0
-      }}/>
-      <div style={{position:'relative', zIndex:1, textAlign:'center', padding:'0 24px', maxWidth:680}}>
-        <div style={{
-          display:'inline-flex', alignItems:'center', gap:6,
-          background:'rgba(194,65,12,0.85)', color:'white',
-          padding:'4px 14px', borderRadius:20, fontSize:11,
-          fontWeight:700, letterSpacing:'0.08em', marginBottom:20,
-          textTransform:'uppercase'
-        }}>🇲🇦 Marrakech · Supervision Urbaine Intelligente</div>
-        <h1 style={{
-          fontSize:'clamp(2.5rem,6vw,4.2rem)', fontWeight:900,
-          lineHeight:1.05, color:'white', marginBottom:16,
-          letterSpacing:'-0.02em'
-        }}>
-          La ville signale.<br/>
-          <span style={{color:'#fed7aa'}}>L'IA répond.</span>
-        </h1>
-        <p style={{
-          fontSize:'clamp(1rem,2vw,1.2rem)', color:'rgba(255,255,255,0.72)',
-          maxWidth:500, margin:'0 auto 32px', lineHeight:1.6
-        }}>
-          Photographiez un problème urbain. Notre intelligence artificielle
-          l'analyse, évalue le danger et alerte l'autorité compétente en secondes.
-        </p>
-        <div style={{display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap'}}>
-          <button onClick={onSignaler} style={{
-            background:'#c2410c', color:'white', border:'none',
-            borderRadius:10, padding:'14px 28px', fontSize:14,
-            fontWeight:700, cursor:'pointer'
-          }}>📷 Signaler maintenant</button>
-          <a href="/carte" style={{
-            color:'white', border:'1px solid rgba(255,255,255,0.3)',
-            borderRadius:10, padding:'14px 28px', fontSize:14,
-            fontWeight:500, textDecoration:'none', display:'inline-block'
-          }}>Voir la carte →</a>
-        </div>
-        <div style={{display:'flex', gap:32, justifyContent:'center', marginTop:48, flexWrap:'wrap'}}>
-          {[['1 284','Signalements'],['89%','Résolus'],['< 2min','Analyse IA'],['8','Secteurs']].map(([n,l]) => (
-            <div key={l} style={{textAlign:'center'}}>
-              <div style={{fontSize:'1.6rem', fontWeight:800, color:'#fed7aa'}}>{n}</div>
-              <div style={{fontSize:10, color:'rgba(255,255,255,0.55)',
-                textTransform:'uppercase', letterSpacing:'0.06em'}}>{l}</div>
-            </div>
-          ))}
+    <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-stone-950 text-white">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/background.jpg')" }}
+        aria-hidden
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.82),rgba(28,25,23,0.54)_48%,rgba(28,25,23,0.30))]" />
+      <div className="moroccan-tile absolute inset-0 opacity-[0.08]" />
+
+      <div className="page-shell relative grid min-h-[calc(100vh-4rem)] items-center py-16">
+        <div className="max-w-2xl">
+          <div className="mb-5 inline-flex items-center rounded-full border border-orange-200/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-orange-100 backdrop-blur-md">
+            Marrakech - Supervision urbaine intelligente
+          </div>
+
+          <h1 className="max-w-3xl text-4xl font-black leading-[1.03] tracking-tight sm:text-5xl lg:text-6xl">
+            La ville signale.
+            <span className="block text-orange-200">Les services repondent.</span>
+          </h1>
+
+          <p className="mt-5 max-w-xl text-base leading-7 text-white/74 sm:text-lg">
+            Photographiez un probleme urbain, localisez-le, puis suivez son traitement depuis une interface claire
+            pensee pour Marrakech.
+          </p>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Button size="lg" className="h-12 px-6" onClick={openReporter}>
+              <Camera className="h-4 w-4" />
+              Signaler maintenant
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 border-white/25 bg-white/8 px-6 text-white hover:bg-white/14"
+              asChild
+            >
+              <Link href="/carte">
+                <MapPinned className="h-4 w-4" />
+                Voir la carte
+              </Link>
+            </Button>
+          </div>
+
+          <div className="mt-10 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ['1 284', 'Signalements'],
+              ['89%', 'Resolus'],
+              ['2 min', 'Analyse IA'],
+              ['8', 'Secteurs'],
+            ].map(([n, l]) => (
+              <div key={l} className="rounded-lg border border-white/12 bg-white/10 p-4 backdrop-blur-md">
+                <div className="text-2xl font-black text-orange-100">{n}</div>
+                <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/52">{l}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </section>
   )
 }

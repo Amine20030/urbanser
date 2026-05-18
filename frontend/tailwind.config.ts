@@ -62,9 +62,9 @@ const config: Config = {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'mesh-light':
-          'radial-gradient(ellipse 120% 80% at 50% -30%, rgba(14, 165, 233, 0.18), transparent 55%), radial-gradient(ellipse 80% 60% at 100% 0%, rgba(99, 102, 241, 0.12), transparent 45%), radial-gradient(ellipse 70% 50% at 0% 100%, rgba(16, 185, 129, 0.08), transparent 50%)',
+          'linear-gradient(135deg, #fbf7ef 0%, #f6efe4 42%, #fffaf3 100%), radial-gradient(ellipse 90% 55% at 20% 0%, rgba(185, 68, 31, 0.12), transparent 55%), radial-gradient(ellipse 70% 45% at 100% 10%, rgba(22, 101, 52, 0.08), transparent 48%)',
         'mesh-dark':
-          'radial-gradient(ellipse 120% 80% at 50% -25%, rgba(56, 189, 248, 0.14), transparent 55%), radial-gradient(ellipse 90% 60% at 100% 10%, rgba(129, 140, 248, 0.12), transparent 45%), radial-gradient(ellipse 70% 50% at 0% 90%, rgba(45, 212, 191, 0.06), transparent 50%)',
+          'linear-gradient(135deg, #120f0d 0%, #1c1713 48%, #17120f 100%), radial-gradient(ellipse 80% 55% at 20% 0%, rgba(185, 68, 31, 0.14), transparent 55%), radial-gradient(ellipse 70% 50% at 100% 10%, rgba(22, 101, 52, 0.10), transparent 48%)',
       },
       keyframes: {
         'fade-up': {

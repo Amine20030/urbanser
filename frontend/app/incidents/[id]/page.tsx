@@ -23,6 +23,10 @@ function normalizeStatus(s: string) {
   return s.toLowerCase() as 'open' | 'in_progress' | 'resolved'
 }
 
+function isNumericId(value: string) {
+  return /^\d+$/.test(value)
+}
+
 function severityForBadge(s: string): Severity {
   const u = (s || 'MEDIUM').toUpperCase()
   if (u === 'CRITICAL' || u === 'HIGH' || u === 'LOW' || u === 'MED' || u === 'MEDIUM') {
@@ -46,9 +50,9 @@ export default function IncidentDetailPage() {
     }
     const load = async () => {
       try {
-        const res = /^INC-/i.test(raw)
-          ? await incidentAPI.getByReference(raw)
-          : await incidentAPI.getById(Number(raw))
+        const res = isNumericId(raw)
+          ? await incidentAPI.getById(Number(raw))
+          : await incidentAPI.getByReference(raw)
         setData(res.data as Record<string, unknown>)
       } catch (err: unknown) {
         const ax = err as { response?: { data?: { message?: string } } }

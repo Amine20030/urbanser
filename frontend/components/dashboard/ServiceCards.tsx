@@ -31,12 +31,12 @@ const icons: Record<string, LucideIcon> = {
 }
 
 const accents = [
-  'from-emerald-500/15 to-teal-500/5 border-emerald-500/20',
+  'from-emerald-500/12 to-green-500/5 border-emerald-500/20',
   'from-amber-500/15 to-yellow-500/5 border-amber-500/20',
-  'from-sky-500/15 to-cyan-500/5 border-sky-500/20',
-  'from-orange-500/15 to-rose-500/5 border-orange-500/20',
-  'from-violet-500/15 to-purple-500/5 border-violet-500/20',
-  'from-slate-500/15 to-zinc-500/5 border-slate-500/20',
+  'from-orange-500/12 to-red-500/5 border-orange-500/20',
+  'from-lime-700/10 to-emerald-600/5 border-lime-700/20',
+  'from-stone-500/12 to-zinc-500/5 border-stone-500/20',
+  'from-red-700/10 to-orange-700/5 border-red-700/20',
 ]
 
 function labelFor(service: ServiceHealthDTO): string {
@@ -55,15 +55,32 @@ export function ServiceCards() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    statsAPI
-      .getServicesHealth()
-      .then((res) => {
-        const raw = res.data
-        const list = Array.isArray(raw) ? raw : []
-        setData(list)
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
+    let cancelled = false
+    const load = () => {
+      statsAPI
+        .getServicesHealth()
+        .then((res) => {
+          if (cancelled) return
+          const raw = res.data
+          const list = Array.isArray(raw) ? raw : []
+          setData(list)
+          setError(null)
+        })
+        .catch((err) => {
+          if (!cancelled) setError(err.message)
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+    }
+    load()
+    const interval = window.setInterval(load, 30000)
+    window.addEventListener('focus', load)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      window.removeEventListener('focus', load)
+    }
   }, [])
 
   if (loading) {
@@ -107,7 +124,7 @@ export function ServiceCards() {
             transition={{ delay: index * 0.04 }}
           >
             <Card
-              className={`h-full cursor-pointer border bg-gradient-to-br shadow-card transition-all hover:-translate-y-0.5 hover:shadow-md ${accent}`}
+              className={`h-full cursor-pointer border bg-gradient-to-br shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-glow ${accent}`}
             >
               <CardContent className="p-4">
                 <div className="mb-3 flex items-center gap-2">

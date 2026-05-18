@@ -85,7 +85,7 @@ export default function SignUpPage() {
       >
         <div className="mb-8 flex justify-center">
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-lg shadow-lg">
+            <span className="flex h-11 w-11 items-center justify-center rounded-md bg-primary text-sm font-black text-white shadow-lg">
               🏙
             </span>
             <span className="text-2xl font-bold tracking-tight text-t1">UrbanOps</span>

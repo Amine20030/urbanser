@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
+import { LogOut, Menu, Plus, UserRound, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { SignalerModal } from '@/components/shared/SignalerModal'
+import { cn } from '@/lib/utils'
 
 type NavUser = {
   email: string
@@ -45,7 +47,6 @@ export function Navbar() {
   const [modalOpen, setModalOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser] = useState<NavUser | null>(null)
-  
   const pathname = usePathname()
 
   useEffect(() => {
@@ -67,168 +68,126 @@ export function Navbar() {
   }
 
   const isAdmin = Boolean(user?.role?.includes('ADMIN'))
-
-  const navLinkStyle = (path: string, exact: boolean = false) => {
-    const isActive = exact ? pathname === path : pathname.startsWith(path) && path !== '/'
-    return {
-      color: isActive ? 'white' : 'rgba(255,255,255,0.6)',
-      textDecoration: 'none',
-      fontSize: 14,
-      fontWeight: 500,
-      borderBottom: isActive ? '2px solid var(--urb-primary)' : '2px solid transparent',
-      padding: '18px 0',
-      transition: 'color 0.15s'
-    }
-  }
+  const links = [
+    { href: '/', label: 'Accueil', exact: true },
+    { href: '/carte', label: 'Carte' },
+    user
+      ? { href: isAdmin ? '/dashboard' : '/mes-signalements', label: isAdmin ? 'Dashboard' : 'Mes signalements' }
+      : { href: '/#how', label: 'Comment ca marche' },
+  ]
 
   return (
     <>
-      <nav style={{
-        background: 'rgba(28,25,23,0.96)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        padding: '0 32px',
-        height: 56,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 200
-      }}>
-        {/* LOGO */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'var(--urb-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, fontWeight: 800, color: 'white'
-          }}>U</div>
-          <span style={{ fontWeight: 800, fontSize: 15, color: 'white', letterSpacing: '-0.01em' }}>
-            UrbanOps
-          </span>
-          <span style={{
-            fontSize: 9, color: 'var(--urb-primary)', fontWeight: 700,
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-            border: '1px solid var(--urb-primary)', borderRadius: 4, padding: '1px 5px'
-          }}>
-            MARRAKECH
-          </span>
-        </Link>
+      <nav className="sticky top-0 z-50 border-b border-border bg-[#fffaf3]/94 text-t1 shadow-[0_8px_26px_rgba(63,37,23,0.08)] backdrop-blur-xl">
+        <div className="page-shell flex h-16 items-center justify-between gap-4">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-black text-white shadow-sm">
+              U
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-black leading-tight">UrbanOps</span>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                Marrakech
+              </span>
+            </span>
+          </Link>
 
-        {/* CENTER LINKS (Desktop) */}
-        <div style={{ display: 'none', gap: 32 }} className="md-flex">
-          <style>{`
-            @media (min-width: 768px) { .md-flex { display: flex !important; } .md-hidden { display: none !important; } }
-          `}</style>
-          
-          <Link href="/" style={navLinkStyle('/', true)} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => {if(pathname!=='/')e.currentTarget.style.color='rgba(255,255,255,0.6)'}}>
-            Accueil
-          </Link>
-          <Link href="/carte" style={navLinkStyle('/carte')} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => {if(pathname!=='/carte')e.currentTarget.style.color='rgba(255,255,255,0.6)'}}>
-            Carte
-          </Link>
-          
-          {!user ? (
-            <Link href="/#how" style={navLinkStyle('/#how')} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.6)'}>
-              Comment ça marche
-            </Link>
-          ) : isAdmin ? (
-            <Link href="/dashboard" style={navLinkStyle('/dashboard')} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => {if(!pathname.startsWith('/dashboard'))e.currentTarget.style.color='rgba(255,255,255,0.6)'}}>
-              Dashboard
-            </Link>
-          ) : (
-            <Link href="/mes-signalements" style={navLinkStyle('/mes-signalements')} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => {if(!pathname.startsWith('/mes-signalements'))e.currentTarget.style.color='rgba(255,255,255,0.6)'}}>
-              Tableau de bord
-            </Link>
-          )}
+          <div className="hidden items-center gap-7 md:flex">
+            {links.map((link) => {
+              const active = link.exact ? pathname === link.href : pathname.startsWith(link.href) && link.href !== '/#how'
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    'border-b-2 py-5 text-sm font-semibold transition-colors',
+                    active
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-t2 hover:text-t1'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
+          </div>
+
+          <div className="hidden items-center gap-2 md:flex">
+            {!user ? (
+              <>
+                <Button variant="ghost" size="sm" className="text-t2 hover:bg-hover hover:text-t1" asChild>
+                  <Link href="/auth/signin">Se connecter</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/auth/signup">S'inscrire</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="mr-2 flex items-center gap-2 rounded-md border border-border bg-muted/60 px-2.5 py-1.5">
+                  <UserRound className="h-3.5 w-3.5 text-primary" />
+                  <span className="max-w-[120px] truncate text-xs font-semibold">{user.firstName}</span>
+                  <span className="rounded bg-primary/90 px-1.5 py-0.5 text-[9px] font-black uppercase text-white">
+                    {isAdmin ? 'Admin' : 'Citoyen'}
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" className="text-t2 hover:bg-hover hover:text-t1" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  Sortir
+                </Button>
+                <Button size="sm" onClick={() => setModalOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Signaler
+                </Button>
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border text-t1 md:hidden"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Menu"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
 
-        {/* RIGHT SIDE (Desktop) */}
-        <div style={{ display: 'none', alignItems: 'center', gap: 16 }} className="md-flex">
-          {!user ? (
-            <>
-              <Link href="/auth/signin" style={{
-                color: 'white', fontSize: 13, fontWeight: 600, padding: '7px 16px',
-                border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8
-              }}>
-                Se connecter
-              </Link>
-              <Link href="/auth/signup" style={{
-                background: 'var(--urb-primary)', color: 'white', fontSize: 13, fontWeight: 600,
-                padding: '8px 16px', borderRadius: 8
-              }}>
-                S'inscrire
-              </Link>
-            </>
-          ) : (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>👤 {user.firstName}</span>
-                <span style={{
-                  background: isAdmin ? 'var(--urb-primary)' : 'var(--urb-accent)',
-                  color: 'white', fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 12
-                }}>
-                  {isAdmin ? 'ADMIN' : 'CITOYEN'}
-                </span>
-              </div>
-              <button onClick={handleLogout} style={{
-                background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', 
-                fontSize: 12, cursor: 'pointer', marginLeft: 8
-              }} onMouseEnter={e => e.currentTarget.style.color='white'} onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.6)'}>
-                Déconnexion
-              </button>
-              <button onClick={() => setModalOpen(true)} style={{
-                background: 'var(--urb-primary)', color: 'white', border: 'none',
-                borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginLeft: 8
-              }}>
-                + Signaler
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* MOBILE MENU BUTTON */}
-        <button className="md-hidden" onClick={() => setMobileOpen(!mobileOpen)} style={{
-          background:'transparent', border:'none', color:'white', cursor:'pointer'
-        }}>
-          {mobileOpen ? <X size={24}/> : <Menu size={24}/>}
-        </button>
-
-        {/* MOBILE OVERLAY */}
         {mobileOpen && (
-          <div className="md-hidden" style={{
-            position:'absolute', top: 56, left: 0, right: 0, background:'rgba(28,25,23,0.98)',
-            borderBottom:'1px solid rgba(255,255,255,0.1)', padding: 20, display:'flex', flexDirection:'column', gap: 20
-          }}>
-             <Link href="/" style={{color:'white', fontWeight:600}} onClick={() => setMobileOpen(false)}>Accueil</Link>
-             <Link href="/carte" style={{color:'white', fontWeight:600}} onClick={() => setMobileOpen(false)}>Carte</Link>
-             
-             {!user ? (
-               <>
-                <Link href="/#how" style={{color:'white', fontWeight:600}} onClick={() => setMobileOpen(false)}>Comment ça marche</Link>
-                <div style={{display:'flex', gap:10, marginTop:10}}>
-                  <Link href="/auth/signin" style={{flex:1, textAlign:'center', color:'white', border:'1px solid rgba(255,255,255,0.2)', padding:'10px', borderRadius:8}}>Se connecter</Link>
-                  <Link href="/auth/signup" style={{flex:1, textAlign:'center', background:'var(--urb-primary)', color:'white', padding:'10px', borderRadius:8}}>S'inscrire</Link>
-                </div>
-               </>
-             ) : (
-               <>
-                {isAdmin ? (
-                  <Link href="/dashboard" style={{color:'white', fontWeight:600}} onClick={() => setMobileOpen(false)}>Dashboard</Link>
+          <div className="border-t border-border bg-[#fffaf3] px-4 py-4 md:hidden">
+            <div className="mx-auto flex max-w-lg flex-col gap-2">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-md px-3 py-2 text-sm font-semibold text-t2 hover:bg-hover hover:text-t1"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
+                {!user ? (
+                  <>
+                    <Button variant="outline" asChild>
+                      <Link href="/auth/signin">Connexion</Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/auth/signup">Inscription</Link>
+                    </Button>
+                  </>
                 ) : (
-                  <Link href="/mes-signalements" style={{color:'white', fontWeight:600}} onClick={() => setMobileOpen(false)}>Tableau de bord</Link>
+                  <>
+                    <Button variant="outline" onClick={handleLogout}>
+                      Deconnexion
+                    </Button>
+                    <Button onClick={() => { setModalOpen(true); setMobileOpen(false) }}>
+                      Signaler
+                    </Button>
+                  </>
                 )}
-                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop: 10, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop: 20}}>
-                  <div style={{color:'white', fontWeight:600}}>
-                    {user.firstName} <span style={{background:isAdmin?'var(--urb-primary)':'var(--urb-accent)', fontSize:9, padding:'2px 6px', borderRadius:10}}>{isAdmin?'ADMIN':'CITOYEN'}</span>
-                  </div>
-                  <button onClick={handleLogout} style={{background:'transparent', border:'none', color:'rgba(255,255,255,0.6)'}}>Déconnexion</button>
-                </div>
-                <button onClick={() => {setModalOpen(true); setMobileOpen(false)}} style={{
-                  background: 'var(--urb-primary)', color: 'white', border: 'none',
-                  borderRadius: 8, padding: '12px', fontSize: 14, fontWeight: 700, width: '100%', marginTop:10
-                }}>
-                  Signaler un problème
-                </button>
-               </>
-             )}
+              </div>
+            </div>
           </div>
         )}
       </nav>

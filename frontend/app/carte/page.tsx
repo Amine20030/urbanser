@@ -23,17 +23,32 @@ const MapView = dynamic(() => import('@/components/shared/MapView'), {
 
 type MapIncident = {
   id: number
-  referenceCode: string
+  referenceCode?: string
   title: string
   latitude: number
   longitude: number
   severity: string
   status: string
-  categoryName: string
+  categoryName?: string
+  category?: string | { name?: string; icon?: string }
 }
 
 function normalizeStatus(s: string) {
   return s.toLowerCase() as 'open' | 'in_progress' | 'resolved'
+}
+
+function categoryLabel(incident: MapIncident) {
+  if (incident.categoryName) return incident.categoryName
+  if (typeof incident.category === 'string') return incident.category
+  return incident.category?.name || 'Autre'
+}
+
+function incidentRef(incident: MapIncident) {
+  return incident.referenceCode || `#${incident.id}`
+}
+
+function incidentHref(incident: MapIncident) {
+  return `/incidents/${encodeURIComponent(incident.referenceCode || String(incident.id))}`
 }
 
 export default function CartePage() {
@@ -54,16 +69,17 @@ export default function CartePage() {
     if (!q) return incidents
     return incidents.filter(
       (i) =>
-        i.title.toLowerCase().includes(q) ||
-        i.categoryName.toLowerCase().includes(q) ||
-        i.referenceCode.toLowerCase().includes(q)
+        (i.title || '').toLowerCase().includes(q) ||
+        categoryLabel(i).toLowerCase().includes(q) ||
+        incidentRef(i).toLowerCase().includes(q)
     )
   }, [incidents, searchQuery])
 
   const categoryStats = useMemo(() => {
     const acc: Record<string, number> = {}
     for (const i of incidents) {
-      acc[i.categoryName] = (acc[i.categoryName] || 0) + 1
+      const label = categoryLabel(i)
+      acc[label] = (acc[label] || 0) + 1
     }
     return Object.entries(acc)
       .map(([name, count]) => ({ name, count }))
@@ -121,7 +137,7 @@ export default function CartePage() {
                         initial={{ width: 0 }}
                         animate={{ width: `${(row.count / maxCat) * 100}%` }}
                         transition={{ duration: 0.6, ease: 'easeOut' }}
-                        className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500"
+                        className="h-full rounded-full bg-primary"
                       />
                     </div>
                   </div>
@@ -138,15 +154,15 @@ export default function CartePage() {
               {filtered.map((incident) => (
                 <Link
                   key={incident.id}
-                  href={`/incidents/${encodeURIComponent(incident.referenceCode)}`}
-                  className="block rounded-xl border border-border bg-bg-hover/40 p-3 transition-all hover:border-primary/35 hover:shadow-md"
+                  href={incidentHref(incident)}
+                  className="block rounded-lg border border-border bg-bg-hover/40 p-3 transition-all hover:border-primary/35 hover:shadow-md"
                 >
                   <div className="mb-2 flex items-start justify-between gap-2">
-                    <span className="font-mono text-[11px] text-primary">{incident.referenceCode}</span>
+                    <span className="font-mono text-[11px] text-primary">{incidentRef(incident)}</span>
                     <StatusBadge status={normalizeStatus(incident.status)} size="sm" />
                   </div>
                   <h4 className="mb-1 line-clamp-2 text-xs font-medium text-t1">{incident.title}</h4>
-                  <p className="text-[10px] text-t3">{incident.categoryName}</p>
+                  <p className="text-[10px] text-t3">{categoryLabel(incident)}</p>
                 </Link>
               ))}
             </CardContent>

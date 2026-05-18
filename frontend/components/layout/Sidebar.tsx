@@ -5,14 +5,14 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  LayoutDashboard,
-  Map,
   AlertTriangle,
+  ClipboardList,
   FileText,
+  LayoutDashboard,
+  LogOut,
+  Map,
   Settings,
   Users,
-  LogOut,
-  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { canAccessAdminDashboard, getCurrentRole } from '@/lib/auth'
@@ -31,12 +31,9 @@ function buildNavItems(): NavItem[] {
       label: 'Tableau de bord',
       icon: staff ? LayoutDashboard : ClipboardList,
     },
-  ]
-
-  items.push(
     { href: '/carte', label: 'Carte', icon: Map },
     { href: '/incidents', label: 'Incidents', icon: FileText },
-  )
+  ]
 
   if (staff) {
     items.push(
@@ -45,20 +42,17 @@ function buildNavItems(): NavItem[] {
     )
   }
 
-  items.push({ href: '/parametres', label: 'Paramètres', icon: Settings })
+  items.push({ href: '/parametres', label: 'Parametres', icon: Settings })
   return items
 }
 
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  // Use empty initial states to match server-side rendering
   const [navItems, setNavItems] = useState<NavItem[]>([])
   const [role, setRole] = useState<string>('')
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
     const refresh = () => {
       setNavItems(buildNavItems())
       setRole(getCurrentRole())
@@ -82,20 +76,20 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[220px] flex-col border-r border-border bg-sidebar/90 backdrop-blur-xl shadow-card lg:w-60">
+    <aside className="fixed left-0 top-0 z-40 flex h-16 w-full flex-row border-b border-border bg-sidebar/95 shadow-card backdrop-blur-xl md:h-screen md:w-[220px] md:flex-col md:border-b-0 md:border-r lg:w-60">
       <motion.div
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex h-16 items-center border-b border-border px-4"
+        className="flex h-16 items-center px-4 md:border-b md:border-border"
       >
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-cyan-600 text-base shadow-md">
-            🏙
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-black text-white shadow-sm">
+            U
           </span>
           <div className="min-w-0">
-            <span className="block text-sm font-bold tracking-tight text-t1">UrbanOps</span>
+            <span className="block text-sm font-bold text-t1">UrbanOps</span>
             {role && (
-              <span className="block truncate text-[10px] font-medium uppercase tracking-wide text-t3">
+              <span className="block truncate text-[10px] font-semibold uppercase tracking-wide text-t3">
                 {role === 'ADMIN' ? 'Administrateur' : role === 'MANAGER' ? 'Gestionnaire' : 'Citoyen'}
               </span>
             )}
@@ -103,7 +97,7 @@ export function Sidebar() {
         </Link>
       </motion.div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav className="hidden flex-1 space-y-1 overflow-y-auto p-3 md:block">
         {navItems.map((item, i) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -118,18 +112,18 @@ export function Sidebar() {
               <Link
                 href={item.href}
                 className={cn(
-                  'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                  'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-gradient-to-r from-sky-500/20 to-cyan-500/10 text-t1 shadow-sm ring-1 ring-primary/25'
+                    ? 'bg-primary/10 text-t1 shadow-sm ring-1 ring-primary/25'
                     : 'text-t2 hover:bg-hover hover:text-t1'
                 )}
               >
                 <span
                   className={cn(
-                    'flex h-8 w-8 items-center justify-center rounded-lg border transition-colors',
+                    'flex h-8 w-8 items-center justify-center rounded-md border transition-colors',
                     isActive
                       ? 'border-primary/30 bg-primary/10 text-primary'
-                      : 'border-transparent bg-muted/50 text-t3 group-hover:border-border group-hover:text-t2'
+                      : 'border-transparent bg-muted/60 text-t3 group-hover:border-border group-hover:text-t2'
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -145,17 +139,17 @@ export function Sidebar() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="border-t border-border p-3"
+        className="ml-auto border-l border-border p-3 md:ml-0 md:border-l-0 md:border-t"
       >
         <button
           type="button"
           onClick={logout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-t2 transition-colors hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-t2 transition-colors hover:bg-red-500/10 hover:text-red-500 md:w-full"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/60">
             <LogOut className="h-4 w-4" />
           </span>
-          Déconnexion
+          <span className="hidden md:inline">Deconnexion</span>
         </button>
       </motion.div>
     </aside>

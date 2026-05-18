@@ -1,33 +1,44 @@
 'use client'
+
 import dynamic from 'next/dynamic'
+import { MapPinned, Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
 const MapView = dynamic(() => import('@/components/shared/MapView'), {
   ssr: false,
   loading: () => (
-    <div style={{height:480,background:'#f1f5f9',borderRadius:12,
-      display:'flex',alignItems:'center',justifyContent:'center',
-      color:'#64748b',fontSize:14}}>
+    <div className="flex h-[420px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-sm text-t3">
       Chargement de la carte...
     </div>
-  )
+  ),
 })
+
 export function LiveMapSection({ onSignaler }: { onSignaler?: () => void }) {
   return (
-    <section style={{padding:'0', background:'#fafaf9'}}>
-      <div style={{
-        display:'flex', justifyContent:'space-between', alignItems:'center',
-        padding:'24px 32px 16px', maxWidth:1400, margin:'0 auto'
-      }}>
-        <h2 style={{fontSize:20, fontWeight:700, color:'#1c1917', margin:0}}>
-          🗺 Carte en temps réel — Marrakech
-        </h2>
-        <button onClick={onSignaler} style={{
-          background:'#c2410c', color:'white', border:'none',
-          borderRadius:8, padding:'8px 18px', fontSize:12,
-          fontWeight:700, cursor:'pointer'
-        }}>+ Signaler ici</button>
-      </div>
-      <div style={{padding:'0 32px 32px', maxWidth:1400, margin:'0 auto'}}>
-        <MapView height="480px" onMapClick={onSignaler} />
+    <section className="bg-bg-base py-10">
+      <div className="page-shell">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary shadow-sm">
+              <MapPinned className="h-3.5 w-3.5" />
+              Carte en temps reel
+            </p>
+            <h2 className="text-2xl font-black tracking-tight text-t1">Signalements actifs a Marrakech</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-t2">
+              Une vue operationnelle simple pour reperer les zones sensibles, les services concernes et les priorites.
+            </p>
+          </div>
+          {onSignaler ? (
+            <Button onClick={onSignaler} className="shrink-0">
+              <Plus className="h-4 w-4" />
+              Signaler ici
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="overflow-hidden rounded-lg border border-border bg-card p-2 shadow-card sm:p-3">
+          <MapView height="min(62vh, 520px)" onMapClick={onSignaler} />
+        </div>
       </div>
     </section>
   )

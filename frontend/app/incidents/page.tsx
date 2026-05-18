@@ -1,41 +1,44 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { Camera, LayoutGrid, List, MapPin } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { SignalerModal } from '@/components/shared/SignalerModal'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { cn } from '@/lib/utils'
 
 function relativeTime(dateStr: string): string {
   if (!dateStr) return ''
   const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff/60000)
-  if (mins < 1) return 'à l\'instant'
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "a l'instant"
   if (mins < 60) return `il y a ${mins}min`
-  const hours = Math.floor(mins/60)
+  const hours = Math.floor(mins / 60)
   if (hours < 24) return `il y a ${hours}h`
-  const days = Math.floor(hours/24)
-  return `il y a ${days}j`
+  return `il y a ${Math.floor(hours / 24)}j`
 }
 
-const sev = (s:string) => s==='HIGH'?'var(--urb-danger)':s==='MEDIUM'?'var(--urb-gold)':'var(--urb-success)'
-
-const StatusPill = ({ status }: { status: string }) => {
-  const isO = status === 'OPEN'
-  const isP = status === 'IN_PROGRESS'
-  return (
-    <span style={{
-      background: isO ? 'var(--urb-danger-lt)' : isP ? 'var(--urb-gold-lt)' : 'var(--urb-success-lt)',
-      color: isO ? 'var(--urb-danger)' : isP ? 'var(--urb-gold)' : 'var(--urb-success)',
-      padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 800, letterSpacing: '0.05em'
-    }}>
-      {isO ? '🔴 OUVERT' : isP ? '🟡 EN COURS' : '✅ RÉSOLU'}
-    </span>
-  )
+const sev = (s: string) => {
+  const value = (s || '').toUpperCase()
+  if (value === 'HIGH' || value === 'CRITICAL') return 'var(--urb-danger)'
+  if (value === 'MEDIUM') return 'var(--urb-gold)'
+  return 'var(--urb-success)'
 }
+
+const filters = [
+  ['Tous', 'Tous'],
+  ['OPEN', 'Ouverts'],
+  ['IN_PROGRESS', 'En cours'],
+  ['RESOLVED', 'Resolus'],
+]
 
 export default function IncidentsPage() {
   const [incidents, setIncidents] = useState<any[]>([])
   const [activeFilter, setFilter] = useState('Tous')
-  const [viewMode, setViewMode] = useState<'grid'|'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [modalOpen, setModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -44,146 +47,145 @@ export default function IncidentsPage() {
       setLoading(true)
       try {
         const res = await fetch('http://localhost:8080/api/v1/incidents?page=0&size=100&sortBy=createdAt&sortDir=desc')
-        if(res.ok) {
+        if (res.ok) {
           const body = await res.json()
           setIncidents(body.content || body)
         }
-      } catch (e) {} finally {
+      } catch {
+      } finally {
         setLoading(false)
       }
     }
     fetchRealData()
   }, [])
 
-  const filtered = incidents.filter(i => activeFilter === 'Tous' ? true : i.status === activeFilter)
+  const filtered = incidents.filter((i) => (activeFilter === 'Tous' ? true : i.status === activeFilter))
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--urb-bg)' }}>
+    <div className="min-h-screen bg-bg-base">
       <Navbar />
 
-      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '40px 24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
+      <main className="page-shell py-8 sm:py-10">
+        <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-0.02em', marginBottom: 8, color: 'var(--urb-text)' }}>
-              Explorateur d'incidents
-            </h1>
-            <p style={{ color: 'var(--urb-text-2)', fontSize: 15 }}>
-              Consultez publiquement les problèmes signalés par les citoyens à Marrakech.
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">Signalements publics</p>
+            <h1 className="text-3xl font-black tracking-tight text-t1">Explorateur d'incidents</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-t2">
+              Consultez les problemes signales par les citoyens a Marrakech et leur etat de traitement.
             </p>
           </div>
-          <button onClick={() => setModalOpen(true)} style={{
-            background: 'var(--urb-primary)', color: 'white', border: 'none', borderRadius: 8,
-            padding: '12px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(194,65,12,0.4)', transition: 'transform 0.15s'
-          }}>
-            📷 Signaler
-          </button>
+          <Button onClick={() => setModalOpen(true)} className="shrink-0">
+            <Camera className="h-4 w-4" />
+            Signaler
+          </Button>
         </div>
 
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-          {['Tous','OPEN','IN_PROGRESS','RESOLVED'].map(s => (
-            <button key={s} onClick={() => setFilter(s)}
-              style={{
-                padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', border: '1px solid',
-                background: activeFilter===s ? 'var(--urb-primary)' : 'white',
-                color: activeFilter===s ? 'white' : 'var(--urb-text-2)',
-                borderColor: activeFilter===s ? 'var(--urb-primary)' : 'var(--urb-border)',
-                transition: 'all 0.15s'
-              }}
-            >
-              {s==='Tous'?'Tous':s==='OPEN'?'🔴 Ouverts':s==='IN_PROGRESS'?'🟡 En cours':'✅ Résolus'}
-            </button>
-          ))}
-          <div style={{ marginLeft: 'auto' }}>
-            <button onClick={() => setViewMode(v => v === 'grid' ? 'list' : 'grid')}
-              style={{
-                fontSize: 13, padding: '8px 16px', border: '1px solid var(--urb-border)',
-                borderRadius: 8, background: 'white', cursor: 'pointer', fontWeight: 600, color: 'var(--urb-text)'
-              }}>
-              {viewMode === 'grid' ? '☰ Vue Liste' : '⊞ Vue Grille'}
-            </button>
+        <div className="mb-5 flex flex-col gap-3 rounded-lg border border-border bg-card p-3 shadow-card sm:flex-row sm:items-center">
+          <div className="flex flex-wrap gap-2">
+            {filters.map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setFilter(value)}
+                className={cn(
+                  'rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
+                  activeFilter === value
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border bg-bg-base text-t2 hover:border-primary/30 hover:text-t1'
+                )}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="sm:ml-auto"
+            onClick={() => setViewMode((v) => (v === 'grid' ? 'list' : 'grid'))}
+          >
+            {viewMode === 'grid' ? <List className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+            {viewMode === 'grid' ? 'Vue liste' : 'Vue grille'}
+          </Button>
         </div>
 
         {loading ? (
-          <div style={{ padding: 60, textAlign: 'center', color: 'var(--urb-text-3)', fontSize: 16 }}>Chargement des incidents...</div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 rounded-lg" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-card p-12 text-center text-sm text-t3">
+            Aucun incident trouve pour ce filtre.
+          </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((inc) => (
+              <IncidentCard key={inc.id} incident={inc} />
+            ))}
+          </div>
         ) : (
-          viewMode === 'grid' ? (
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-               {filtered.map(inc => (
-                 <article key={inc.id} style={{
-                   background: 'var(--urb-surface)', border: '1px solid var(--urb-border)',
-                   borderRadius: 'var(--urb-radius-lg)', overflow: 'hidden',
-                   boxShadow: 'var(--urb-shadow)', transition: 'box-shadow 0.15s, transform 0.15s', cursor: 'pointer'
-                 }} onMouseEnter={e => {
-                    e.currentTarget.style.boxShadow = 'var(--urb-shadow-md)'
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                 }} onMouseLeave={e => {
-                    e.currentTarget.style.boxShadow = 'var(--urb-shadow)'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                 }}>
-                   <div style={{ height: 4, background: sev(inc.severity) }}/>
-                   <div style={{ padding: '20px' }}>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                       <span style={{ fontSize: 12, color: 'var(--urb-text-3)', fontWeight: 600 }}>
-                         {inc.category?.icon} {inc.category?.name}
-                       </span>
-                       <span style={{ fontSize: 11, color: 'var(--urb-text-3)' }}>
-                         {relativeTime(inc.createdAt)}
-                       </span>
-                     </div>
-                     <h3 style={{
-                       fontSize: 15, fontWeight: 700, color: 'var(--urb-text)',
-                       marginBottom: 10, lineHeight: 1.4, height: 42,
-                       display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                     }}>
-                       {inc.title}
-                     </h3>
-                     <div style={{ fontSize: 12, color: 'var(--urb-text-2)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
-                       📍 <span style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{inc.sector?.name}</span>
-                     </div>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--urb-border)', paddingTop: 16 }}>
-                       <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--urb-primary)', fontWeight: 700 }}>
-                         #{inc.referenceCode}
-                       </span>
-                       <StatusPill status={inc.status}/>
-                     </div>
-                   </div>
-                 </article>
-               ))}
-             </div>
-          ) : (
-            <div style={{ background: 'var(--urb-surface)', border: '1px solid var(--urb-border)', borderRadius: 'var(--urb-radius-lg)', overflow: 'hidden' }}>
-              {filtered.map((inc, i) => (
-                <div key={inc.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px',
-                  borderBottom: i === filtered.length-1 ? 'none' : '1px solid var(--urb-border)',
-                  background: 'var(--urb-surface)', transition: 'background 0.1s', cursor: 'pointer'
-                }} onMouseEnter={e => e.currentTarget.style.background = 'var(--urb-bg)'}
-                   onMouseLeave={e => e.currentTarget.style.background = 'var(--urb-surface)'}>
-                  <div style={{ width: 4, height: 40, background: sev(inc.severity), borderRadius: 2 }}/>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--urb-text)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {inc.title}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--urb-text-3)', display: 'flex', gap: 12 }}>
-                      <span style={{ fontFamily: 'monospace', color: 'var(--urb-primary)', fontWeight: 600 }}>{inc.referenceCode}</span>
-                      <span>{inc.category?.name}</span>
-                      <span>📍 {inc.sector?.name}</span>
-                    </div>
-                  </div>
-                  <div style={{ color: 'var(--urb-text-3)', fontSize: 12 }}>{relativeTime(inc.createdAt)}</div>
-                  <div><StatusPill status={inc.status}/></div>
-                </div>
-              ))}
-            </div>
-          )
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+            {filtered.map((inc, i) => (
+              <IncidentListRow key={inc.id} incident={inc} last={i === filtered.length - 1} />
+            ))}
+          </div>
         )}
       </main>
 
       <SignalerModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
+  )
+}
+
+function IncidentCard({ incident }: { incident: any }) {
+  return (
+    <Link
+      href={`/incidents/${encodeURIComponent(incident.referenceCode || incident.id)}`}
+      className="group overflow-hidden rounded-lg border border-border bg-card shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-glow"
+    >
+      <div className="h-1" style={{ background: sev(incident.severity) }} />
+      <div className="p-5">
+        <div className="mb-3 flex justify-between gap-3">
+          <span className="min-w-0 truncate text-xs font-semibold text-t3">
+            {incident.category?.icon ? `${incident.category.icon} ` : ''}
+            {incident.category?.name ?? 'Categorie'}
+          </span>
+          <span className="shrink-0 text-xs text-t3">{relativeTime(incident.createdAt)}</span>
+        </div>
+        <h3 className="line-clamp-2 min-h-[2.75rem] text-sm font-bold leading-snug text-t1 group-hover:text-primary">
+          {incident.title}
+        </h3>
+        <div className="mt-3 flex items-center gap-1.5 text-xs text-t2">
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          <span className="truncate">{incident.sector?.name ?? 'Marrakech'}</span>
+        </div>
+        <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+          <span className="font-mono text-[11px] font-bold text-primary">{incident.referenceCode}</span>
+          <StatusBadge status={incident.status} size="sm" />
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+function IncidentListRow({ incident, last }: { incident: any; last: boolean }) {
+  return (
+    <Link
+      href={`/incidents/${encodeURIComponent(incident.referenceCode || incident.id)}`}
+      className={cn('flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center', !last && 'border-b border-border')}
+    >
+      <div className="h-10 w-1 rounded-full sm:shrink-0" style={{ background: sev(incident.severity) }} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-bold text-t1">{incident.title}</div>
+        <div className="mt-1 flex flex-wrap gap-3 text-xs text-t3">
+          <span className="font-mono font-bold text-primary">{incident.referenceCode}</span>
+          <span>{incident.category?.name ?? 'Categorie'}</span>
+          <span>{incident.sector?.name ?? 'Marrakech'}</span>
+        </div>
+      </div>
+      <span className="text-xs text-t3">{relativeTime(incident.createdAt)}</span>
+      <StatusBadge status={incident.status} size="sm" />
+    </Link>
   )
 }
