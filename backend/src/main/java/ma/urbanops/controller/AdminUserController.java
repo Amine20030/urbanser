@@ -31,7 +31,7 @@ public class AdminUserController {
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<User> users = userService.findAllUsers();
 
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(users.stream().map(userService::toResponse).toList());
     }
 
     @GetMapping("/role/{role}")
@@ -97,6 +97,6 @@ public class AdminUserController {
         User u = userService.findById(id);
         u.setIsActive(!u.getIsActive());
         User updated = userService.save(u);
-
+        return ResponseEntity.ok(userService.toResponse(updated));
     }
 }

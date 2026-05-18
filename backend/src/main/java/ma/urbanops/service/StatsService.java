@@ -113,7 +113,6 @@ public class StatsService {
             long total = list.size();
             long resolved = list.stream().filter(i -> i.getStatus() == IncidentStatus.RESOLVED).count();
             int healthPercent = total == 0 ? 100 : (int) Math.round((double) resolved / total * 100.0);
-            if (healthPercent < 50) healthPercent = 50;
             if (healthPercent > 100) healthPercent = 100;
             
             result.add(StatsResponse.ServiceHealth.builder()

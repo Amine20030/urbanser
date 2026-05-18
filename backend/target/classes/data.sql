@@ -1,2 +1,0 @@
--- Seed data is handled by ma.urbanops.config.DataSeeder (UTF-8 safe).
--- Do not insert categories/sectors here — duplicate rows and broken emoji encoding can occur.

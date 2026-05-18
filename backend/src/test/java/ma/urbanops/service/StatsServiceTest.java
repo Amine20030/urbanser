@@ -1,6 +1,8 @@
 package ma.urbanops.service;
 
 import ma.urbanops.dto.response.StatsResponse;
+import ma.urbanops.entity.Category;
+import ma.urbanops.entity.Incident;
 import ma.urbanops.enums.IncidentStatus;
 import ma.urbanops.enums.Role;
 import ma.urbanops.enums.Severity;
@@ -142,6 +144,32 @@ class StatsServiceTest {
             assertNotNull(health.getPercentage());
             assertTrue(health.getPercentage() >= 0 && health.getPercentage() <= 100);
         }
+    }
+
+    @Test
+    void getServicesHealth_shouldUseRealResolutionRateWithoutMinimumFloor() {
+        Category transport = Category.builder().name("Transport").build();
+        Category water = Category.builder().name("Eau").build();
+        when(incidentRepository.findAll()).thenReturn(List.of(
+                Incident.builder().category(transport).status(IncidentStatus.OPEN).build(),
+                Incident.builder().category(transport).status(IncidentStatus.OPEN).build(),
+                Incident.builder().category(water).status(IncidentStatus.RESOLVED).build(),
+                Incident.builder().category(water).status(IncidentStatus.OPEN).build()
+        ));
+
+        List<StatsResponse.ServiceHealth> result = statsService.getServicesHealth();
+
+        StatsResponse.ServiceHealth transportHealth = result.stream()
+                .filter(h -> h.getServiceName().equals("Transport"))
+                .findFirst()
+                .orElseThrow();
+        StatsResponse.ServiceHealth waterHealth = result.stream()
+                .filter(h -> h.getServiceName().equals("Eau"))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(0, transportHealth.getPercentage());
+        assertEquals(50, waterHealth.getPercentage());
     }
 
     @Test

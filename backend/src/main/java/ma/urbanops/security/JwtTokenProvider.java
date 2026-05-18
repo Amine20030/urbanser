@@ -41,12 +41,12 @@ public class JwtTokenProvider {
                 .orElse("ROLE_CITIZEN");
 
         return Jwts.builder()
-                .subject(userPrincipal.getUsername())
+                .setSubject(userPrincipal.getUsername())
                 .claim("role", role)
                 .claim("firstName", userPrincipal.getFirstName())
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(getSigningKey())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
 
