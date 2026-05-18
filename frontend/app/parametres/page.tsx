@@ -53,7 +53,7 @@ export default function ParametresPage() {
   function logout() {
     localStorage.removeItem('urbanops_token')
     localStorage.removeItem('urbanops_user')
-    window.dispatchEvent(new Event('urbanops-auth-changed'))
+    globalThis.dispatchEvent(new Event('urbanops-auth-changed'))
     router.push('/')
   }
 

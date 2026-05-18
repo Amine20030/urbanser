@@ -98,8 +98,8 @@ export function RecentReports() {
 
         {loading && (
           <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 w-full rounded-xl" />
+            {(['r1', 'r2', 'r3'] as const).map((slot) => (
+              <Skeleton key={`report-skeleton-${slot}`} className="h-28 w-full rounded-xl" />
             ))}
           </div>
         )}

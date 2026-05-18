@@ -74,20 +74,20 @@ export function ServiceCards() {
         })
     }
     load()
-    const interval = window.setInterval(load, 30000)
-    window.addEventListener('focus', load)
+    const interval = globalThis.setInterval(load, 30000)
+    globalThis.addEventListener('focus', load)
     return () => {
       cancelled = true
-      window.clearInterval(interval)
-      window.removeEventListener('focus', load)
+      globalThis.clearInterval(interval)
+      globalThis.removeEventListener('focus', load)
     }
   }, [])
 
   if (loading) {
     return (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-xl" />
+        {(['a', 'b', 'c', 'd', 'e', 'f'] as const).map((slot) => (
+          <Skeleton key={`service-skeleton-${slot}`} className="h-24 rounded-xl" />
         ))}
       </div>
     )

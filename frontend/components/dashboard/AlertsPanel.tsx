@@ -9,12 +9,40 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
+type AlertItem = { id: number | string; title: string; severity: string; sentAt: string }
+
+function renderAlertActions(alert: AlertItem, onAck: (id: number) => void) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 shrink-0"
+      aria-label="Acquitter"
+      onClick={() => {
+        const id = Number(alert.id)
+        if (!Number.isNaN(id)) {
+          onAck(id)
+        }
+      }}
+    >
+      <Check className="h-3.5 w-3.5 text-t3" />
+    </Button>
+  )
+}
+
 export function AlertsPanel() {
-  const [data, setData] = useState<
-    { id: number | string; title: string; severity: string; sentAt: string }[]
-  >([])
+  const [data, setData] = useState<AlertItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const refreshAlerts = () => {
+    alertAPI.getRecent().then((res) => setData(res.data))
+  }
+
+  const handleAcknowledge = (id: number) => {
+    alertAPI.acknowledge(id).then(() => refreshAlerts())
+  }
 
   useEffect(() => {
     alertAPI
@@ -79,23 +107,7 @@ export function AlertsPanel() {
                   <p className="text-[10px] text-t3">{new Date(alert.sentAt).toLocaleString()}</p>
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                aria-label="Acquitter"
-                onClick={() => {
-                  const id = Number(alert.id)
-                  if (!Number.isNaN(id)) {
-                    alertAPI.acknowledge(id).then(() => {
-                      alertAPI.getRecent().then((res) => setData(res.data))
-                    })
-                  }
-                }}
-              >
-                <Check className="h-3.5 w-3.5 text-t3" />
-              </Button>
+              {renderAlertActions(alert, handleAcknowledge)}
             </div>
           ))}
 

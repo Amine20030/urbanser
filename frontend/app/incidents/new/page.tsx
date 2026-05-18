@@ -65,8 +65,8 @@ export default function NewIncidentPage() {
       setError('Choisissez une categorie et un secteur.')
       return
     }
-    const lat = parseFloat(latitude)
-    const lng = parseFloat(longitude)
+    const lat = Number.parseFloat(latitude)
+    const lng = Number.parseFloat(longitude)
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
       setError('Latitude et longitude invalides.')
       return
@@ -154,8 +154,9 @@ export default function NewIncidentPage() {
 
             <div className="space-y-4">
               <div>
-                <label className={labelClass}>Titre</label>
+                <label htmlFor="new-incident-title" className={labelClass}>Titre</label>
                 <input
+                  id="new-incident-title"
                   required
                   minLength={5}
                   maxLength={200}
@@ -167,8 +168,9 @@ export default function NewIncidentPage() {
               </div>
 
               <div>
-                <label className={labelClass}>Description</label>
+                <label htmlFor="new-incident-description" className={labelClass}>Description</label>
                 <textarea
+                  id="new-incident-description"
                   required
                   minLength={10}
                   maxLength={2000}
@@ -182,8 +184,8 @@ export default function NewIncidentPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className={labelClass}>Categorie</label>
-                  <select required value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={fieldClass}>
+                  <label htmlFor="new-incident-category" className={labelClass}>Categorie</label>
+                  <select id="new-incident-category" required value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={fieldClass}>
                     <option value="">Selectionner</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -193,8 +195,8 @@ export default function NewIncidentPage() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelClass}>Secteur</label>
-                  <select required value={sectorId} onChange={(e) => setSectorId(e.target.value)} className={fieldClass}>
+                  <label htmlFor="new-incident-sector" className={labelClass}>Secteur</label>
+                  <select id="new-incident-sector" required value={sectorId} onChange={(e) => setSectorId(e.target.value)} className={fieldClass}>
                     <option value="">Selectionner</option>
                     {sectors.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -207,18 +209,19 @@ export default function NewIncidentPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelClass}>Latitude</label>
-                  <input required type="number" step="any" value={latitude} onChange={(e) => setLatitude(e.target.value)} className={`${fieldClass} font-mono`} />
+                  <label htmlFor="new-incident-lat" className={labelClass}>Latitude</label>
+                  <input id="new-incident-lat" required type="number" step="any" value={latitude} onChange={(e) => setLatitude(e.target.value)} className={`${fieldClass} font-mono`} />
                 </div>
                 <div>
-                  <label className={labelClass}>Longitude</label>
-                  <input required type="number" step="any" value={longitude} onChange={(e) => setLongitude(e.target.value)} className={`${fieldClass} font-mono`} />
+                  <label htmlFor="new-incident-lng" className={labelClass}>Longitude</label>
+                  <input id="new-incident-lng" required type="number" step="any" value={longitude} onChange={(e) => setLongitude(e.target.value)} className={`${fieldClass} font-mono`} />
                 </div>
               </div>
 
               <div>
-                <label className={labelClass}>Photo (optionnel)</label>
+                <label htmlFor="new-incident-photo" className={labelClass}>Photo (optionnel)</label>
                 <input
+                  id="new-incident-photo"
                   type="file"
                   accept="image/*"
                   onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}

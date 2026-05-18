@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { getSeverityColor } from '@/lib/utils'
 
-interface IncidentTableProps {
+type IncidentTableProps = Readonly<{
   incidents: any[]
   isAdmin?: boolean
   changeStatus?: (id: number, status: string) => void
-}
+}>
 
 export function IncidentTable({ incidents, isAdmin = false, changeStatus }: IncidentTableProps) {
   return (

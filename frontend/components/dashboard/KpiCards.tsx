@@ -27,8 +27,8 @@ export function KpiCards() {
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-lg" />
+        {(['total', 'open', 'progress', 'resolved'] as const).map((slot) => (
+          <Skeleton key={`kpi-skeleton-${slot}`} className="h-32 rounded-lg" />
         ))}
       </div>
     )
@@ -70,12 +70,12 @@ function KpiStatCard({
   value,
   icon: Icon,
   color,
-}: {
+}: Readonly<{
   label: string
   value: number
   icon: typeof ClipboardList
   color: string
-}) {
+}>) {
   const [displayed, setDisplayed] = useState(0)
   useEffect(() => {
     if (value === 0) {

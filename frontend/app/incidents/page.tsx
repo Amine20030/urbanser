@@ -110,8 +110,8 @@ export default function IncidentsPage() {
 
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 rounded-lg" />
+            {(['a', 'b', 'c', 'd', 'e', 'f'] as const).map((slot) => (
+              <Skeleton key={`incident-grid-skeleton-${slot}`} className="h-40 rounded-lg" />
             ))}
           </div>
         ) : filtered.length === 0 ? (

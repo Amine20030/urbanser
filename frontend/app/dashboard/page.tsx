@@ -96,7 +96,11 @@ function DashboardContent() {
     const payload = getTokenPayload()
     if (stored) setProfile(stored)
     else if (payload?.sub)
-      setProfile({ email: String(payload.sub), firstName: String(payload.firstName ?? 'Admin') })
+      setProfile({
+        email: String(payload.sub),
+        firstName:
+          typeof payload.firstName === 'string' ? payload.firstName : String(payload.sub ?? 'Admin'),
+      })
     setAuthReady(true)
   }, [router])
 

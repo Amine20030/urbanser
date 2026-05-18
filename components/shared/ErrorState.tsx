@@ -1,7 +1,7 @@
-interface ErrorStateProps {
+type ErrorStateProps = Readonly<{
   message: string
   retry?: () => void
-}
+}>
 
 export function ErrorState({ message, retry }: ErrorStateProps) {
   return (
@@ -32,7 +32,7 @@ export function OfflineBanner() {
   )
 }
 
-export function EmptyState({ message = 'Aucune donnée disponible' }: { message?: string }) {
+export function EmptyState({ message = 'Aucune donnée disponible' }: Readonly<{ message?: string }>) {
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
       <div className="text-[#3a4556] text-2xl mb-2">📭</div>

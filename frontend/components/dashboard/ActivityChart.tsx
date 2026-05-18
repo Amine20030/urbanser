@@ -6,7 +6,7 @@ import { statsAPI } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export function ActivityChart({ pollMs = 10000 }: { pollMs?: number } = {}) {
+export function ActivityChart({ pollMs = 10000 }: Readonly<{ pollMs?: number }> = {}) {
   const [data, setData] = useState<{ hour: string; count: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +79,7 @@ export function ActivityChart({ pollMs = 10000 }: { pollMs?: number } = {}) {
       <CardContent>
         <div className="flex h-44 items-end gap-1">
           {data.map((item, idx) => (
-            <div key={idx} className="group relative flex h-full flex-1 flex-col items-center justify-end gap-1">
+            <div key={`${item.hour}-${item.count}`} className="group relative flex h-full flex-1 flex-col items-center justify-end gap-1">
               <motion.div
                 initial={{ height: 0 }}
                 animate={{ height: `${Math.max(6, (item.count / maxValue) * 100)}%` }}

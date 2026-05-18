@@ -1,6 +1,9 @@
 'use client';
 
-export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+export default function AppError({
+  error,
+  reset,
+}: Readonly<{ error: Error; reset: () => void }>) {
   return (
     <div className="min-h-screen bg-[#0b0f14] flex items-center justify-center px-4">
       <div className="text-center max-w-md">

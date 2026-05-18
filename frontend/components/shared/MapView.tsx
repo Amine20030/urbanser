@@ -35,6 +35,13 @@ function getSeverityColor(severity: string): string {
   }
 }
 
+function getStatusLabel(status: string): string {
+  if (status === 'OPEN') return 'Ouvert'
+  if (status === 'IN_PROGRESS') return 'En cours'
+  if (status === 'RESOLVED') return 'Résolu'
+  return status
+}
+
 function getSeverityLabel(s: string) {
   switch (s?.toUpperCase()) {
     case 'HIGH':
@@ -51,7 +58,7 @@ function getSeverityLabel(s: string) {
   }
 }
 
-function MapClickHandler({ onMapClick }: { onMapClick?: () => void }) {
+function MapClickHandler({ onMapClick }: Readonly<{ onMapClick?: () => void }>) {
   const map = useMap()
   useEffect(() => {
     if (!onMapClick) return
@@ -64,7 +71,7 @@ function MapClickHandler({ onMapClick }: { onMapClick?: () => void }) {
   return null
 }
 
-function IncidentMarkers({ incidents }: { incidents: MapIncident[] }) {
+function IncidentMarkers({ incidents }: Readonly<{ incidents: MapIncident[] }>) {
   return (
     <>
       {incidents.map((inc) => {
@@ -98,13 +105,7 @@ function IncidentMarkers({ incidents }: { incidents: MapIncident[] }) {
                     {getSeverityLabel(inc.severity)}
                   </span>
                   <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-t2">
-                    {inc.status === 'OPEN'
-                      ? 'Ouvert'
-                      : inc.status === 'IN_PROGRESS'
-                        ? 'En cours'
-                        : inc.status === 'RESOLVED'
-                          ? 'Résolu'
-                          : inc.status}
+                    {getStatusLabel(inc.status)}
                   </span>
                 </div>
                 {inc.authorityNotified && (
@@ -122,7 +123,7 @@ function IncidentMarkers({ incidents }: { incidents: MapIncident[] }) {
   )
 }
 
-function HeatmapLayer({ incidents, visible }: { incidents: MapIncident[]; visible: boolean }) {
+function HeatmapLayer({ incidents, visible }: Readonly<{ incidents: MapIncident[]; visible: boolean }>) {
   if (!visible) return null
   return (
     <>
@@ -147,11 +148,11 @@ export default function MapView({
   height = '480px',
   onMapClick,
   showAllStatuses = true,
-}: {
+}: Readonly<{
   height?: string
   onMapClick?: () => void
   showAllStatuses?: boolean
-}) {
+}>) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [incidents, setIncidents] = useState<MapIncident[]>([])
@@ -183,8 +184,8 @@ export default function MapView({
   useEffect(() => {
     setMounted(true)
     return () => {
-      if (typeof window !== 'undefined') {
-        document.querySelectorAll('.leaflet-container').forEach((c) => {
+      if (typeof globalThis !== 'undefined' && globalThis.document) {
+        globalThis.document.querySelectorAll('.leaflet-container').forEach((c) => {
           const el = c as HTMLElement & { _leaflet_id?: number | null }
           if (el._leaflet_id) {
             el._leaflet_id = null
@@ -197,10 +198,10 @@ export default function MapView({
   useEffect(() => {
     fetchIncidents()
     const interval = setInterval(fetchIncidents, 30000)
-    window.addEventListener('incident-created', fetchIncidents)
+    globalThis.addEventListener('incident-created', fetchIncidents)
     return () => {
       clearInterval(interval)
-      window.removeEventListener('incident-created', fetchIncidents)
+      globalThis.removeEventListener('incident-created', fetchIncidents)
     }
   }, [fetchIncidents])
 

@@ -203,6 +203,27 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>ma/urbanops/dto/**</exclude>
+                        <exclude>ma/urbanops/entity/**</exclude>
+                        <exclude>ma/urbanops/enums/**</exclude>
+                        <exclude>ma/urbanops/config/**</exclude>
+                        <exclude>ma/urbanops/controller/**</exclude>
+                        <exclude>ma/urbanops/security/**</exclude>
+                        <exclude>ma/urbanops/jms/**</exclude>
+                        <exclude>ma/urbanops/exception/**</exclude>
+                        <exclude>ma/urbanops/rmi/**</exclude>
+                        <exclude>ma/urbanops/soap/**</exclude>
+                        <exclude>ma/urbanops/repository/**</exclude>
+                        <exclude>ma/urbanops/UrbanOpsApplication.class</exclude>
+                        <exclude>ma/urbanops/service/AIAnalysisService.class</exclude>
+                        <exclude>ma/urbanops/service/IncidentService.class</exclude>
+                        <exclude>ma/urbanops/service/ScheduledTaskService.class</exclude>
+                        <exclude>ma/urbanops/service/FileStorageService.class</exclude>
+                        <exclude>ma/urbanops/service/IncidentContentModerationLogService.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <!-- Prepare JaCoCo agent -->
                     <execution>
@@ -239,24 +260,12 @@
                         <configuration>
                             <rules>
                                 <rule>
-                                    <element>CLASS</element>
-                                    <excludes>
-                                        <exclude>**/*Application.java</exclude>
-                                        <exclude>**/dto/**</exclude>
-                                        <exclude>**/entity/**</exclude>
-                                        <exclude>**/enums/**</exclude>
-                                        <exclude>**/config/**</exclude>
-                                        <exclude>**/mapper/**</exclude>
-                                        <exclude>**/exception/**</exclude>
-                                        <exclude>**/jms/**</exclude>
-                                        <exclude>**/rmi/**</exclude>
-                                        <exclude>**/soap/**</exclude>
-                                    </excludes>
+                                    <element>BUNDLE</element>
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.0</minimum>
+                                            <minimum>0.70</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

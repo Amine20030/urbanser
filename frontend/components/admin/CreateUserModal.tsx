@@ -4,10 +4,17 @@ import React, { useState } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type Props = {
+type Props = Readonly<{
   onClose: () => void
-  onCreate: (data: any) => void
-}
+  onCreate: (data: {
+    firstName: string
+    lastName: string
+    email: string
+    password: string
+    role: string
+    phone: string
+  }) => void
+}>
 
 export default function CreateUserModal({ onClose, onCreate }: Props) {
   const [firstName, setFirstName] = useState('')
@@ -35,19 +42,21 @@ export default function CreateUserModal({ onClose, onCreate }: Props) {
           </button>
         </div>
         <form onSubmit={submit} className="space-y-3 p-5">
-          <Field label="Prenom" value={firstName} onChange={setFirstName} className={fieldClass} />
-          <Field label="Nom" value={lastName} onChange={setLastName} className={fieldClass} />
-          <Field label="Email" type="email" value={email} onChange={setEmail} className={fieldClass} />
-          <Field label="Mot de passe" type="password" value={password} onChange={setPassword} className={fieldClass} />
+          <Field id="user-first-name" label="Prenom" value={firstName} onChange={setFirstName} className={fieldClass} />
+          <Field id="user-last-name" label="Nom" value={lastName} onChange={setLastName} className={fieldClass} />
+          <Field id="user-email" label="Email" type="email" value={email} onChange={setEmail} className={fieldClass} />
+          <Field id="user-password" label="Mot de passe" type="password" value={password} onChange={setPassword} className={fieldClass} />
           <div>
-            <label className="mb-1 block text-xs font-bold uppercase tracking-[0.12em] text-t3">Role</label>
-            <select className={fieldClass} value={role} onChange={(e) => setRole(e.target.value)}>
+            <label htmlFor="user-role" className="mb-1 block text-xs font-bold uppercase tracking-[0.12em] text-t3">
+              Role
+            </label>
+            <select id="user-role" className={fieldClass} value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="ADMIN">ADMIN</option>
               <option value="MANAGER">MANAGER</option>
               <option value="CITIZEN">CITIZEN</option>
             </select>
           </div>
-          <Field label="Telephone" value={phone} onChange={setPhone} className={fieldClass} />
+          <Field id="user-phone" label="Telephone" value={phone} onChange={setPhone} className={fieldClass} />
 
           <div className="flex justify-end gap-2 border-t border-border pt-4">
             <Button type="button" variant="ghost" onClick={onClose}>
@@ -62,22 +71,26 @@ export default function CreateUserModal({ onClose, onCreate }: Props) {
 }
 
 function Field({
+  id,
   label,
   value,
   onChange,
   className,
   type = 'text',
-}: {
+}: Readonly<{
+  id: string
   label: string
   value: string
   onChange: (value: string) => void
   className: string
   type?: string
-}) {
+}>) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-bold uppercase tracking-[0.12em] text-t3">{label}</label>
-      <input type={type} className={className} value={value} onChange={(e) => onChange(e.target.value)} />
+      <label htmlFor={id} className="mb-1 block text-xs font-bold uppercase tracking-[0.12em] text-t3">
+        {label}
+      </label>
+      <input id={id} type={type} className={className} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   )
 }

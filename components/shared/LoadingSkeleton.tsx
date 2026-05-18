@@ -11,8 +11,8 @@ export function CardSkeleton() {
 export function CardsSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {Array.from({ length: count }).map((_, i) => (
-        <CardSkeleton key={i} />
+      {Array.from({ length: count }, (_, i) => (
+        <CardSkeleton key={`card-skeleton-${i + 1}`} />
       ))}
     </div>
   )
@@ -21,8 +21,8 @@ export function CardsSkeleton({ count = 4 }: { count?: number }) {
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className="animate-pulse space-y-3 p-4">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex gap-4">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={`table-row-skeleton-${i + 1}`} className="flex gap-4">
           <div className="h-4 bg-white/10 rounded w-24" />
           <div className="h-4 bg-white/10 rounded flex-1" />
           <div className="h-4 bg-white/10 rounded w-16" />
@@ -63,3 +63,4 @@ export function AlertSkeleton() {
     </div>
   )
 }
+

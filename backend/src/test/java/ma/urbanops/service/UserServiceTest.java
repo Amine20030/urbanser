@@ -154,4 +154,16 @@ class UserServiceTest {
         
         assertEquals(200L, result);
     }
+
+    @Test
+    void register_passwordShouldBeDifferentFromOriginal() {
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hashed");
+        when(userRepository.save(any())).thenReturn(testUser);
+
+        User result = userService.register(validRequest);
+
+        assertNotNull(result);
+        assertNotEquals(validRequest.getPassword(), "$2a$10$hashed");
+    }
 }

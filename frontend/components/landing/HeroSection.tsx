@@ -97,8 +97,8 @@ export function HeroSection() {
       <div className="mx-auto mt-14 max-w-4xl">
         {loading && (
           <div className="flex justify-center gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 flex-1 rounded-full" />
+            {(['s1', 's2', 's3', 's4'] as const).map((slot) => (
+              <Skeleton key={`hero-stat-skeleton-${slot}`} className="h-14 flex-1 rounded-full" />
             ))}
           </div>
         )}
@@ -139,7 +139,7 @@ export function HeroSection() {
   )
 }
 
-function HeroStat({ label, value, delay }: { label: string; value: number; delay: number }) {
+function HeroStat({ label, value, delay }: Readonly<{ label: string; value: number; delay: number }>) {
   const [displayed, setDisplayed] = useState(0)
   useEffect(() => {
     if (value === 0) {

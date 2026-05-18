@@ -26,11 +26,11 @@ export default function SignInPage() {
         setError('Réponse serveur invalide (pas de jeton).')
         return
       }
-      localStorage.setItem('urbanops_token', token)
+      globalThis.localStorage.setItem('urbanops_token', token)
       if (data.user) {
-        localStorage.setItem('urbanops_user', JSON.stringify(data.user))
+        globalThis.localStorage.setItem('urbanops_user', JSON.stringify(data.user))
       }
-      window.dispatchEvent(new Event('urbanops-auth-changed'))
+      globalThis.dispatchEvent(new Event('urbanops-auth-changed'))
       router.push(getDashboardPath())
     } catch (err: any) {
       const msg = err.response?.data?.message
@@ -89,8 +89,8 @@ export default function SignInPage() {
               "Signalement géolocalisé précis",
               "Analyse IA en temps réel",
               "Alertes aux autorités compétentes"
-            ].map((text, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            ].map((text) => (
+              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <CheckCircle2 color="var(--urb-accent)" size={20}/>
                 <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: 600 }}>{text}</span>
               </div>
@@ -126,21 +126,21 @@ export default function SignInPage() {
 
           <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--urb-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+              <label htmlFor="signin-email" style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--urb-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
                 Adresse Email
               </label>
-              <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+              <input id="signin-email" type="email" required value={email} onChange={e => setEmail(e.target.value)}
                      className="urban-input" placeholder="vous@exemple.com"/>
             </div>
 
             <div style={{ position: 'relative' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--urb-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <label htmlFor="signin-password" style={{ fontSize: 12, fontWeight: 700, color: 'var(--urb-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Mot de passe
                 </label>
                 <Link href="#" style={{ fontSize: 12, color: 'var(--urb-primary)', fontWeight: 600 }}>Oublié ?</Link>
               </div>
-              <input type={showPassword ? "text" : "password"} required value={password} onChange={e => setPassword(e.target.value)}
+              <input id="signin-password" type={showPassword ? "text" : "password"} required value={password} onChange={e => setPassword(e.target.value)}
                      className="urban-input" style={{ paddingRight: 40 }} placeholder="••••••••"/>
               <button type="button" onClick={() => setShowPassword(!showPassword)} style={{
                 position: 'absolute', right: 0, bottom: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--urb-text-3)'

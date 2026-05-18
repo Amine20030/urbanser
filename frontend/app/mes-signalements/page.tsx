@@ -100,8 +100,8 @@ export default function MesSignalementsPage() {
 
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {loading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-28 rounded-xl" />
+            ? kpiCards.map((card) => (
+                <Skeleton key={`kpi-skeleton-${card.label}`} className="h-28 rounded-xl" />
               ))
             : kpiCards.map((card, i) => (
                 <motion.div

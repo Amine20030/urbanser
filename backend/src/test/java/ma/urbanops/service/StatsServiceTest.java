@@ -61,6 +61,11 @@ class StatsServiceTest {
         when(incidentRepository.countResolvedSince(any(LocalDateTime.class))).thenReturn(5L);
     }
 
+    @AfterEach
+    void tearDown() {
+        System.out.println("StatsService test completed");
+    }
+
     @AfterAll
     static void cleanAll() {
         System.out.println("=== StatsService Tests Complete ===");
@@ -97,12 +102,22 @@ class StatsServiceTest {
 
     @Test
     void getResolutionRate_whenAllResolved_shouldReturnHundred() {
-        when(incidentRepository.count()).thenReturn(100L);
-        when(incidentRepository.countByStatus(IncidentStatus.RESOLVED)).thenReturn(100L);
+        when(incidentRepository.count()).thenReturn(5L);
+        when(incidentRepository.countByStatus(IncidentStatus.RESOLVED)).thenReturn(5L);
 
         double result = statsService.getResolutionRate();
 
         assertEquals(100.0, result, 0.01);
+    }
+
+    @Test
+    void getResolutionRate_whenNoneResolved_shouldReturnZero() {
+        when(incidentRepository.count()).thenReturn(5L);
+        when(incidentRepository.countByStatus(IncidentStatus.RESOLVED)).thenReturn(0L);
+
+        double result = statsService.getResolutionRate();
+
+        assertEquals(0.0, result, 0.01);
     }
 
     @Test
@@ -170,6 +185,39 @@ class StatsServiceTest {
 
         assertEquals(0, transportHealth.getPercentage());
         assertEquals(50, waterHealth.getPercentage());
+    }
+
+    @Test
+    void getHourlyStats_shouldReturnTwentyFourBuckets() {
+        List<java.util.Map<String, Object>> hourly = statsService.getHourlyStats();
+
+        assertNotNull(hourly);
+        assertEquals(24, hourly.size());
+        assertTrue(hourly.stream().allMatch(m -> m.containsKey("hour") && m.containsKey("count")));
+    }
+
+    @Test
+    void getHourlyStats_whenNoIncidents_shouldReturnZeroCounts() {
+        when(incidentRepository.findAll()).thenReturn(Collections.emptyList());
+
+        List<java.util.Map<String, Object>> hourly = statsService.getHourlyStats();
+
+        assertEquals(24, hourly.size());
+        assertTrue(hourly.stream().allMatch(m -> ((Number) m.get("count")).longValue() == 0L));
+    }
+
+    @Test
+    void getHourlyStats_shouldCountIncidentsInMatchingHour() {
+        Incident inc = Incident.builder()
+                .createdAt(LocalDateTime.of(2026, 5, 18, 14, 30))
+                .build();
+        when(incidentRepository.findAll()).thenReturn(List.of(inc));
+
+        List<java.util.Map<String, Object>> hourly = statsService.getHourlyStats();
+        java.util.Map<String, Object> hour14 = hourly.get(14);
+
+        assertEquals(1L, ((Number) hour14.get("count")).longValue());
+        assertEquals("14h", hour14.get("hour"));
     }
 
     @Test

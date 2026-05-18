@@ -16,7 +16,7 @@ type Sector = { id: number; name: string }
 function normalizePhone(raw: string): string | undefined {
   const t = raw.trim()
   if (!t) return undefined
-  const digits = t.replace(/\s/g, '').replace(/-/g, '')
+  const digits = t.replaceAll(' ', '').replaceAll('-', '')
   return digits || undefined
 }
 

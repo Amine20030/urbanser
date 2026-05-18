@@ -6,10 +6,10 @@ import { categoryAPI, sectorAPI, incidentAPI } from '@/lib/api'
 import { Check, UploadCloud, X, Loader2, AlertCircle } from 'lucide-react'
 import { getCategoryDisplayIcon } from '@/lib/categoryIcons'
 
-interface SignalerModalProps {
+type SignalerModalProps = Readonly<{
   isOpen: boolean
   onClose: () => void
-}
+}>
 
 type Category = { id: number; name: string; icon?: string }
 type Sector = { id: number; name: string; centerLat?: number; centerLng?: number }
@@ -113,14 +113,14 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
     }
 
     const token =
-      typeof window !== 'undefined' ? localStorage.getItem('urbanops_token') : null
+      typeof globalThis !== 'undefined' ? globalThis.localStorage?.getItem('urbanops_token') : null
     if (!token) {
       setSubmitError('Vous devez être connecté pour envoyer un signalement.')
       return
     }
 
-    const secId = parseInt(sectorId, 10)
-    const catId = parseInt(categoryId, 10)
+    const secId = Number.parseInt(sectorId, 10)
+    const catId = Number.parseInt(categoryId, 10)
     const sec = sectors.find((s) => s.id === secId)
     const lat = sec?.centerLat ?? DEFAULT_LAT
     const lng = sec?.centerLng ?? DEFAULT_LNG
@@ -149,7 +149,7 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
       const res = await incidentAPI.create(formData)
       setAiResult(res.data)
       setSuccess(true)
-      window.dispatchEvent(new CustomEvent('incident-created'))
+      globalThis.dispatchEvent(new CustomEvent('incident-created'))
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { message?: string }; status?: number } }
       if (ax.response?.status === 401) {
@@ -172,6 +172,9 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose()
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') handleClose()
       }}
     >
       <div
