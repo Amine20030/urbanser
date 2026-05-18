@@ -110,10 +110,10 @@ export default function AlertesPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-t1 sm:text-3xl">Alertes</h1>
             <p className="mt-1 text-sm text-t2">
-              <span className="font-mono font-semibold text-red-500">{highCount}</span> critiques
-              <span className="mx-2 text-t3">·</span>
-              <span className="font-mono font-semibold text-amber-500">{medCount}</span> moyennes
-              <span className="mx-2 text-t3">·</span>
+              <span className="font-mono font-semibold text-red-500">{highCount}</span> critiques{' '}
+              <span className="mx-2 text-t3">·</span>{' '}
+              <span className="font-mono font-semibold text-amber-500">{medCount}</span> moyennes{' '}
+              <span className="mx-2 text-t3">·</span>{' '}
               <span className="font-mono font-semibold text-emerald-500">{lowCount}</span> faibles
             </p>
           </div>

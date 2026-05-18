@@ -27,7 +27,7 @@ export function HeroSection({ onSignaler }: { onSignaler?: () => void }) {
           </div>
 
           <h1 className="max-w-3xl text-4xl font-black leading-[1.03] tracking-tight sm:text-5xl lg:text-6xl">
-            La ville signale.
+            La ville signale.{' '}
             <span className="block text-orange-200">Les services repondent.</span>
           </h1>
 

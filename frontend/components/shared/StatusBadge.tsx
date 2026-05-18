@@ -6,7 +6,7 @@ interface StatusBadgeProps {
 }
 
 function normalizeKey(status: string): string {
-  const u = (status || '').toUpperCase().replace(/-/g, '_')
+  const u = (status || '').toUpperCase().replaceAll('-', '_')
   if (u === 'IN_PROGRESS') return 'IN_PROGRESS'
   if (u === 'RESOLVED') return 'RESOLVED'
   if (u === 'OPEN') return 'OPEN'

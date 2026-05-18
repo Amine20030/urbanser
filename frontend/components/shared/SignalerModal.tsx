@@ -165,6 +165,7 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
   if (!isOpen) return null
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       role="dialog"
       aria-modal="true"
@@ -177,6 +178,7 @@ export function SignalerModal({ isOpen, onClose }: SignalerModalProps) {
         if (e.key === 'Escape') handleClose()
       }}
     >
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
       <div
         className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
