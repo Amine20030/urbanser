@@ -217,7 +217,7 @@ export default function MapView({
     'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
 
   const fullscreen = () => {
-    void wrapRef.current?.requestFullscreen?.()
+    wrapRef.current?.requestFullscreen?.().catch(() => undefined)
   }
 
   if (!mounted) {

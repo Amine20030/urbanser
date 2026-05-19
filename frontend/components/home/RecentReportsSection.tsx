@@ -18,6 +18,15 @@ function relativeTime(d: string) {
   return `il y a ${Math.floor(h / 24)}j`
 }
 
+const LOADING_PLACEHOLDER_IDS = [
+  'loading-a',
+  'loading-b',
+  'loading-c',
+  'loading-d',
+  'loading-e',
+  'loading-f',
+] as const
+
 const sev = (s: string) => {
   const value = (s || '').toUpperCase()
   if (value === 'HIGH' || value === 'CRITICAL') return 'var(--urb-danger)'
@@ -63,8 +72,8 @@ export function RecentReportsSection() {
           if (loading) {
             return (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={`skeleton-${i}`} className="h-36 rounded-lg" />
+                {LOADING_PLACEHOLDER_IDS.map((id) => (
+                  <Skeleton key={id} className="h-36 rounded-lg" />
                 ))}
               </div>
             )

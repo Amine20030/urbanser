@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('node:fs');
 let data;
 try {
   let raw = fs.readFileSync('issues.json', 'utf16le');
