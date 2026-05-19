@@ -8,7 +8,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -68,7 +67,11 @@ class FileStorageServiceTest {
 
     @Test
     void deleteFile_whenMissing_shouldNotThrow() {
-        fileStorageService.deleteFile("missing-file.jpg");
+        String missing = "missing-file.jpg";
+        Path missingPath = fileStorageService.loadFile(missing);
+
+        assertDoesNotThrow(() -> fileStorageService.deleteFile(missing));
+        assertFalse(Files.exists(missingPath));
     }
 
     @Test
