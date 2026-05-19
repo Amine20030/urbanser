@@ -1,0 +1,604 @@
+% =============================================================================
+% UrbanOps — Rapport de projet (Marrakech)
+% Compilation : pdflatex rapport.tex (deux passes)
+% Figures : placer les images dans le dossier ./figures/
+% =============================================================================
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french,english]{babel}
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{titlesec}
+\usepackage{titletoc}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{tocloft}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue!60!black,
+  pdftitle={UrbanOps — Rapport de projet},
+  pdfauthor={Équipe UrbanOps},
+}
+
+% En-têtes
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small UrbanOps}
+\fancyhead[R]{\small\itshape Supervision urbaine intelligente — Marrakech}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}}
+
+% Titres de chapitres
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}
+  {\chaptertitlename\ \thechapter}
+  {12pt}
+  {\Huge}
+\titlespacing*{\chapter}{0pt}{0pt}{24pt}
+
+% Macro figure : affiche l'image si présente, sinon un cadre placeholder
+\newcommand{\urbanfig}[3][]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{figures/#2}{%
+      \includegraphics[width=#1]{figures/#2}%
+    }{%
+      \fcolorbox{black!20}{black!3}{%
+        \parbox[c][5.2cm][c]{0.88\textwidth}{%
+          \centering\small\itshape
+          Figure à insérer : \texttt{figures/#2}\\[0.4em]
+          #3%
+        }%
+      }%
+    }%
+  \end{figure}%
+}
+
+\def\urbanfigbasename#1.#2\relax{#1}
+
+\newcommand{\urbanfigCap}[4][]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{figures/#2}{%
+      \includegraphics[width=#1]{figures/#2}%
+    }{%
+      \fcolorbox{black!20}{black!3}{%
+        \parbox[c][5.2cm][c]{0.88\textwidth}{%
+          \centering\small\itshape
+          Figure à insérer : \texttt{figures/#2}\\[0.4em]
+          #4%
+        }%
+      }%
+    }%
+    \caption{#3}%
+    \begingroup
+    \edef\@urbanlbl{fig:\expandafter\urbanfigbasename#2.png\relax}%
+    \expandafter\endgroup\expandafter\label\expandafter{\@urbanlbl}%
+  \end{figure}%
+}
+
+% =============================================================================
+\begin{document}
+
+% --- Page de garde (vierge) ---------------------------------------------------
+\thispagestyle{empty}
+\null
+\newpage
+
+% --- Pages liminaires (numérotation romaine) ----------------------------------
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+% Dédicace
+\chapter*{\centering Dédicace}
+\addcontentsline{toc}{chapter}{Dédicace}
+\thispagestyle{empty}
+\vspace*{2cm}
+\begin{center}
+  \large\itshape
+  À nos enseignants et encadrants, pour leur exigence et leur disponibilité,\\[0.6em]
+  à la communauté de Marrakech, dont la qualité de vie urbaine inspire ce travail,\\[0.6em]
+  et à nos familles, pour leur soutien tout au long de ce projet.
+\end{center}
+\vfill
+\newpage
+
+% Remerciements
+\chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
+\normalsize
+Nous tenons à exprimer notre gratitude à l'ensemble des personnes qui ont contribué, de près ou de loin, à la réalisation de la plateforme \textbf{UrbanOps}.
+
+Nos remerciements s'adressent en premier lieu à notre établissement et à nos encadrants pédagogiques, pour leurs orientations méthodologiques et techniques. Leur accompagnement nous a permis de structurer une démarche allant de l'analyse des besoins jusqu'à la validation par des tests automatisés et des outils d'assurance qualité (JaCoCo, SonarQube / SonarCloud).
+
+Nous remercions également les acteurs métier — services municipaux, opérateurs urbains et citoyens — dont les retours ont nourri la définition des catégories d'incidents, des secteurs géographiques et des scénarios de signalement.
+
+Enfin, nous saluons l'écosystème open source (Spring Boot, Next.js, PostgreSQL, Leaflet, entre autres) qui a rendu possible la mise en œuvre rapide d'une architecture moderne, sécurisée et évolutive.
+
+\newpage
+
+% Résumé (français)
+\chapter*{Résumé}
+\addcontentsline{toc}{chapter}{Résumé}
+\markboth{Résumé}{Résumé}
+\selectlanguage{french}
+\textbf{Mots-clés :} supervision urbaine, signalement citoyen, Marrakech, Spring Boot, Next.js, intelligence artificielle, JMS, qualité logicielle.
+
+\medskip
+\noindent
+\textbf{UrbanOps} est une plateforme web de supervision urbaine intelligente dédiée à la ville de Marrakech. Elle permet aux citoyens de signaler des incidents (voirie, eau, électricité, déchets, éclairage, etc.) avec géolocalisation et pièce jointe photographique, tandis que les administrateurs et gestionnaires disposent d'un tableau de bord, d'une cartographie interactive et d'un module d'alertes vers les autorités compétentes.
+
+Le backend, développé en \textbf{Java~17} et \textbf{Spring Boot~3.2}, expose une API REST sécurisée par JWT, intègre une analyse IA (Google Gemini avec repli local), une modération de contenu, une messagerie \textbf{JMS} (ActiveMQ Artemis) pour l'envoi asynchrone d'e-mails, ainsi que des services \textbf{SOAP} et \textbf{RMI} à des fins de démonstration d'interopérabilité. Le frontend \textbf{Next.js~14} / \textbf{React} offre une expérience responsive incluant landing page, authentification, signalement, carte Leaflet et vues analytiques.
+
+La validation repose sur des tests unitaires JUnit~5, un rapport de couverture JaCoCo et une analyse statique SonarCloud. Les résultats démontrent la faisabilité d'une chaîne complète «\,signalement $\rightarrow$ analyse $\rightarrow$ traitement $\rightarrow$ pilotage\,» au service de la ville intelligente.
+
+\newpage
+
+% Abstract (anglais)
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\markboth{Abstract}{Abstract}
+\selectlanguage{english}
+\textbf{Keywords:} urban supervision, citizen reporting, Marrakech, Spring Boot, Next.js, artificial intelligence, JMS, software quality.
+
+\medskip
+\noindent
+\textbf{UrbanOps} is a smart urban supervision web platform for the city of Marrakech. Citizens can report localized incidents with photos; administrators monitor operations through dashboards, interactive maps, and authority alerting.
+
+The \textbf{Java~17 / Spring Boot~3.2} backend provides a JWT-secured REST API, AI-based triage (Google Gemini with local fallback), content moderation, embedded \textbf{JMS} (ActiveMQ Artemis) for asynchronous e-mail alerts, plus \textbf{SOAP} and \textbf{RMI} integration samples. The \textbf{Next.js~14} frontend delivers landing, authentication, reporting, Leaflet mapping, and analytics views.
+
+Validation combines JUnit~5 unit tests, JaCoCo coverage reports, and SonarCloud static analysis, demonstrating an end-to-end pipeline from citizen reporting to operational oversight.
+
+\selectlanguage{french}
+\newpage
+
+% Glossaire
+\chapter*{Glossaire}
+\addcontentsline{toc}{chapter}{Glossaire}
+\begin{description}[style=nextline, leftmargin=3.2cm, labelwidth=3cm, font=\normalfont]
+  \item[API REST] Interface applicative respectant le style architectural REST (HTTP, JSON).
+  \item[Artemis] Broker de messages JMS embarqué pour la file d'alertes UrbanOps.
+  \item[Citoyen (CITIZEN)] Utilisateur qui crée et suit ses signalements.
+  \item[Gemini] Modèle d'IA Google utilisé pour classifier gravité et autorité.
+  \item[Incident] Signalement urbain géolocalisé (titre, description, catégorie, secteur, statut).
+  \item[JaCoCo] Outil de mesure de couverture de tests Java.
+  \item[JWT] JSON Web Token pour l'authentification stateless.
+  \item[JMS] Java Message Service — messagerie asynchrone entre services.
+  \item[KPI] Indicateur clé de performance (tableau de bord).
+  \item[RMI] Remote Method Invocation — appel distant de l'analyse IA.
+  \item[Sector] Quartier / zone de Marrakech (ex.\ Guéliz, Médina).
+  \item[SonarCloud] Plateforme d'analyse continue de qualité et sécurité du code.
+  \item[SOAP] Protocole XML pour l'échange structuré (consultation d'incidents).
+  \item[WBS] Work Breakdown Structure — découpage hiérarchique du projet.
+\end{description}
+
+\newpage
+
+% Liste des figures
+\chapter*{Liste des figures}
+\addcontentsline{toc}{chapter}{Liste des figures}
+\listoffigures
+\newpage
+
+% Liste des tableaux
+\chapter*{Liste des tableaux}
+\addcontentsline{toc}{chapter}{Liste des tableaux}
+\listoftables
+\newpage
+
+% Table des matières
+\tableofcontents
+\newpage
+
+% =============================================================================
+% CORPS DU RAPPORT (numérotation arabe)
+% =============================================================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\chapter*{Introduction générale}
+\addcontentsline{toc}{chapter}{Introduction générale}
+\markboth{Introduction générale}{Introduction générale}
+
+Les villes marocaines connaissent une croissance rapide de leur tissu urbain. Marrakech, ville touristique et administrative majeure, doit concilier attractivité, sécurité et qualité des services publics. Les dysfonctionnements visibles — dégradation de la voirie, fuites d'eau, éclairage défaillant, déchets — sont souvent signalés de manière fragmentée (appels, réseaux sociaux), ce qui retarde l'intervention des opérateurs compétents.
+
+Le projet \textbf{UrbanOps} répond à ce constat en proposant une plateforme numérique unifiée : un canal citoyen structuré, un traitement intelligent des signalements et un pilotage centralisé pour les responsables. Ce rapport présente le contexte, l'analyse des besoins, la conception, l'environnement technique, les fonctionnalités — dont le module d'intelligence artificielle — ainsi que la stratégie de tests et de validation.
+
+La solution s'articule autour d'une architecture \emph{three-tier} : interface Next.js, API Spring Boot, base PostgreSQL, enrichie par des mécanismes de qualité logicielle et d'intégration (JMS, SOAP, RMI) illustrant les compétences acquises en ingénierie logicielle.
+
+% =============================================================================
+\chapter{Contexte du projet}
+% =============================================================================
+
+\section{Problématique}
+
+À Marrakech, le traitement des incidents urbains souffre de plusieurs limites :
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Dispersion des canaux} : absence d'un référentiel unique pour enregistrer, tracer et clôturer un signalement ;
+  \item \textbf{Délai de qualification} : difficulté à prioriser selon la gravité et à orienter vers la bonne autorité (ONEE, RADEEMA, police, commune, etc.) ;
+  \item \textbf{Manque de visibilité spatiale} : les décideurs ne disposent pas toujours d'une carte consolidée des incidents ouverts ;
+  \item \textbf{Risque de contenu inapproprié} : signalements vagues, dupliqués ou non pertinents sans filtrage automatique.
+\end{itemize}
+
+UrbanOps vise à réduire ces frictions en industrialisant le flux «\,déclaration $\rightarrow$ analyse $\rightarrow$ alerte $\rightarrow$ résolution\,».
+
+\section{Objectifs}
+
+\subsection{Objectif général}
+Concevoir et réaliser une plateforme web de supervision urbaine intelligente pour Marrakech, accessible aux citoyens et aux acteurs institutionnels.
+
+\subsection{Objectifs spécifiques}
+\begin{enumerate}[leftmargin=*]
+  \item Permettre l'authentification et la gestion de profils (citoyen, gestionnaire, administrateur) ;
+  \item Offrir un formulaire de signalement géolocalisé avec photo et catégorisation métier ;
+  \item Automatiser l'estimation de gravité et l'identification de l'autorité via IA ;
+  \item Modérer les contenus avant persistance ;
+  \item Notifier les autorités par e-mail asynchrone (JMS) ;
+  \item Fournir cartographie, tableaux de bord et statistiques ;
+  \item Garantir la qualité par tests JUnit, JaCoCo et SonarCloud ;
+  \item Démontrer l'interopérabilité (SOAP, RMI) et la documentation OpenAPI.
+\end{enumerate}
+
+\section{Méthodologie de développement}
+
+Le projet a été mené selon une approche \textbf{itérative et incrémentale}, inspirée des pratiques Agile, structurée en phases :
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Planification} : diagramme de Gantt, PERT et WBS (figures~\ref{fig:diagramme_gantt} à \ref{fig:wbs_arborescent}) ;
+  \item \textbf{Analyse} : cas d'utilisation, besoins fonctionnels et non fonctionnels ;
+  \item \textbf{Conception} : diagramme de classes, architecture en couches ;
+  \item \textbf{Réalisation} : sprints backend / frontend par fonctionnalité ;
+  \item \textbf{Validation} : tests automatisés, revue SonarCloud, démonstration des écrans.
+\end{itemize}
+
+\urbanfigCap[0.92\textwidth]{diagramme_gantt.png}{Diagramme de Gantt du projet UrbanOps}{Planification temporelle des lots : analyse, conception, développement, tests et rédaction.}
+
+\urbanfigCap[0.92\textwidth]{diagramme_perte.png}{Diagramme PERT / réseau du projet}{Chemin critique et dépendances entre tâches (analyse, développement, intégration, validation).}
+
+\urbanfigCap[0.88\textwidth]{wbs_arborescent.png}{Vue arborescente condensée du WBS}{Décomposition hiérarchique : frontend, backend, base de données, IA, qualité, documentation.}
+
+\section{Conclusion du chapitre}
+
+Le contexte urbain de Marrakech justifie une plateforme intégrée. Les objectifs fixés couvrent l'ensemble de la chaîne de valeur, de la déclaration citoyenne au pilotage analytique. La méthodologie retenue combine planification classique (Gantt, PERT, WBS) et livraisons incrémentales, préparant les chapitres d'analyse et de conception.
+
+% =============================================================================
+\chapter{Analyse des besoins}
+% =============================================================================
+
+\section{Acteurs du système}
+
+\begin{table}[H]
+  \centering
+  \caption{Acteurs et rôles UrbanOps}
+  \label{tab:acteurs}
+  \begin{tabular}{@{}p{3.2cm}p{9.5cm}@{}}
+    \toprule
+    \textbf{Acteur} & \textbf{Rôle} \\
+    \midrule
+    Citoyen (\texttt{CITIZEN}) & S'inscrire, signaler un incident, consulter ses signalements, voir la carte publique \\
+    Gestionnaire (\texttt{MANAGER}) & Suivre les incidents, mettre à jour les statuts (\texttt{OPEN}, \texttt{IN\_PROGRESS}, \texttt{RESOLVED}) \\
+    Administrateur (\texttt{ADMIN}) & Gérer utilisateurs, alertes, statistiques, configuration opérationnelle \\
+    Système IA & Modérer le contenu, classifier catégorie / gravité / autorité \\
+    Autorité externe & Recevoir les alertes e-mail (ONEE, RADEEMA, police, etc.) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Besoins fonctionnels (synthèse)}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{BF1} — Authentification JWT (inscription, connexion, profil) ;
+  \item \textbf{BF2} — CRUD incidents avec upload photo multipart ;
+  \item \textbf{BF3} — Carte des incidents géolocalisés ;
+  \item \textbf{BF4} — Tableau de bord KPI et graphiques d'activité ;
+  \item \textbf{BF5} — Gestion des alertes et acquittement ;
+  \item \textbf{BF6} — Administration des utilisateurs ;
+  \item \textbf{BF7} — Analyse IA et modération ;
+  \item \textbf{BF8} — Consultation SOAP / démonstration RMI ;
+  \item \textbf{BF9} — Statistiques par catégorie, secteur et taux de résolution.
+\end{enumerate}
+
+\section{Besoins non fonctionnels}
+
+\begin{table}[H]
+  \centering
+  \caption{Exigences non fonctionnelles principales}
+  \label{tab:bnf}
+  \begin{tabular}{@{}llp{7.5cm}@{}}
+    \toprule
+    \textbf{ID} & \textbf{Type} & \textbf{Exigence} \\
+    \midrule
+    BNF1 & Performance & Réponse API $<$ 2\,s pour les listes paginées \\
+    BNF2 & Sécurité & Mots de passe BCrypt, JWT, contrôle par rôle \\
+    BNF3 & Disponibilité & Health check Actuator \texttt{/actuator/health} \\
+    BNF4 & Maintenabilité & Architecture en couches, DTO, OpenAPI \\
+    BNF5 & Qualité & Couverture JaCoCo, seuil SonarCloud \\
+    BNF6 & UX & Interface responsive Next.js / Tailwind \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\urbanfigCap[0.95\textwidth]{diagramme_cas_utilisation.png}{Diagramme de cas d'utilisation}{Cas principaux : s'authentifier, signaler, modérer, analyser, consulter carte, gérer statuts, administrer, acquitter alertes.}
+
+\section{Conclusion du chapitre}
+
+L'analyse identifie trois profils utilisateurs, un ensemble cohérent de besoins fonctionnels et des contraintes de sécurité, performance et qualité. Le diagramme de cas d'utilisation formalise les interactions et sert de référence pour la conception détaillée.
+
+% =============================================================================
+\chapter{Analyse détaillée et conception}
+% =============================================================================
+
+\section{Modèle de domaine}
+
+Les entités cœur du système sont :
+\begin{itemize}[leftmargin=*]
+  \item \textbf{User} — compte, rôle, secteur, préférences d'alertes ;
+  \item \textbf{Incident} — signalement (référence \texttt{INC-####}, statut, gravité, coordonnées GPS, photo) ;
+  \item \textbf{Category} — type d'incident et e-mail de l'autorité par défaut ;
+  \item \textbf{Sector} — quartier de Marrakech avec centroïde cartographique ;
+  \item \textbf{Alert} — notification liée à un incident, avec acquittement ;
+  \item \textbf{IncidentContentModerationLog} — trace des décisions de modération.
+\end{itemize}
+
+\urbanfigCap[0.95\textwidth]{diagramme_classes.png}{Diagramme de classes (extrait)}{Relations entre entités JPA, énumérations \texttt{Role}, \texttt{Severity}, \texttt{IncidentStatus}.}
+
+\section{Architecture logicielle}
+
+L'application suit une architecture \textbf{3-tiers} :
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Présentation} — Next.js~14, React~18, Axios, Leaflet ;
+  \item \textbf{Métier} — services Spring (\texttt{IncidentService}, \texttt{AlertService}, \texttt{AIAnalysisService}, \texttt{StatsService}, etc.) ;
+  \item \textbf{Données} — repositories JPA, PostgreSQL (\texttt{urbanops\_db}).
+\end{enumerate}
+
+\subsection{Flux de création d'incident}
+
+\begin{enumerate}[leftmargin=*]
+  \item Le citoyen envoie \texttt{POST /api/v1/incidents} (multipart JSON + photo) ;
+  \item \texttt{IncidentService} invoque la modération IA ; en cas de rejet, exception métier ;
+  \item Analyse Gemini (ou repli local) pour gravité et autorité ;
+  \item Persistance, génération du code référence ;
+  \item Si gravité élevée/moyenne : \texttt{AlertService} $\rightarrow$ \texttt{AlertProducer} (JMS) $\rightarrow$ \texttt{AlertConsumer} $\rightarrow$ \texttt{EmailService}.
+\end{enumerate}
+
+\section{Conception des interfaces}
+
+Les maquettes implémentées couvrent le parcours complet utilisateur (figures~\ref{fig:landing_page} à \ref{fig:vue_analytique}).
+
+\urbanfigCap[0.88\textwidth]{landing_page.png}{Page d'accueil (landing page)}{Présentation du service, statistiques live, appel à l'action «\,Signaler\,».}
+
+\urbanfigCap[0.75\textwidth]{formulaire_inscription.png}{Formulaire d'inscription}{Création de compte citoyen : identité, e-mail, secteur, alertes quartier.}
+
+\urbanfigCap[0.75\textwidth]{ecran_connexion.png}{Écran de connexion}{Authentification par e-mail et mot de passe ; redirection selon le rôle.}
+
+\urbanfigCap[0.92\textwidth]{tableau_bord_admin.png}{Tableau de bord administrateur}{KPI, graphique horaire, alertes récentes, tableau des incidents.}
+
+\urbanfigCap[0.92\textwidth]{tableau_bord_user.png}{Tableau de bord citoyen}{Synthèse des signalements personnels et accès rapide à la carte.}
+
+\urbanfigCap[0.92\textwidth]{vue_analytique.png}{Vue analytique}{Répartition par catégorie, santé des services, indicateurs de résolution.}
+
+\section{Conclusion du chapitre}
+
+La conception combine un modèle de données riche, une architecture en couches Spring et une interface moderne. Les flux critiques (signalement, IA, alertes) sont explicités pour guider l'implémentation et les tests.
+
+% =============================================================================
+\chapter{Environnement de développement et déploiement}
+% =============================================================================
+
+\section{Environnement matériel et logiciel}
+
+\begin{table}[H]
+  \centering
+  \caption{Stack technique UrbanOps}
+  \label{tab:stack}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Couche} & \textbf{Technologie} & \textbf{Version} \\
+    \midrule
+    Backend & Java / Spring Boot & 17 / 3.2.5 \\
+    Frontend & Next.js / React / TypeScript & 14.2 / 18.3 / 5.5 \\
+    Base de données & PostgreSQL & 14+ \\
+    ORM & Spring Data JPA & (Boot 3.2) \\
+    Sécurité & Spring Security + JWT (JJWT) & 0.11.5 \\
+    API doc & springdoc-openapi & 2.3.0 \\
+    Messagerie & ActiveMQ Artemis (JMS) & embarqué \\
+    Cartographie & Leaflet / react-leaflet & 1.9 / 4.2 \\
+    IA & Google Gemini API & gemini-1.5-flash \\
+    Tests & JUnit 5, Mockito, H2 & --- \\
+    Qualité & JaCoCo, SonarCloud & 0.8.11 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Configuration}
+
+\begin{itemize}[leftmargin=*]
+  \item API : \texttt{http://localhost:8080/api/v1}
+  \item Frontend : \texttt{http://localhost:3000}
+  \item Swagger UI : \texttt{/api/v1/swagger-ui.html}
+  \item SOAP WSDL : \texttt{/soap/urbanops.wsdl}
+  \item RMI : \texttt{rmi://localhost:1099/AIAnalysisService}
+  \item Variables : \texttt{GEMINI\_API\_KEY}, \texttt{SPRING\_DATASOURCE\_*}, \texttt{NEXT\_PUBLIC\_API\_URL}
+\end{itemize}
+
+\section{Organisation du dépôt}
+
+\begin{verbatim}
+urbanops/
+  backend/     # Spring Boot (src/main, src/test)
+  frontend/    # Next.js (app/, components/, lib/)
+  docs/latex/  # Rapport et figures
+\end{verbatim}
+
+\section{Conclusion du chapitre}
+
+L'environnement retenu est standard, documenté et reproductible. Il favorise la productivité (frameworks matures) tout en permettant l'intégration de briques avancées (JMS, IA, assurance qualité).
+
+% =============================================================================
+\chapter{Fonctionnalités et intelligence artificielle}
+% =============================================================================
+
+\section{Module citoyen}
+
+Le citoyen accède à l'inscription, connecte son compte, crée un signalement via modal ou page dédiée (\texttt{/incidents/new}), et consulte l'historique sur \texttt{/mes-signalements}. La carte publique (\texttt{/carte}) visualise les incidents géolocalisés.
+
+\section{Module administration}
+
+L'administrateur et le gestionnaire utilisent \texttt{/dashboard} : indicateurs (ouverts, en cours, résolus), graphique d'activité horaire, panneau d'alertes, changement de statut, gestion des utilisateurs (\texttt{/utilisateurs}, \texttt{/admin/users}).
+
+\section{Intelligence artificielle}
+
+Le service \texttt{AIAnalysisService} réalise deux missions :
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Modération} — filtrage de contenus non pertinents (longueur, mots-clés, score de confiance) avant enregistrement ;
+  \item \textbf{Analyse} — classification catégorie / gravité (\texttt{HIGH}, \texttt{MEDIUM}, \texttt{LOW}) et suggestion d'autorité (ONEE, RADEEMA, etc.).
+\end{itemize}
+
+En cas d'indisponibilité de l'API Gemini, un \textbf{repli déterministe} garantit la continuité de service. L'interface RMI expose les mêmes capacités pour illustration pédagogique.
+
+\section{Alertes et intégrations}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{JMS} — \texttt{AlertProducer} / \texttt{AlertConsumer}, file \texttt{urbanops.alert.queue} ;
+  \item \textbf{SOAP} — \texttt{IncidentSoapEndpoint} (statistiques, recherche par référence) ;
+  \item \textbf{E-mail} — \texttt{EmailService} asynchrone via SMTP ;
+  \item \textbf{Tâches planifiées} — \texttt{ScheduledTaskService} (rappels, incidents en retard).
+\end{itemize}
+
+\section{Conclusion du chapitre}
+
+Les fonctionnalités couvrent l'ensemble du cycle de vie d'un incident. Le module IA apporte une valeur différenciante : priorisation et routage automatiques, renforcés par la modération et les alertes asynchrones.
+
+% =============================================================================
+\chapter{Tests de validation et assurance qualité}
+% =============================================================================
+
+\section{Stratégie de test}
+
+La validation s'appuie sur une pyramide de tests :
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Tests unitaires} — services métier mockés (JUnit~5, Mockito) ;
+  \item \textbf{Tests de contrôleur} — ex.\ \texttt{AuthControllerTest} ;
+  \item \textbf{Build Maven} — \texttt{mvn clean verify} (compilation, tests, rapport JaCoCo) ;
+  \item \textbf{Analyse statique} — SonarCloud (bugs, vulnérabilités, duplication, Quality Gate).
+\end{itemize}
+
+\section{Couverture JaCoCo}
+
+Les tests ciblent notamment \texttt{AlertService}, \texttt{CategoryService}, \texttt{SectorService}, \texttt{StatsService}, \texttt{UserService}, \texttt{IncidentService} et \texttt{AIAnalysisService}. Le plugin JaCoCo produit un rapport HTML/XML sous \texttt{backend/target/site/jacoco/}. Les DTO, entités et configurations sont exclus du calcul pour focaliser la logique métier.
+
+\begin{table}[H]
+  \centering
+  \caption{Synthèse des tests automatisés (backend)}
+  \label{tab:tests}
+  \begin{tabular}{@{}lc@{}}
+    \toprule
+    \textbf{Suite} & \textbf{Tests (approx.)} \\
+    \midrule
+    \texttt{AlertServiceTest} & 14 \\
+    \texttt{CategoryServiceTest} & 12 \\
+    \texttt{SectorServiceTest} & 12 \\
+    \texttt{StatsServiceTest} & 14 \\
+    \texttt{UserServiceTest} & 10 \\
+    \texttt{IncidentServiceTest} & 11 \\
+    \texttt{AuthControllerTest} & 4 \\
+    \texttt{AIAnalysisServiceTest} & 2 \\
+    \texttt{EmailServiceTest} & 3 \\
+    \midrule
+    \textbf{Total} & $\approx$ 80+ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Analyse SonarCloud}
+
+L'analyse SonarCloud (ou SonarQube local) vérifie la maintenabilité, la sécurité et la duplication. Les captures ci-dessous documentent l'état du projet après corrections (figures~\ref{fig:sonarcloud_quality_gate} à \ref{fig:sonarcloud_securite}).
+
+\urbanfigCap[0.92\textwidth]{sonarcloud_quality_gate.png}{SonarCloud — Quality Gate}{État global du projet : critères de qualité passés ou en cours de correction.}
+
+\urbanfigCap[0.92\textwidth]{sonarcloud_issues.png}{SonarCloud — Issues}{Liste des anomalies : bugs, code smells, dettes techniques.}
+
+\urbanfigCap[0.92\textwidth]{sonarcloud_duplication.png}{SonarCloud — Duplication}{Taux de duplication et blocs dupliqués identifiés.}
+
+\urbanfigCap[0.92\textwidth]{sonarcloud_securite.png}{SonarCloud — Sécurité}{Hotspots et vulnérabilités potentielles.}
+
+\section{Validation fonctionnelle (frontend)}
+
+La compilation \texttt{npm run build} valide le typage TypeScript et la génération des pages Next.js. Les parcours manuels couvrent inscription, connexion, signalement, carte et tableaux de bord admin/citoyen (captures chapitre~3).
+
+\section{Conclusion du chapitre}
+
+Les tests automatisés et l'analyse SonarCloud constituent une validation reproductible. JaCoCo mesure la couverture des services ; SonarCloud encadre la qualité globale. Des améliorations futures porteront sur l'élargissement des tests d'intégration et le déploiement continu (CI/CD).
+
+% =============================================================================
+\chapter*{Conclusion générale}
+\addcontentsline{toc}{chapter}{Conclusion générale}
+\markboth{Conclusion générale}{Conclusion générale}
+
+Le projet UrbanOps démontre la faisabilité d'une plateforme de supervision urbaine pour Marrakech, articulée autour d'une API Spring Boot robuste et d'une interface Next.js moderne. Les objectifs initiaux — signalement citoyen, analyse IA, alertes, cartographie et pilotage — ont été atteints dans une architecture cohérente et documentée.
+
+Les apports principaux sont : (1)~la structuration du flux incident de bout en bout ; (2)~l'intégration pragmatique de l'IA avec modération et repli local ; (3)~la démonstration de patrons d'intégration (JMS, SOAP, RMI) ; (4)~l'instauration d'une culture qualité (JUnit, JaCoCo, SonarCloud).
+
+Les perspectives d'évolution incluent le déploiement cloud, la notification mobile (SMS / push), l'intégration avec les systèmes d'information municipaux existants, et le renforcement des tests end-to-end (Cypress / Playwright). UrbanOps constitue ainsi une base solide pour une gestion urbaine plus réactive et participative à Marrakech.
+
+% =============================================================================
+\begin{thebibliography}{99}
+\addcontentsline{toc}{chapter}{Bibliographie}
+
+\bibitem{springboot}
+Spring Boot Documentation, \textit{Spring Boot 3.2 Reference}, VMware / Broadcom, 2024.
+\url{https://docs.spring.io/spring-boot/docs/3.2.x/reference/html/}
+
+\bibitem{nextjs}
+Vercel, \textit{Next.js 14 Documentation}, 2024.
+\url{https://nextjs.org/docs}
+
+\bibitem{jwt}
+IETF, RFC 7519 — \textit{JSON Web Token (JWT)}, mai 2015.
+
+\bibitem{leaflet}
+Leaflet, \textit{An open-source JavaScript library for mobile-friendly interactive maps}, 2024.
+\url{https://leafletjs.com/}
+
+\bibitem{gemini}
+Google, \textit{Gemini API — Generative Language}, documentation développeur, 2024.
+
+\bibitem{jms}
+Oracle / Jakarta EE, \textit{Jakarta Messaging 3.1 Specification}, 2022.
+
+\bibitem{jacoco}
+JaCoCo, \textit{Java Code Coverage Library}, \url{https://www.jacoco.org/jacoco/}
+
+\bibitem{sonar}
+SonarSource, \textit{SonarQube / SonarCloud — Code Quality and Security}, 2024.
+\url{https://www.sonarsource.com/}
+
+\bibitem{fowler}
+M. Fowler, \textit{Patterns of Enterprise Application Architecture}, Addison-Wesley, 2002.
+
+\bibitem{pressman}
+R. S. Pressman, B. R. Maxim, \textit{Software Engineering: A Practitioner's Approach}, McGraw-Hill, 9\textsuperscript{e} éd., 2019.
+
+\end{thebibliography}
+
+\end{document}
