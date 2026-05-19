@@ -11,6 +11,8 @@ import ma.urbanops.repository.IncidentRepository;
 import ma.urbanops.repository.UserRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,7 +45,6 @@ class StatsServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Setup default mock responses
         when(incidentRepository.count()).thenReturn(100L);
         when(incidentRepository.countByStatus(IncidentStatus.OPEN)).thenReturn(30L);
         when(incidentRepository.countByStatus(IncidentStatus.IN_PROGRESS)).thenReturn(20L);
@@ -76,9 +77,9 @@ class StatsServiceTest {
         StatsResponse result = statsService.getDashboardStats();
 
         assertNotNull(result);
-        assertNotNull(result.getTotalIncidents());
-        assertNotNull(result.getOpenIncidents());
-        assertNotNull(result.getResolvedIncidents());
+        assertTrue(result.getTotalIncidents() >= 0);
+        assertTrue(result.getOpenIncidents() >= 0);
+        assertTrue(result.getResolvedIncidents() >= 0);
     }
 
     @Test
@@ -91,33 +92,19 @@ class StatsServiceTest {
         assertEquals(50.0, result, 0.01);
     }
 
-    @Test
-    void getResolutionRate_whenNoIncidents_shouldReturnZero() {
-        when(incidentRepository.count()).thenReturn(0L);
-
+    @ParameterizedTest(name = "total={0} resolved={1} expected={2}")
+    @CsvSource({
+        "0, 0, 0.0",
+        "5, 0, 0.0",
+        "5, 5, 100.0"
+    })
+    void getResolutionRate_parameterized(long total, long resolved, double expected) {
+        when(incidentRepository.count()).thenReturn(total);
+        if (total > 0) {
+            when(incidentRepository.countByStatus(IncidentStatus.RESOLVED)).thenReturn(resolved);
+        }
         double result = statsService.getResolutionRate();
-
-        assertEquals(0.0, result, 0.01);
-    }
-
-    @Test
-    void getResolutionRate_whenAllResolved_shouldReturnHundred() {
-        when(incidentRepository.count()).thenReturn(5L);
-        when(incidentRepository.countByStatus(IncidentStatus.RESOLVED)).thenReturn(5L);
-
-        double result = statsService.getResolutionRate();
-
-        assertEquals(100.0, result, 0.01);
-    }
-
-    @Test
-    void getResolutionRate_whenNoneResolved_shouldReturnZero() {
-        when(incidentRepository.count()).thenReturn(5L);
-        when(incidentRepository.countByStatus(IncidentStatus.RESOLVED)).thenReturn(0L);
-
-        double result = statsService.getResolutionRate();
-
-        assertEquals(0.0, result, 0.01);
+        assertEquals(expected, result, 0.01);
     }
 
     @Test
@@ -156,7 +143,6 @@ class StatsServiceTest {
         assertNotNull(result);
         for (StatsResponse.ServiceHealth health : result) {
             assertNotNull(health.getServiceName());
-            assertNotNull(health.getPercentage());
             assertTrue(health.getPercentage() >= 0 && health.getPercentage() <= 100);
         }
     }
@@ -224,13 +210,13 @@ class StatsServiceTest {
     void getDashboardStats_shouldIncludeAllFields() {
         StatsResponse result = statsService.getDashboardStats();
 
-        assertNotNull(result.getTotalIncidents());
-        assertNotNull(result.getOpenIncidents());
-        assertNotNull(result.getInProgressIncidents());
-        assertNotNull(result.getResolvedIncidents());
-        assertNotNull(result.getHighSeverityCount());
-        assertNotNull(result.getTotalCitizens());
-        assertNotNull(result.getResolutionRate());
+        assertTrue(result.getTotalIncidents() >= 0);
+        assertTrue(result.getOpenIncidents() >= 0);
+        assertTrue(result.getInProgressIncidents() >= 0);
+        assertTrue(result.getResolvedIncidents() >= 0);
+        assertTrue(result.getHighSeverityCount() >= 0);
+        assertTrue(result.getTotalCitizens() >= 0);
+        assertTrue(result.getResolutionRate() >= 0);
         assertNotNull(result.getIncidentsByCategory());
         assertNotNull(result.getIncidentsBySector());
     }

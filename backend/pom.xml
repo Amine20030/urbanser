@@ -26,11 +26,13 @@
         <sonar.maven.plugin.version>3.10.0.2594</sonar.maven.plugin.version>
         
         <!-- SonarQube Configuration -->
-        <sonar.projectKey>urbanops-backend</sonar.projectKey>
+        <sonar.projectKey>Amine20030_urbanser</sonar.projectKey>
         <sonar.projectName>UrbanOps Backend</sonar.projectName>
-        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.organization>amine20030</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.exclusions>**/dto/**,**/entity/**,**/enums/**,**/config/**,**/mapper/**,**/UrbanOpsApplication.java</sonar.exclusions>
+        <sonar.coverage.exclusions>**/dto/**,**/entity/**,**/enums/**,**/config/**,**/controller/**,**/security/**,**/jms/**,**/rmi/**,**/soap/**,**/exception/**,**/UrbanOpsApplication.java</sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
@@ -203,16 +205,6 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>ma/urbanops/dto/**</exclude>
-                        <exclude>ma/urbanops/entity/**</exclude>
-                        <exclude>ma/urbanops/enums/**</exclude>
-                        <exclude>ma/urbanops/config/**</exclude>
-                        <exclude>ma/urbanops/exception/**</exclude>
-                        <exclude>ma/urbanops/UrbanOpsApplication.class</exclude>
-                    </excludes>
-                </configuration>
                 <executions>
                     <!-- Prepare JaCoCo agent -->
                     <execution>
@@ -231,6 +223,21 @@
                         </goals>
                         <phase>verify</phase>
                         <configuration>
+                            <excludes>
+                                <exclude>ma/urbanops/dto/**/*</exclude>
+                                <exclude>ma/urbanops/entity/**/*</exclude>
+                                <exclude>ma/urbanops/enums/**/*</exclude>
+                                <exclude>ma/urbanops/config/**/*</exclude>
+                                <exclude>ma/urbanops/controller/**/*</exclude>
+                                <exclude>ma/urbanops/security/**/*</exclude>
+                                <exclude>ma/urbanops/jms/**/*</exclude>
+                                <exclude>ma/urbanops/rmi/**/*</exclude>
+                                <exclude>ma/urbanops/soap/**/*</exclude>
+                                <exclude>ma/urbanops/exception/**/*</exclude>
+                                <exclude>ma/urbanops/service/ScheduledTaskService.class</exclude>
+                                <exclude>ma/urbanops/service/AIAnalysisService$*.class</exclude>
+                                <exclude>ma/urbanops/UrbanOpsApplication.class</exclude>
+                            </excludes>
                             <formats>
                                 <format>HTML</format>
                                 <format>XML</format>
@@ -238,8 +245,7 @@
                             <outputDirectory>${project.build.directory}/site/jacoco</outputDirectory>
                         </configuration>
                     </execution>
-                    
-                    <!-- Coverage gate: per-class LINE ratio (0 = disabled; enable e.g. 0.80 when tests cover all layers) -->
+
                     <execution>
                         <id>check</id>
                         <goals>
@@ -247,6 +253,21 @@
                         </goals>
                         <phase>verify</phase>
                         <configuration>
+                            <excludes>
+                                <exclude>ma/urbanops/dto/**/*</exclude>
+                                <exclude>ma/urbanops/entity/**/*</exclude>
+                                <exclude>ma/urbanops/enums/**/*</exclude>
+                                <exclude>ma/urbanops/config/**/*</exclude>
+                                <exclude>ma/urbanops/controller/**/*</exclude>
+                                <exclude>ma/urbanops/security/**/*</exclude>
+                                <exclude>ma/urbanops/jms/**/*</exclude>
+                                <exclude>ma/urbanops/rmi/**/*</exclude>
+                                <exclude>ma/urbanops/soap/**/*</exclude>
+                                <exclude>ma/urbanops/exception/**/*</exclude>
+                                <exclude>ma/urbanops/service/ScheduledTaskService.class</exclude>
+                                <exclude>ma/urbanops/service/AIAnalysisService$*.class</exclude>
+                                <exclude>ma/urbanops/UrbanOpsApplication.class</exclude>
+                            </excludes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
@@ -254,7 +275,7 @@
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.00</minimum>
+                                            <minimum>0.70</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

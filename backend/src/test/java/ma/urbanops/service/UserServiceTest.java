@@ -10,9 +10,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -156,6 +163,96 @@ class UserServiceTest {
     }
 
     @Test
+    void findAll_shouldReturnPageOfUsers() {
+        Page<User> page = new PageImpl<>(List.of(testUser));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
+        Page<User> result = userService.findAll(PageRequest.of(0, 10));
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void updateProfile_shouldUpdateFirstName() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any())).thenReturn(testUser);
+        RegisterRequest req = RegisterRequest.builder().firstName("Nouveau").build();
+        User result = userService.updateProfile(1L, req);
+        assertNotNull(result);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updateProfile_withPassword_shouldEncodePassword() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.encode("newpass123")).thenReturn("$2a$new");
+        when(userRepository.save(any())).thenReturn(testUser);
+        RegisterRequest req = RegisterRequest.builder().password("newpass123").build();
+        userService.updateProfile(1L, req);
+        verify(passwordEncoder).encode("newpass123");
+    }
+
+    @Test
+    void toResponse_shouldMapUserFields() {
+        var response = userService.toResponse(testUser);
+        assertEquals("yassine@test.ma", response.getEmail());
+        assertEquals("Yassine", response.getFirstName());
+    }
+
+    @Test
+    void findAllUsers_shouldReturnList() {
+        when(userRepository.findAll()).thenReturn(List.of(testUser));
+        assertEquals(1, userService.findAllUsers().size());
+    }
+
+    @Test
+    void findByRole_shouldReturnMatchingUsers() {
+        when(userRepository.findByRole(Role.CITIZEN)).thenReturn(List.of(testUser));
+        assertEquals(1, userService.findByRole(Role.CITIZEN).size());
+    }
+
+    @Test
+    void existsByEmail_shouldDelegateToRepository() {
+        when(userRepository.existsByEmail("yassine@test.ma")).thenReturn(true);
+        assertTrue(userService.existsByEmail("yassine@test.ma"));
+    }
+
+    @Test
+    void save_shouldDelegateToRepository() {
+        when(userRepository.save(testUser)).thenReturn(testUser);
+        assertEquals(testUser, userService.save(testUser));
+    }
+
+    @Test
+    void deleteById_shouldDelegateToRepository() {
+        userService.deleteById(1L);
+        verify(userRepository).deleteById(1L);
+    }
+
+    @Test
+    void countActiveThisWeek_shouldReturnCount() {
+        when(userRepository.countByCreatedAtAfter(any())).thenReturn(12L);
+        assertEquals(12L, userService.countActiveThisWeek());
+    }
+
+    @Test
+    void countActiveThisWeek_whenNull_shouldReturnZero() {
+        when(userRepository.countByCreatedAtAfter(any())).thenReturn(null);
+        assertEquals(0L, userService.countActiveThisWeek());
+    }
+
+    @Test
+    void register_withNullReceiveAlerts_shouldDefaultToTrue() {
+        validRequest.setReceiveAlerts(null);
+        when(userRepository.existsByEmail(validRequest.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("$2a$hashed");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = userService.register(validRequest);
+
+        assertTrue(result.getReceiveAlerts());
+    }
+
+    @Test
     void register_passwordShouldBeDifferentFromOriginal() {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hashed");
@@ -164,6 +261,6 @@ class UserServiceTest {
         User result = userService.register(validRequest);
 
         assertNotNull(result);
-        assertNotEquals(validRequest.getPassword(), "$2a$10$hashed");
+        assertNotEquals("$2a$10$hashed", result.getPassword());
     }
 }

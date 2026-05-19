@@ -21,6 +21,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class AlertService {
 
+    private static final String ENTITY_NAME = "Alert";
+
     private final AlertRepository alertRepository;
     private final ma.urbanops.jms.AlertProducer alertProducer;
 
@@ -30,8 +32,7 @@ public class AlertService {
         
         Category category = incident.getCategory();
         String authorityEmail = category.getAuthorityEmail();
-        String authorityName = category.getDefaultAuthority();
-        
+
         Alert alert = Alert.builder()
                 .incident(incident)
                 .severity(incident.getSeverity())
@@ -68,8 +69,8 @@ public class AlertService {
     public void resendAlert(Long alertId) {
         log.info("Resending alert: {}", alertId);
         Alert alert = alertRepository.findById(alertId)
-                .orElseThrow(() -> new ResourceNotFoundException("Alert", "id", alertId));
-        
+                .orElseThrow(() -> new ResourceNotFoundException(ENTITY_NAME, "id", alertId));
+
         Incident incident = alert.getIncident();
         Category category = incident.getCategory();
         
@@ -84,8 +85,8 @@ public class AlertService {
     public void acknowledgeAlert(Long alertId) {
         log.info("Acknowledging alert: {}", alertId);
         Alert alert = alertRepository.findById(alertId)
-                .orElseThrow(() -> new ResourceNotFoundException("Alert", "id", alertId));
-        
+                .orElseThrow(() -> new ResourceNotFoundException(ENTITY_NAME, "id", alertId));
+
         alert.acknowledge();
         alertRepository.save(alert);
     }
@@ -108,7 +109,7 @@ public class AlertService {
 
     public Alert findById(Long id) {
         return alertRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Alert", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException(ENTITY_NAME, "id", id));
     }
 
     public List<Alert> findByIncident(Long incidentId) {

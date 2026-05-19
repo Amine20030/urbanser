@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import ma.urbanops.dto.response.AIAnalysisResult;
 import ma.urbanops.dto.response.ContentModerationResult;
+import ma.urbanops.exception.AIAnalysisException;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -114,10 +116,10 @@ public class AIAnalysisService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        ResponseEntity<Map> response = restTemplate.exchange(
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
             url, HttpMethod.POST,
             new HttpEntity<>(body, headers),
-            Map.class
+            new ParameterizedTypeReference<Map<String, Object>>() {}
         );
 
         String text = extractText(response.getBody());
@@ -146,10 +148,10 @@ public class AIAnalysisService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        ResponseEntity<Map> response = restTemplate.exchange(
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
             url, HttpMethod.POST,
             new HttpEntity<>(body, headers),
-            Map.class
+            new ParameterizedTypeReference<Map<String, Object>>() {}
         );
 
         String text = extractText(response.getBody());
@@ -213,13 +215,13 @@ public class AIAnalysisService {
             List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get(PARTS);
             return (String) parts.get(0).get("text");
         } catch (Exception e) {
-            throw new RuntimeException("Cannot parse Gemini response structure");
+            throw new AIAnalysisException("Cannot parse Gemini response structure", e);
         }
     }
 
     private AIAnalysisResult parseResponse(String json, String categoryHint) {
         try {
-            String clean = json.replace("```json", "").replace("```", "").trim();
+            String clean = cleanJsonMarkdown(json);
             Map<String, Object> map = objectMapper.readValue(clean, Map.class);
 
             String severity = normalizeSeverity((String) map.get("severity"));
@@ -243,7 +245,7 @@ public class AIAnalysisService {
     // ── FALLBACK — keyword rules ───────────────────────────────
     private ContentModerationResult parseModerationResponse(String json) {
         try {
-            String clean = json.replace("```json", "").replace("```", "").trim();
+            String clean = cleanJsonMarkdown(json);
             Map<String, Object> map = objectMapper.readValue(clean, Map.class);
 
             return ContentModerationResult.builder()
@@ -280,9 +282,7 @@ public class AIAnalysisService {
         } else if (containsAny(desc, "inondation","fuite","rupture","gaz")) {
             severity = "HIGH"; authority = "RADEEMA"; email = "urgences@radeema.ma";
         } else if (containsAny(desc, "embouteillage","trafic","route bloquée","signalisation")) {
-            severity = "MEDIUM"; authority = "Police Circulation"; email = "circulation@marrakech.ma";
-        } else if (containsAny(desc, "lampadaire","éclairage","lumière")) {
-            severity = MEDIUM_SEVERITY;
+            authority = "Police Circulation"; email = "circulation@marrakech.ma";
         } else if (containsAny(desc, "poubelle","ordures","déchet")) {
             severity = "LOW";
         }
@@ -339,7 +339,7 @@ public class AIAnalysisService {
             .reason("Contenu accepte par verification locale.")
             .confidence(0.65)
             .fallbackUsed(true)
-            .rawResponse("fallback")
+            .rawResponse(FALLBACK)
             .build();
     }
 
@@ -355,7 +355,7 @@ public class AIAnalysisService {
     private boolean containsAny(String text, String... keywords) {
         String normalized = java.text.Normalizer
             .normalize(text.toLowerCase(), java.text.Normalizer.Form.NFD)
-            .replaceAll("\\p{M}", "");
+            .replaceAll(DIACRITICS_REGEX, "");
         for (String k : keywords) {
             String normalizedKeyword = java.text.Normalizer
                 .normalize(k.toLowerCase(), java.text.Normalizer.Form.NFD)
@@ -396,5 +396,9 @@ public class AIAnalysisService {
         return java.text.Normalizer
             .normalize(text.toLowerCase(), java.text.Normalizer.Form.NFD)
             .replaceAll(DIACRITICS_REGEX, "");
+    }
+
+    private static String cleanJsonMarkdown(String json) {
+        return json.replace("```json", "").replace("```", "").trim();
     }
 }

@@ -51,6 +51,22 @@ public class AIAnalysisRemoteImpl extends UnicastRemoteObject implements AIAnaly
         return "OK — UrbanOps RMI AI Service running";
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     private String toJson(AIAnalysisResult r, boolean fallback) throws RemoteException {
         try {
             Map<String, Object> m = new LinkedHashMap<>();
