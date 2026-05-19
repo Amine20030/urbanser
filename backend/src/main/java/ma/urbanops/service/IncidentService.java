@@ -78,7 +78,9 @@ public class IncidentService {
             try {
                 int number = Integer.parseInt(numberPart);
                 code = String.format("INC-%04d", number);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+                // Ignore the exception, keep original code if it fails to parse
+            }
         }
         String finalCode = code;
         return incidentRepository.findByReferenceCode(finalCode)
@@ -133,9 +135,7 @@ public class IncidentService {
             ma.urbanops.dto.response.AIAnalysisResult ai = aiAnalysisService.analyze(request.getDescription(), categoryName);
 
             // Map severity string to enum
-            Severity sev;
-            try { sev = Severity.valueOf(ai.getSeverity()); }
-            catch (Exception e) { sev = Severity.MEDIUM; }
+            Severity sev = parseSeverity(ai.getSeverity());
 
             incident.setSeverity(sev);
             incident.setAuthorityNotified(ai.getAuthorityName());
@@ -230,5 +230,13 @@ public class IncidentService {
 
     public String generateReferenceCode(Long id) {
         return String.format("INC-%04d", id);
+    }
+
+    private Severity parseSeverity(String severity) {
+        try {
+            return Severity.valueOf(severity);
+        } catch (Exception e) {
+            return Severity.MEDIUM;
+        }
     }
 }

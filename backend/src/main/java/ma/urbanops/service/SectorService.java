@@ -35,7 +35,8 @@ public class SectorService {
     public Sector create(Sector s) { return sectorRepository.save(s); }
 
     public List<Incident> getIncidentsBySector(Long sectorId) {
-        Sector sector = findById(sectorId);
+        Sector sector = sectorRepository.findById(sectorId)
+            .orElseThrow(() -> new ResourceNotFoundException("Sector","id",sectorId));
         return incidentRepository.findAll((root, query, cb) -> cb.equal(root.get("sector"), sector));
     }
 

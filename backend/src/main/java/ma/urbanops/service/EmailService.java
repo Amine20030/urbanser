@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     @Async
-    public void sendAlertEmailFromJms(String authorityName, String authorityEmail, String eventId, String level, String address, String type, String date, String details, Double latitude, Double longitude) {
-        log.info("Sending alert to {}: {} at {}", authorityName, type, address);
+    public void sendAlertEmailFromJms(ma.urbanops.dto.jms.AlertMessage msg) {
+        log.info("Sending alert to {}: {} at {}", msg.getAuthorityName(), msg.getCategory(), msg.getSector());
     }
 }

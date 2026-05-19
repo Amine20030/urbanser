@@ -133,67 +133,75 @@ export default function MesSignalementsPage() {
             </Link>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <motion.div className="space-y-3">
-                <Skeleton className="h-20 w-full rounded-xl" />
-                <Skeleton className="h-20 w-full rounded-xl" />
-              </motion.div>
-            ) : incidents.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="py-16 text-center"
-              >
-                <p className="text-4xl">📭</p>
-                <h2 className="mt-4 text-lg font-semibold text-t1">
-                  Aucun signalement pour le moment
-                </h2>
-                <p className="mt-2 text-sm text-t3">
-                  Signalez un problème dans votre quartier pour contribuer à Marrakech.
-                </p>
-                <Button className="mt-6" onClick={() => setModalOpen(true)}>
-                  Faire mon premier signalement
-                </Button>
-              </motion.div>
-            ) : (
-              <motion.div className="space-y-3">
-                {incidents.map((inc) => {
-                  const st = statusLabel(inc.status)
-                  return (
-                    <motion.div
-                      key={inc.id}
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <motion.div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-primary">
-                            {inc.referenceCode}
+            {(() => {
+              if (loading) {
+                return (
+                  <motion.div className="space-y-3">
+                    <Skeleton className="h-20 w-full rounded-xl" />
+                    <Skeleton className="h-20 w-full rounded-xl" />
+                  </motion.div>
+                )
+              }
+              if (incidents.length === 0) {
+                return (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="py-16 text-center"
+                  >
+                    <p className="text-4xl">📭</p>
+                    <h2 className="mt-4 text-lg font-semibold text-t1">
+                      Aucun signalement pour le moment
+                    </h2>
+                    <p className="mt-2 text-sm text-t3">
+                      Signalez un problème dans votre quartier pour contribuer à Marrakech.
+                    </p>
+                    <Button className="mt-6" onClick={() => setModalOpen(true)}>
+                      Faire mon premier signalement
+                    </Button>
+                  </motion.div>
+                )
+              }
+              return (
+                <motion.div className="space-y-3">
+                  {incidents.map((inc) => {
+                    const st = statusLabel(inc.status)
+                    return (
+                      <motion.div
+                        key={inc.id}
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <motion.div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-primary">
+                              {inc.referenceCode}
+                            </span>
+                            <span className="font-semibold text-t1">{inc.title}</span>
+                          </motion.div>
+                          <p className="mt-2 text-xs text-t3">
+                            {new Date(inc.createdAt).toLocaleDateString('fr-FR')} ·{' '}
+                            {inc.sector?.name ?? 'Secteur inconnu'} ·{' '}
+                            {inc.category?.name ?? 'Autre'}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${severityStyles(inc.severity)}`}
+                          >
+                            {inc.severity}
                           </span>
-                          <span className="font-semibold text-t1">{inc.title}</span>
-                        </motion.div>
-                        <p className="mt-2 text-xs text-t3">
-                          {new Date(inc.createdAt).toLocaleDateString('fr-FR')} ·{' '}
-                          {inc.sector?.name ?? 'Secteur inconnu'} ·{' '}
-                          {inc.category?.name ?? 'Autre'}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${severityStyles(inc.severity)}`}
-                        >
-                          {inc.severity}
-                        </span>
-                        <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase text-t2">
-                          {st.emoji} {st.text}
-                        </span>
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </motion.div>
-            )}
+                          <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase text-t2">
+                            {st.emoji} {st.text}
+                          </span>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </motion.div>
+              )
+            })()}
           </CardContent>
         </Card>
       </main>

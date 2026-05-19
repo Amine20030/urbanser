@@ -15,7 +15,7 @@ public class AIAnalysisRemoteImpl extends UnicastRemoteObject implements AIAnaly
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private final AIAnalysisService aiAnalysisService;
+    private final transient AIAnalysisService aiAnalysisService;
 
     public AIAnalysisRemoteImpl(AIAnalysisService aiAnalysisService) throws RemoteException {
         super();

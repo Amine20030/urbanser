@@ -1,5 +1,6 @@
 package ma.urbanops.service;
 
+import ma.urbanops.dto.jms.AlertMessage;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -10,19 +11,55 @@ class EmailServiceTest {
 
     @Test
     void sendAlertEmailFromJms_shouldNotThrow() {
-        assertDoesNotThrow(() -> emailService.sendAlertEmailFromJms(
-                "ONEE", "onee@test.ma", "INC-1", "HIGH", "Avenue X", "Eau", "2026-05-18", "Fuite", 31.63, -8.0));
+        assertDoesNotThrow(() -> {
+            AlertMessage msg = AlertMessage.builder()
+                .authorityName("ONEE")
+                .authorityEmail("onee@test.ma")
+                .referenceCode("INC-1")
+                .severity("HIGH")
+                .sector("Avenue X")
+                .category("Eau")
+                .description("Fuite")
+                .latitude(31.63)
+                .longitude(-8.0)
+                .build();
+            emailService.sendAlertEmailFromJms(msg);
+        });
     }
 
     @Test
     void sendAlertEmailFromJms_withNullCoordinates_shouldNotThrow() {
-        assertDoesNotThrow(() -> emailService.sendAlertEmailFromJms(
-                "Police", "police@test.ma", "INC-2", "MEDIUM", "Rue Y", "Transport", "2026-05-18", "Details", null, null));
+        assertDoesNotThrow(() -> {
+            AlertMessage msg = AlertMessage.builder()
+                .authorityName("Police")
+                .authorityEmail("police@test.ma")
+                .referenceCode("INC-2")
+                .severity("MEDIUM")
+                .sector("Rue Y")
+                .category("Transport")
+                .description("Details")
+                .latitude(null)
+                .longitude(null)
+                .build();
+            emailService.sendAlertEmailFromJms(msg);
+        });
     }
 
     @Test
     void sendAlertEmailFromJms_withEmptyStrings_shouldNotThrow() {
-        assertDoesNotThrow(() -> emailService.sendAlertEmailFromJms(
-                "", "", "", "", "", "", "", "", 0.0, 0.0));
+        assertDoesNotThrow(() -> {
+            AlertMessage msg = AlertMessage.builder()
+                .authorityName("")
+                .authorityEmail("")
+                .referenceCode("")
+                .severity("")
+                .sector("")
+                .category("")
+                .description("")
+                .latitude(0.0)
+                .longitude(0.0)
+                .build();
+            emailService.sendAlertEmailFromJms(msg);
+        });
     }
 }

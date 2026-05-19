@@ -122,12 +122,17 @@ public class IncidentController {
             m.put("severity", i.getSeverity() != null ? i.getSeverity().name() : "MEDIUM");
             m.put("status", i.getStatus() != null ? i.getStatus().name() : "OPEN");
             m.put("authorityNotified", i.getAuthorityNotified());
-            m.put("category", i.getCategory() != null ? java.util.Map.of(
-                "name", i.getCategory().getName(),
-                "icon", i.getCategory().getIcon() != null ? i.getCategory().getIcon() : "📍"
-            ) : java.util.Map.of("name","Autre","icon","📍"));
+            java.util.Map<String, String> catInfo = new java.util.LinkedHashMap<>();
+            if (i.getCategory() != null) {
+                catInfo.put("name", i.getCategory().getName());
+                catInfo.put("icon", i.getCategory().getIcon() != null ? i.getCategory().getIcon() : "📍");
+            } else {
+                catInfo.put("name", "Autre");
+                catInfo.put("icon", "📍");
+            }
+            m.put("category", catInfo);
             return m;
-        }).collect(java.util.stream.Collectors.toList());
+        }).toList();
         return ResponseEntity.ok(result);
     }
 

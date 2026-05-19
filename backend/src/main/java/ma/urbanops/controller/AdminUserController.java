@@ -54,7 +54,7 @@ public class AdminUserController {
         u.setRole(req.getRole() != null ? req.getRole() : Role.CITIZEN);
         u.setPhone(req.getPhone());
         u.setSector(req.getSector());
-        u.setReceiveAlerts(req.getReceiveAlerts() != null ? req.getReceiveAlerts() : true);
+        u.setReceiveAlerts(req.getReceiveAlerts() == null || req.getReceiveAlerts());
         u.setIsActive(true);
         User created = userService.save(u);
         return ResponseEntity.status(201).body(userService.toResponse(created));

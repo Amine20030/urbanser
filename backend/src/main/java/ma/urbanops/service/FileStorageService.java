@@ -29,7 +29,7 @@ public class FileStorageService {
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (Exception ex) {
-            throw new RuntimeException("Could not create the directory where the uploaded files will be stored.", ex);
+            throw new IllegalStateException("Could not create the directory where the uploaded files will be stored.", ex);
         }
     }
 
@@ -49,7 +49,7 @@ public class FileStorageService {
 
         try {
             if (originalFileName != null && originalFileName.contains("..")) {
-                throw new RuntimeException("Invalid file path: " + originalFileName);
+                throw new IllegalArgumentException("Invalid file path: " + originalFileName);
             }
 
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
@@ -59,7 +59,7 @@ public class FileStorageService {
             return fileName;
             
         } catch (IOException ex) {
-            throw new RuntimeException("Could not store file " + originalFileName + ". Please try again!", ex);
+            throw new IllegalStateException("Could not store file " + originalFileName + ". Please try again!", ex);
         }
     }
 

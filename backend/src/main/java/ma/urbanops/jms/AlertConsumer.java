@@ -24,18 +24,7 @@ public class AlertConsumer {
                 message.getReferenceCode());
 
         try {
-            emailService.sendAlertEmailFromJms(
-                    message.getAuthorityEmail(),
-                    message.getAuthorityName(),
-                    message.getReferenceCode(),
-                    message.getTitle(),
-                    message.getDescription(),
-                    message.getSeverity(),
-                    message.getCategory(),
-                    message.getSector(),
-                    message.getLatitude(),
-                    message.getLongitude()
-            );
+            emailService.sendAlertEmailFromJms(message);
 
             log.info("[JMS CONSUMER] Email sent successfully to {} for incident {}",
                     message.getAuthorityEmail(), message.getReferenceCode());

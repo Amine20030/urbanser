@@ -34,7 +34,7 @@ public class UserService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .sector(request.getSector())
-                .receiveAlerts(request.getReceiveAlerts() != null ? request.getReceiveAlerts() : true)
+                .receiveAlerts(request.getReceiveAlerts() == null || request.getReceiveAlerts())
                 .role(Role.CITIZEN)
                 .build();
         return userRepository.save(user);
@@ -58,7 +58,8 @@ public class UserService {
     }
 
     public User updateProfile(Long userId, RegisterRequest request) {
-        User user = findById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
@@ -73,7 +74,8 @@ public class UserService {
     }
 
     public void deactivateUser(Long id) {
-        User user = findById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         user.setIsActive(false);
         userRepository.save(user);
     }

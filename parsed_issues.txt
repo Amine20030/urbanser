@@ -1,0 +1,63 @@
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L85 | [MAJOR] Replace these 3 tests with a single Parameterized one.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/UserServiceTest.java | L167 | [MAJOR] Swap these 2 arguments so they are in the correct order: expected value, actual value.
+Amine20030_urbanser:src/main/java/ma/urbanops/security/UserDetailsServiceImpl.java | L5 | [MINOR] Remove this unused import 'org.springframework.security.core.authority.SimpleGrantedAuthority'.
+Amine20030_urbanser:src/main/java/ma/urbanops/security/UserDetailsServiceImpl.java | L6 | [MINOR] Remove this unused import 'org.springframework.security.core.userdetails.User'.
+Amine20030_urbanser:src/main/java/ma/urbanops/security/UserDetailsServiceImpl.java | L11 | [MINOR] Remove this unused import 'java.util.List'.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/EmailService.java | L12 | [MAJOR] Method has 10 parameters, which is greater than 7 authorized.
+Amine20030_urbanser:src/main/java/ma/urbanops/controller/AdminUserController.java | L57 | [MINOR] Remove the unnecessary boolean literal.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L93 | [CRITICAL] Define a constant instead of duplicating this literal "parts" 3 times.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L141 | [MAJOR] Provide the parametrized type for this generic.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L238 | [CRITICAL] Replace this call to "replaceAll()" by a call to the "replace()" method.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L238 | [CRITICAL] Replace this call to "replaceAll()" by a call to the "replace()" method.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L290 | [CRITICAL] Define a constant instead of duplicating this literal "fallback" 3 times.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L350 | [CRITICAL] Define a constant instead of duplicating this literal "\\p{M}" 3 times.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/AIAnalysisServiceTest.java | L20 | [MAJOR] Use assertNotEquals instead.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/AIAnalysisServiceTest.java | L29 | [MAJOR] Use assertEquals instead.
+Amine20030_urbanser:src/main/java/ma/urbanops/rmi/AIAnalysisRemoteImpl.java | L14 | [MINOR] Override the "equals" method in this class.
+Amine20030_urbanser:src/main/java/ma/urbanops/rmi/AIAnalysisRemoteImpl.java | L18 | [CRITICAL] Make non-static "aiAnalysisService" transient or serializable.
+Amine20030_urbanser:src/main/java/ma/urbanops/rmi/RmiClientDemo.java | L12 | [MAJOR] Replace this use of System.out by a logger.
+Amine20030_urbanser:src/main/java/ma/urbanops/rmi/RmiClientDemo.java | L17 | [MAJOR] Replace this use of System.out by a logger.
+Amine20030_urbanser:src/main/java/ma/urbanops/rmi/RmiClientDemo.java | L21 | [MAJOR] Replace this use of System.out by a logger.
+Amine20030_urbanser:src/main/java/ma/urbanops/rmi/RmiClientDemo.java | L25 | [MAJOR] Replace this use of System.out by a logger.
+Amine20030_urbanser:src/main/java/ma/urbanops/rmi/RmiClientDemo.java | L28 | [MAJOR] Replace this use of System.out by a logger.
+Amine20030_urbanser:src/main/java/ma/urbanops/rmi/RmiClientDemo.java | L30 | [MAJOR] Replace this use of System.out by a logger.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/UserService.java | L37 | [MINOR] Remove the unnecessary boolean literal.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/UserService.java | L61 | [CRITICAL] Call transactional methods via an injected dependency instead of directly via 'this'.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/UserService.java | L76 | [CRITICAL] Call transactional methods via an injected dependency instead of directly via 'this'.
+Amine20030_urbanser:src/main/java/ma/urbanops/controller/IncidentController.java | L127 | [MAJOR] Extract this nested ternary operation into an independent statement.
+Amine20030_urbanser:src/main/java/ma/urbanops/controller/IncidentController.java | L130 | [MAJOR] Replace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()' and ensure that the list is unmodified.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/CategoryService.java | L32 | [CRITICAL] Call transactional methods via an injected dependency instead of directly via 'this'.
+Amine20030_urbanser:src/main/java/ma/urbanops/controller/AlertController.java | L13 | [MINOR] Remove this unused import 'org.springframework.http.HttpStatus'.
+Amine20030_urbanser:src/main/java/ma/urbanops/exception/GlobalExceptionHandler.java | L49 | [CRITICAL] Define a constant instead of duplicating this literal "Unauthorized" 3 times.
+Amine20030_urbanser:src/main/java/ma/urbanops/repository/IncidentRepository.java | L3 | [MINOR] Remove this unused import 'ma.urbanops.dto.response.MapIncidentProjection'.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L52 | [MAJOR] Either re-interrupt this method or rethrow the "InterruptedException" that can be caught here.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L109 | [MAJOR] Provide the parametrized type for this generic.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L208 | [MAJOR] Replace generic exceptions with specific library exceptions or a custom exception.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L214 | [CRITICAL] Replace this call to "replaceAll()" by a call to the "replace()" method.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L214 | [CRITICAL] Replace this call to "replaceAll()" by a call to the "replace()" method.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AIAnalysisService.java | L263 | [CRITICAL] Define a constant instead of duplicating this literal "MEDIUM" 5 times.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/IncidentService.java | L81 | [MAJOR] Remove this block of code, fill it in, or add a comment explaining why it is empty.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/IncidentService.java | L137 | [MAJOR] Extract this nested try block into a separate method.
+Amine20030_urbanser:src/main/java/ma/urbanops/controller/AlertController.java | L37 | [MAJOR] Remove this conditional structure or edit its code blocks so that they're not all the same.
+Amine20030_urbanser:src/main/java/ma/urbanops/controller/UserController.java | L9 | [MINOR] Remove this unused import 'ma.urbanops.security.UserDetailsImpl'.
+Amine20030_urbanser:src/main/java/ma/urbanops/controller/UserController.java | L15 | [MINOR] Remove this unused import 'org.springframework.security.core.annotation.AuthenticationPrincipal'.
+Amine20030_urbanser:src/main/java/ma/urbanops/security/JwtAuthenticationFilter.java | L23 | [MAJOR] Remove this field injection and use constructor injection instead.
+Amine20030_urbanser:src/main/java/ma/urbanops/security/JwtAuthenticationFilter.java | L26 | [MAJOR] Remove this field injection and use constructor injection instead.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AlertService.java | L33 | [MAJOR] Remove this useless assignment to local variable "authorityName".
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AlertService.java | L33 | [MINOR] Remove this unused "authorityName" local variable.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/AlertService.java | L71 | [CRITICAL] Define a constant instead of duplicating this literal "Alert" 3 times.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/FileStorageService.java | L32 | [MAJOR] Replace generic exceptions with specific library exceptions or a custom exception.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/FileStorageService.java | L52 | [MAJOR] Replace generic exceptions with specific library exceptions or a custom exception.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/FileStorageService.java | L62 | [MAJOR] Replace generic exceptions with specific library exceptions or a custom exception.
+Amine20030_urbanser:src/main/java/ma/urbanops/service/SectorService.java | L38 | [CRITICAL] Call transactional methods via an injected dependency instead of directly via 'this'.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L79 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L80 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L81 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L159 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L227 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L228 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L229 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L230 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L231 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L232 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.
+Amine20030_urbanser:src/test/java/ma/urbanops/service/StatsServiceTest.java | L233 | [CRITICAL] Change the assertion arguments to not compare a primitive value with null.

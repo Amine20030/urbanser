@@ -1,6 +1,5 @@
 package ma.urbanops.repository;
 
-import ma.urbanops.dto.response.MapIncidentProjection;
 import ma.urbanops.entity.Incident;
 import ma.urbanops.entity.User;
 import ma.urbanops.enums.IncidentStatus;

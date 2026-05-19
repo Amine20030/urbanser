@@ -59,53 +59,64 @@ export function RecentReportsSection() {
           </Button>
         </div>
 
-        {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-36 rounded-lg" />
-            ))}
-          </div>
-        ) : error ? (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        ) : incidents.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-muted/40 p-10 text-center">
-            <Inbox className="mx-auto h-8 w-8 text-primary" />
-            <p className="mt-3 text-sm font-semibold text-t1">Aucun signalement recent</p>
-            <p className="mt-1 text-sm text-t2">Les nouvelles declarations apparaitront ici.</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {incidents.slice(0, 6).map((inc) => (
-              <Link
-                key={inc.id}
-                href={`/incidents/${encodeURIComponent(inc.referenceCode || inc.id)}`}
-                className="group rounded-lg border border-border bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-glow"
-                style={{ borderLeft: `4px solid ${sev(inc.severity)}` }}
-              >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <span className="min-w-0 truncate text-xs font-semibold text-t3">
-                    {inc.category?.icon ? `${inc.category.icon} ` : ''}
-                    {inc.category?.name ?? 'Categorie'}
-                  </span>
-                  <span className="shrink-0 text-xs text-t3">{relativeTime(inc.createdAt)}</span>
-                </div>
-                <h3 className="line-clamp-2 min-h-[2.75rem] text-sm font-bold leading-snug text-t1 group-hover:text-primary">
-                  {inc.title}
-                </h3>
-                <div className="mt-3 flex items-center gap-1.5 text-xs text-t2">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  <span className="truncate">{inc.sector?.name ?? 'Marrakech'}</span>
-                </div>
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-                  <span className="font-mono text-[11px] font-bold text-primary">{inc.referenceCode}</span>
-                  <StatusBadge status={inc.status} size="sm" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        {(() => {
+          if (loading) {
+            return (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={`skeleton-${i}`} className="h-36 rounded-lg" />
+                ))}
+              </div>
+            )
+          }
+          if (error) {
+            return (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )
+          }
+          if (incidents.length === 0) {
+            return (
+              <div className="rounded-lg border border-dashed border-border bg-muted/40 p-10 text-center">
+                <Inbox className="mx-auto h-8 w-8 text-primary" />
+                <p className="mt-3 text-sm font-semibold text-t1">Aucun signalement recent</p>
+                <p className="mt-1 text-sm text-t2">Les nouvelles declarations apparaitront ici.</p>
+              </div>
+            )
+          }
+          return (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {incidents.slice(0, 6).map((inc) => (
+                <Link
+                  key={inc.id}
+                  href={`/incidents/${encodeURIComponent(inc.referenceCode || inc.id)}`}
+                  className="group rounded-lg border border-border bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-glow"
+                  style={{ borderLeft: `4px solid ${sev(inc.severity)}` }}
+                >
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <span className="min-w-0 truncate text-xs font-semibold text-t3">
+                      {inc.category?.icon ? `${inc.category.icon} ` : ''}
+                      {inc.category?.name ?? 'Categorie'}
+                    </span>
+                    <span className="shrink-0 text-xs text-t3">{relativeTime(inc.createdAt)}</span>
+                  </div>
+                  <h3 className="line-clamp-2 min-h-[2.75rem] text-sm font-bold leading-snug text-t1 group-hover:text-primary">
+                    {inc.title}
+                  </h3>
+                  <div className="mt-3 flex items-center gap-1.5 text-xs text-t2">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    <span className="truncate">{inc.sector?.name ?? 'Marrakech'}</span>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                    <span className="font-mono text-[11px] font-bold text-primary">{inc.referenceCode}</span>
+                    <StatusBadge status={inc.status} size="sm" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )
+        })()}
       </div>
     </section>
   )

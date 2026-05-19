@@ -25,6 +25,8 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String UNAUTHORIZED = "Unauthorized";
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
             ResourceNotFoundException ex, HttpServletRequest request) {
@@ -46,7 +48,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
-                "Unauthorized",
+                UNAUTHORIZED,
                 ex.getMessage(),
                 request.getRequestURI()
         );
@@ -139,7 +141,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
-                "Unauthorized",
+                UNAUTHORIZED,
                 "Email ou mot de passe incorrect.",
                 request.getRequestURI()
         );
@@ -167,7 +169,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
-                "Unauthorized",
+                UNAUTHORIZED,
                 "Authentification impossible. Vérifiez vos identifiants.",
                 request.getRequestURI()
         );

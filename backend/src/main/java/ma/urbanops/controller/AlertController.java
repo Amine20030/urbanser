@@ -10,7 +10,6 @@ import ma.urbanops.enums.Severity;
 import ma.urbanops.service.AlertService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -33,12 +32,7 @@ public class AlertController {
             @RequestParam(required = false) Severity severity,
             @RequestParam(required = false) Boolean acknowledged,
             Pageable pageable) {
-        Page<Alert> alerts;
-        if (acknowledged != null) {
-            alerts = alertService.getAllAlerts(pageable);
-        } else {
-            alerts = alertService.getAllAlerts(pageable);
-        }
+        Page<Alert> alerts = alertService.getAllAlerts(pageable);
         return ResponseEntity.ok(alerts.map(this::toResponse));
     }
 

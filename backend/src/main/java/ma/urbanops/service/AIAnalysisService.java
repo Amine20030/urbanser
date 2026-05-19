@@ -29,6 +29,11 @@ public class AIAnalysisService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
+    private static final String PARTS = "parts";
+    private static final String FALLBACK = "fallback";
+    private static final String MEDIUM_SEVERITY = "MEDIUM";
+    private static final String DIACRITICS_REGEX = "\\p{M}";
+
     public AIAnalysisService(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
@@ -49,6 +54,9 @@ public class AIAnalysisService {
                 try {
                     Thread.sleep(3000);
                     return callGemini(description, categoryHint);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return fallback(description, categoryHint);
                 } catch (Exception e2) {
                     return fallback(description, categoryHint);
                 }
@@ -90,7 +98,7 @@ public class AIAnalysisService {
         String prompt = buildPrompt(description, categoryHint);
 
         Map<String, Object> part = Map.of("text", prompt);
-        Map<String, Object> content = Map.of("parts", List.of(part));
+        Map<String, Object> content = Map.of(PARTS, List.of(part));
         Map<String, Object> genConfig = Map.of(
             "temperature", 0.1,
             "maxOutputTokens", 300,
@@ -122,7 +130,7 @@ public class AIAnalysisService {
         String prompt = buildModerationPrompt(title, description, categoryName, sectorName);
 
         Map<String, Object> part = Map.of("text", prompt);
-        Map<String, Object> content = Map.of("parts", List.of(part));
+        Map<String, Object> content = Map.of(PARTS, List.of(part));
         Map<String, Object> genConfig = Map.of(
             "temperature", 0.0,
             "maxOutputTokens", 200,
@@ -202,7 +210,7 @@ public class AIAnalysisService {
         try {
             List<Map<String, Object>> candidates = (List<Map<String, Object>>) body.get("candidates");
             Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
-            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get(PARTS);
             return (String) parts.get(0).get("text");
         } catch (Exception e) {
             throw new RuntimeException("Cannot parse Gemini response structure");
@@ -211,7 +219,7 @@ public class AIAnalysisService {
 
     private AIAnalysisResult parseResponse(String json, String categoryHint) {
         try {
-            String clean = json.replaceAll("```json", "").replaceAll("```", "").trim();
+            String clean = json.replace("```json", "").replace("```", "").trim();
             Map<String, Object> map = objectMapper.readValue(clean, Map.class);
 
             String severity = normalizeSeverity((String) map.get("severity"));
@@ -235,7 +243,7 @@ public class AIAnalysisService {
     // ── FALLBACK — keyword rules ───────────────────────────────
     private ContentModerationResult parseModerationResponse(String json) {
         try {
-            String clean = json.replaceAll("```json", "").replaceAll("```", "").trim();
+            String clean = json.replace("```json", "").replace("```", "").trim();
             Map<String, Object> map = objectMapper.readValue(clean, Map.class);
 
             return ContentModerationResult.builder()
@@ -252,7 +260,7 @@ public class AIAnalysisService {
                 .reason("Reponse IA de moderation illisible")
                 .confidence(0.0)
                 .fallbackUsed(true)
-                .rawResponse(json)
+                .rawResponse(FALLBACK)
                 .build();
         }
     }
@@ -260,7 +268,7 @@ public class AIAnalysisService {
     public AIAnalysisResult fallback(String description, String categoryHint) {
         String desc = description == null ? "" : description.toLowerCase();
 
-        String severity = "MEDIUM";
+        String severity = MEDIUM_SEVERITY;
         String authority = "Commune Urbaine Marrakech";
         String email = "contact@commune.marrakech.ma";
         String reason = "Classification automatique par règles métier";
@@ -274,7 +282,7 @@ public class AIAnalysisService {
         } else if (containsAny(desc, "embouteillage","trafic","route bloquée","signalisation")) {
             severity = "MEDIUM"; authority = "Police Circulation"; email = "circulation@marrakech.ma";
         } else if (containsAny(desc, "lampadaire","éclairage","lumière")) {
-            severity = "MEDIUM";
+            severity = MEDIUM_SEVERITY;
         } else if (containsAny(desc, "poubelle","ordures","déchet")) {
             severity = "LOW";
         }
@@ -287,7 +295,7 @@ public class AIAnalysisService {
             .reason(reason)
             .confidence(0.5)
             .fallbackUsed(true)
-            .rawResponse("fallback")
+            .rawResponse(FALLBACK)
             .build();
     }
 
@@ -336,11 +344,11 @@ public class AIAnalysisService {
     }
 
     private String normalizeSeverity(String s) {
-        if (s == null) return "MEDIUM";
+        if (s == null) return MEDIUM_SEVERITY;
         return switch (s.toUpperCase().trim()) {
             case "HIGH", "HAUTE", "ÉLEVÉ" -> "HIGH";
             case "LOW", "FAIBLE", "BAS"   -> "LOW";
-            default                         -> "MEDIUM";
+            default                         -> MEDIUM_SEVERITY;
         };
     }
 
@@ -351,7 +359,7 @@ public class AIAnalysisService {
         for (String k : keywords) {
             String normalizedKeyword = java.text.Normalizer
                 .normalize(k.toLowerCase(), java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "");
+                .replaceAll(DIACRITICS_REGEX, "");
             if (normalized.contains(normalizedKeyword)) return true;
         }
         return false;
@@ -380,13 +388,13 @@ public class AIAnalysisService {
             .reason(reason)
             .confidence(0.6)
             .fallbackUsed(true)
-            .rawResponse("fallback")
+            .rawResponse(FALLBACK)
             .build();
     }
 
     private String normalizeText(String text) {
         return java.text.Normalizer
             .normalize(text.toLowerCase(), java.text.Normalizer.Form.NFD)
-            .replaceAll("\\p{M}", "");
+            .replaceAll(DIACRITICS_REGEX, "");
     }
 }

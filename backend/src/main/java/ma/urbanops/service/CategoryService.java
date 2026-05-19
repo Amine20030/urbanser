@@ -29,7 +29,8 @@ public class CategoryService {
     public Category create(Category c) { return categoryRepository.save(c); }
 
     public Category update(Long id, Category categoryDetails) {
-        Category category = findById(id);
+        Category category = categoryRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Category","id",id));
         if(categoryDetails.getName() != null) category.setName(categoryDetails.getName());
         if(categoryDetails.getIcon() != null) category.setIcon(categoryDetails.getIcon());
         if(categoryDetails.getDefaultAuthority() != null) category.setDefaultAuthority(categoryDetails.getDefaultAuthority());
